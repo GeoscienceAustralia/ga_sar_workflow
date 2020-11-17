@@ -394,6 +394,7 @@ class CoregisterDem:
         if raster_out:
             params = SlcParFileParser(self.r_dem_master_mli_par)
 
+            # py_gamma parameters
             pwr_pathname = str(self.r_dem_master_mli)
             width = params.slc_par_params.range_samples
             start = 1

@@ -16,6 +16,7 @@ import structlog
 
 from insar.py_gamma_ga import GammaInterface, auto_logging_decorator, subprocess_wrapper
 from insar.subprocess_utils import working_directory, run_command
+from insar.project import ProcConfig
 
 _LOG = structlog.get_logger("insar")
 
@@ -369,10 +370,10 @@ class CoregisterSlc:
             str(self.r_dem_master_slc_par),
             str(self.slc_slave_par),
             str(self.slave_off),
-            1,  # intensity cross-correlation
+            1,          # intensity cross-correlation
             self.rlks,
             self.alks,
-            0, # non-interactive mode
+            0,          # non-interactive mode
         )
 
         # TODO: cleanup to constants.py?
@@ -414,10 +415,10 @@ class CoregisterSlc:
                         str(self.r_dem_master_slc_par),
                         str(self.slc_slave_par),
                         str(slave_doff),
-                        1, # intensity cross-correlation
+                        1,          # intensity cross-correlation
                         self.rlks,
                         self.alks,
-                        0, # non-interactive mode
+                        0,          # non-interactive mode
                     )
 
                     # offset tracking between SLC images using intensity cross-correlation
@@ -429,11 +430,11 @@ class CoregisterSlc:
                         str(slave_doff),
                         str(slave_offs),
                         str(slave_snr),
-                        128, # rwin
-                        64, # azwin
-                        "-", # offsets
-                        1, # n_ovr
-                        0.2, # thres
+                        128,   # rwin
+                        64,    # azwin
+                        "-",   # offsets
+                        1,     # n_ovr
+                        0.2,   # thres
                         self.range_step,
                         self.azimuth_step,
                         self.master_sample.slc_width_start,
@@ -447,11 +448,11 @@ class CoregisterSlc:
                         str(slave_offs),
                         str(slave_snr),
                         str(slave_doff),
-                        "-", # coffs
-                        "-", # coffsets
-                        0.2, # thresh
-                        1, # npolynomial
-                        0, # non-interactive
+                        "-",  # coffs
+                        "-",  # coffsets
+                        0.2,  # thresh
+                        1,    # npolynomial
+                        0,    # non-interactive
                     )
 
                     range_stdev, azimuth_stdev = re.findall(
@@ -536,7 +537,7 @@ class CoregisterSlc:
                         self.master_sample.mli_width_end,
                         str(slave_diff_par),
                         str(self.slave_lt),
-                        1, # ref_flg
+                        1,  # ref_flg
                     )
                     # TODO: do we raise and kill the program or iterate here on exception?
 
@@ -560,7 +561,7 @@ class CoregisterSlc:
         value: str
     ):
         """Get the (first) line number of a matching string in a file"""
-        
+
         with open(filepath, 'r') as file:
             for lineno, line in enumerate(file.read().splitlines()):
                 if line == value:
@@ -579,7 +580,7 @@ class CoregisterSlc:
 
         tab_record = namedtuple("tab_record", ["slc", "par", "TOPS_par"])
 
-        with open(filepath, 'r') as file:
+        with open(tab_file, 'r') as file:
             lines = file.read().splitlines()
 
             # Remove empty lines
@@ -608,22 +609,31 @@ class CoregisterSlc:
 
     def fine_registration(
         self,
+        proc: ProcConfig,
+        slave: Union[str, int],
+        list_idx: Union[str, int],
         max_iteration: Optional[int] = 5,
-        azimuth_px_offset_target: Optional[float] = 0.0001
+        max_azimuth_threshold: Optional[float] = 0.01,
+        azimuth_px_offset_target: Optional[float] = 0.0001,
     ):
         """Performs a fine co-registration"""
 
-        # TODO: Where does this come from?
-        # (look at process_gamma which calls coregister_S1_slave_SLC)
-        list_idx = "-"
-
-        self.coarse_registration(pass) # TODO: pass in appropriate params..?
+        self.coarse_registration(max_iteration, max_azimuth_threshold)
 
         _LOG.info("Iterative improvement of refinement offset azimuth overlap regions:")
-        
-        with tempfile.TemporaryDirectory() as temp_dir:
+
+        with tempfile.TemporaryDirectory() as temp_dir, open(temp_dir.joinpath(f"{self.master_slave_prefix}.ovr_results"), 'w') as slave_ovr_res:
             temp_dir = Path(temp_dir)
-            
+
+            # initialize the output text file
+            slave_ovr_res.writelines([
+                "    Burst Overlap Results",
+                f"        thresholds applied: cc_thresh: {slave_s1_cct},  ph_fraction_thresh: {slave_s1_frac}, ph_stdev_thresh (rad): {slave_s1_stdev}",
+                "",
+                "        IW  overlap  ph_mean ph_stdev ph_fraction   (cc_mean cc_stdev cc_fraction)    weight",
+                "",
+            ])
+
             for iteration in range(max_iteration):
                 # cp -rf $slave_off $slave_off_start
                 slave_off_start = temp_dir.joinpath(f"{self.slave_off.name}.start")
@@ -645,87 +655,54 @@ class CoregisterSlc:
                 )
 
                 # coregister to nearest slave if list_idx is given
-                if list_idx == "-": # coregister to master
-                    # S1_COREG_OVERLAP $master_slc_tab $r_slave_slc_tab $slave_off_start $slave_off $slave_s1_cct $slave_s1_frac $slave_s1_stdev > $slave_off.az_ovr.$it.out
-                    azpol = self.S1_COREG_OVERLAP(
-                        str(self.master_slc_tab),
-                        str(self.r_slave_slc_tab),
-                        str(slave_off_start),
-                        str(slave_off),
-                        slave_s1_cct,
-                        slave_s1_frac,
-                        slave_s1_stdev,
-                    )  # TODO: cout -> $slave_off.az_ovr.$it.out
+                if list_idx == "-":  # coregister to master
+                    r_coreg_slave_tab = None
 
-                elif list_idx == "0": # coregister to adjacent slave
+                elif list_idx == "0":  # coregister to adjacent slave
                     # get slave position in slaves.list
-                    #slave_pos=`grep -n $slave $slave_list | cut -f1 -d:`
+                    # slave_pos=`grep -n $slave $slave_list | cut -f1 -d:`
                     self._get_matching_lineno(slave_list, slave)
 
-                    if slave < master_scene:
+                    if int(slave) < int(proc.ref_master_scene):
                         coreg_pos = slave_pos+1
 
-                    elif slave > master_scene:
+                    elif int(slave) > int(proc.ref_master_scene):
                         coreg_pos = slave_pos-1
 
                     # coreg_slave=`head -n $coreg_pos $slave_list | tail -1`
                     coreg_slave = self._read_line(slave_list, coreg_pos)
-
                     r_coreg_slave_tab = f'{slc_dir}/{coreg_slave}/r{coreg_slave}_{polar}_tab'
-
-                    # S1_COREG_OVERLAP $master_slc_tab $r_slave_slc_tab $slave_off_start $slave_off $slave_s1_cct $slave_s1_frac $slave_s1_stdev $r_coreg_slave_tab > $slave_off.az_ovr.$it.out
-                    azpol = self.S1_COREG_OVERLAP(
-                        master_slc_tab,
-                        r_slave_slc_tab,
-                        slave_off_start,
-                        slave_off,
-                        slave_s1_cct,
-                        slave_s1_frac,
-                        slave_s1_stdev,
-                        r_coreg_slave_tab,
-                    )  # TODO: cout -> $slave_off.az_ovr.$it.out
 
                 elif int(list_idx) < 20140000:  # coregister to particular slave
                     coreg_slave = list_idx
                     r_coreg_slave_tab = f'{slc_dir}/{coreg_slave}/r{coreg_slave}_{polar}_tab'
 
-                    # S1_COREG_OVERLAP $master_slc_tab $r_slave_slc_tab $slave_off_start $slave_off $slave_s1_cct $slave_s1_frac $slave_s1_stdev $r_coreg_slave_tab > $slave_off.az_ovr.$it.out
-                    azpol = self.S1_COREG_OVERLAP(
-                        master_slc_tab,
-                        r_slave_slc_tab,
-                        slave_off_start,
-                        slave_off,
-                        slave_s1_cct,
-                        slave_s1_frac,
-                        slave_s1_stdev,
-                        r_coreg_slave_tab,
-                    )  # TODO: cout -> $slave_off.az_ovr.$it.out
-
                 else:  # coregister to slave image with short temporal baseline
-                    #  take the first/last slave of the previous list for coregistration
+                    # take the first/last slave of the previous list for coregistration
                     prev_list_idx = list_idx-1
 
                     if int(slave) < int(master_scene):
-                        #coreg_slave=`head $list_dir/slaves$prev_list_idx.list -n1`
+                        # coreg_slave=`head $list_dir/slaves$prev_list_idx.list -n1`
                         coreg_slave = self._read_line(list_dir/f'slaves{prev_list_idx}.list', 0)
 
                     elif int(slave) > int(master_scene):
-                        #coreg_slave=`tail $list_dir/slaves$prev_list_idx.list -n1`
+                        # coreg_slave=`tail $list_dir/slaves$prev_list_idx.list -n1`
                         coreg_slave = self._read_line(list_dir/f'slaves{prev_list_idx}.list', -1)
-                    
-                    r_coreg_slave_tab=f'{slc_dir}/{coreg_slave}/r{coreg_slave}_{polar}_tab'
 
-                    # S1_COREG_OVERLAP $master_slc_tab $r_slave_slc_tab $slave_off_start $slave_off $slave_s1_cct $slave_s1_frac $slave_s1_stdev $r_coreg_slave_tab > $slave_off.az_ovr.$it.out
-                    azpol = self.S1_COREG_OVERLAP(
-                        master_slc_tab,
-                        r_slave_slc_tab,
-                        slave_off_start,
-                        slave_off,
-                        slave_s1_cct,
-                        slave_s1_frac,
-                        slave_s1_stdev,
-                        r_coreg_slave_tab,
-                    )  # TODO: cout -> $slave_off.az_ovr.$it.out
+                    r_coreg_slave_tab = f'{slc_dir}/{coreg_slave}/r{coreg_slave}_{polar}_tab'
+
+                # S1_COREG_OVERLAP $master_slc_tab $r_slave_slc_tab $slave_off_start $slave_off $slave_s1_cct $slave_s1_frac $slave_s1_stdev $r_coreg_slave_tab > $slave_off.az_ovr.$it.out
+                azpol = self.S1_COREG_OVERLAP(
+                    slave_ovr_res,
+                    str(self.master_slc_tab),
+                    str(self.r_slave_slc_tab),
+                    str(slave_off_start),
+                    str(self.slave_off),
+                    proc.coreg_s1_cc_thresh,
+                    proc.coreg_s1_frac_thresh,
+                    proc.coreg_s1_stdev_thresh,
+                    r_coreg_slave_tab,
+                )  # TODO: cout -> $slave_off.az_ovr.$it.out
 
                 # daz=`awk '$1 == "azimuth_pixel_offset" {print $2}' $slave_off.az_ovr.$it.out`
                 daz = azpol[0]  # we return this directly from S1_COREG_OVERLAP (no need to keep reading the file over and over like bash does)
@@ -735,11 +712,13 @@ class CoregisterSlc:
 
                 _LOG.info(f'    az_ovr_iteration_{iteration}: {daz} (daz in SLC pixel)')
 
+                # Break out of the loop if we reach our target accuracy
                 if abs(daz) < azimuth_px_offset_target:
                     break
 
     def S1_COREG_OVERLAP(
         self,
+        slave_ovr_res,
         master_slc_tab,
         r_slave_slc_tab,
         slave_off_start,
@@ -747,11 +726,9 @@ class CoregisterSlc:
         slave_s1_cct,
         slave_s1_frac,
         slave_s1_stdev,
-        r_slave2_slc_tab: Optional[]
+        r_slave2_slc_tab: Optional[Union[str, Path]]
     ):
         """S1_COREG_OVERLAP"""
-        samples = 0
-        sum = 0.0
         samples_all = 0
         sum_all = 0.0
         sum_weight_all = 0.0
@@ -779,12 +756,10 @@ class CoregisterSlc:
         _LOG.info(f"lines_offset_IW1: {lines_offset_IW1}")
 
         if master_IWs[1] is not None:
-            lines_offset_IW2 = calc_line_offset(master_IWs[1])
-            _LOG.info(f"lines_offset_IW2: {lines_offset_IW2}")
+            _LOG.info(f"lines_offset_IW2: {calc_line_offset(master_IWs[1])}")
 
         if master_IWs[2] is not None:
-            lines_offset_IW3 = calc_line_offset(master_IWs[2])
-            _LOG.info(f"lines_offset_IW3: {lines_offset_IW3}")
+            _LOG.info(f"lines_offset_IW3: {calc_line_offset(master_IWs[2])}")
 
         # calculate lines_offset for the second scene (for comparsion)
         _LOG.info(f"lines_offset_IW1: {calc_line_offset(r_slave_IWs[0])}")
@@ -818,22 +793,16 @@ class CoregisterSlc:
 
             master_IWi = master_IWs[subswath_id-1]
             r_slave_IWi = r_slave_IWs[subswath_id-1]
-            r_slave2_IWi = r_slave2_IWs[subswath_id-1] if if r_slave2_slc_tab is not None else None
+            r_slave2_IWi = r_slave2_IWs[subswath_id-1] if r_slave2_slc_tab is not None else None
 
             master_IWi_par = pg.ParFile(master_IWi.par)
             master_IWi_TOPS = pg.ParFile(master_IWi.TOPS_par)
 
-            # Setup some par file helpers
-            def read_par_int(id): return master_IWi_par.get_value(id, dtype=int, index=0)
-            def read_par_float(id): return master_IWi_par.get_value(id, dtype=float, index=0)
-            def read_TOPS_int(id): return master_IWi_TOPS.get_value(id, dtype=int, index=0)
-            def read_TOPS_float(id): return master_IWi_TOPS.get_value(id, dtype=float, index=0)
-
-            number_of_bursts_IWi = read_TOPS_int("number_of_bursts")
-            lines_per_burst = read_TOPS_int("lines_per_burst")
+            number_of_bursts_IWi = master_IWi_TOPS.get_value("number_of_bursts", dtype=int, index=0)
+            lines_per_burst = master_IWi_TOPS.get_value("lines_per_burst", dtype=int, index=0)
             lines_offset = lines_offset_IWs[subswath_id-1]
             lines_overlap = lines_per_burst - lines_offset
-            range_samples = read_par_int("range_samples")
+            range_samples = master_IWi_par.get_value("range_samples", dtype=int, index=0)
             samples = 0
             sum = 0.0
             sum_weight = 0.0
@@ -847,41 +816,26 @@ class CoregisterSlc:
                 mas_IWi_slc = r_master_slave_name + f"_{IWid}_slc"
                 mas_IWi_par = r_master_slave_name + f"_{IWid}_par"
 
-                # option to coregister to another slave
-                if r_slave2_slc_tab is not None:
-                    # SLC_copy r_slave2_IWi.slc master_IWi.par mas_IWi_slc.{i}.1 mas_IWi_par.{i}.1 - 1. 0 $range_samples $starting_line1 $lines_overlap
-                    pg.SLC_copy(
-                        r_slave2_IWi.slc, master_IWi.par,
-                        f"{mas_IWi_slc}.{i}.1", f"{mas_IWi_par}.{i}.1",
-                        "-", 1.0, 0,
-                        range_samples, starting_line1, lines_overlap
-                    )
+                # SLC_copy master_IWi.slc master_IWi.par mas_IWi_slc.{i}.1 mas_IWi_par.{i}.1 - 1. 0 $range_samples $starting_line1 $lines_overlap
+                # w/ option to coregister to another slave via r_slave2_slc_tab
+                pg.SLC_copy(
+                    master_IWi.slc if r_slave2_slc_tab is None else r_slave2_IWi.slc,
+                    master_IWi.par,
+                    f"{mas_IWi_slc}.{i}.1", f"{mas_IWi_par}.{i}.1",
+                    "-", 1.0, 0,
+                    range_samples, starting_line1, lines_overlap
+                )
 
-                    # SLC_copy r_slave2_IWi.slc master_IWi.par mas_IWi_slc.{i}.2 mas_IWi_par.{i}.2 - 1. 0 $range_samples $starting_line2 $lines_overlap
-                    pg.SLC_copy(
-                        r_slave2_IWi.slc, master_IWi.par,
-                        f"{mas_IWi_slc}.{i}.2", f"{mas_IWi_par}.{i}.2",
-                        "-", 1.0, 0,
-                        range_samples, starting_line2, lines_overlap
-                    )
+                # SLC_copy master_IWi.slc master_IWi.par mas_IWi_slc.{i}.2 mas_IWi_par.{i}.2 - 1. 0 $range_samples $starting_line2 $lines_overlap
+                # w/ option to coregister to another slave via r_slave2_slc_tab
+                pg.SLC_copy(
+                    master_IWi.slc if r_slave2_slc_tab is None else r_slave2_IWi.slc,
+                    master_IWi.par,
+                    f"{mas_IWi_slc}.{i}.2", f"{mas_IWi_par}.{i}.2",
+                    "-", 1.0, 0,
+                    range_samples, starting_line2, lines_overlap
+                )
 
-                else:
-                    # SLC_copy master_IWi.slc master_IWi.par mas_IWi_slc.{i}.1 mas_IWi_par.{i}.1 - 1. 0 $range_samples $starting_line1 $lines_overlap
-                    pg.SLC_copy(
-                        master_IWi.slc, master_IWi.par,
-                        f"{mas_IWi_slc}.{i}.1", f"{mas_IWi_par}.{i}.1",
-                        "-", 1.0, 0,
-                        range_samples, starting_line1, lines_overlap
-                    )
-
-                    # SLC_copy master_IWi.slc master_IWi.par mas_IWi_slc.{i}.2 mas_IWi_par.{i}.2 - 1. 0 $range_samples $starting_line2 $lines_overlap
-                    pg.SLC_copy(
-                        master_IWi.slc, master_IWi.par,
-                        f"{mas_IWi_slc}.{i}.2", f"{mas_IWi_par}.{i}.2",
-                        "-", 1.0, 0,
-                        range_samples, starting_line2, lines_overlap
-                    )
-                
                 # SLC_copy $r_slave_IWi.slc $master_IWi.par $r_slave_IWi.slc.{i}.1 $r_slave_IWi.par.{i}.1 - 1. 0 $range_samples $starting_line1 $lines_overlap
                 pg.SLC_copy(
                     r_slave_IWi.slc, master_IWi.par,
@@ -889,7 +843,7 @@ class CoregisterSlc:
                     "-", 1.0, 0,
                     range_samples, starting_line1, lines_overlap
                 )
-                
+
                 # SLC_copy $r_slave_IWi.slc $master_IWi.par $r_slave_IWi.slc.{i}.2 $r_slave_IWi.par.{i}.2 - 1. 0 $range_samples $starting_line2 $lines_overlap
                 pg.SLC_copy(
                     r_slave_IWi.slc, master_IWi.par,
@@ -910,10 +864,10 @@ class CoregisterSlc:
                     f"{mas_IWi_par}.{i}.1",
                     f"{mas_IWi_par}.{i}.1",
                     str(off1),
-                    1, # intensity cross-correlation
+                    1,  # intensity cross-correlation
                     1,
                     1,
-                    0, # non-interactive mode
+                    0,  # non-interactive mode
                 )
 
                 # SLC_intf $mas_IWi_slc.{i}.1 $r_slave_IWi.slc.{i}.1 $mas_IWi_par.{i}.1 $mas_IWi_par.{i}.1 $off1 $int1 1 1 0 - 0 0
@@ -936,16 +890,16 @@ class CoregisterSlc:
                 int2 = Path(f"r_master_slave_name.{IWid}.{i}.int2")
                 off2.unlink(missing_ok=True)
                 int2.unlink(missing_ok=True)
-                
+
                 # create_offset $mas_IWi_par.{i}.2 $mas_IWi_par.{i}.2 $off2 1 1 1 0
                 pg.create_offset(
                     f"{mas_IWi_par}.{i}.2",
                     f"{mas_IWi_par}.{i}.2",
                     str(off2),
-                    1, # intensity cross-correlation
+                    1,  # intensity cross-correlation
                     1,
                     1,
-                    0, # non-interactive mode
+                    0,  # non-interactive mode
                 )
 
                 # SLC_intf $mas_IWi_slc.{i}.2 $r_slave_IWi_slc.{i}.2 $mas_IWi_par.{i}.2 $mas_IWi_par.{i}.2 $off2 $int2 1 1 0 - 0 0
@@ -969,7 +923,7 @@ class CoregisterSlc:
                 diff_par1 = Path(f"r_master_slave_name.{IWid}.{i}.diff_par")
                 diff1 = Path(f"r_master_slave_name.{IWid}.{i}.diff")
                 diff_par1.unlink(missing_ok=True)
-                
+
                 # create_diff_par $off1 $off2 $diff_par1 0 0
                 pg.create_diff_par(
                     str(off1),
@@ -1163,14 +1117,12 @@ class CoregisterSlc:
                 # calculate average over the first sub-swath and print it out to output text file
                 if fraction > 0:
                     _LOG.info(f"{IWid} {i} {mean} {stdev} {fraction} ({cc_mean} {cc_stdev} {cc_fraction}) {weight}")
-                    #echo "{IWid} "$i $mean $stdev $fraction" ("$cc_mean $cc_stdev $cc_fraction") "$weight >> $slave_ovr_res
-                    pass
+                    slave_ovr_res.write(f"{IWid} {i} {mean} {stdev} {fraction} ({cc_mean} {cc_stdev} {cc_fraction}) {weight}\n")
 
                 else:
                     _LOG.info(f"{IWid} {i} 0.00000 0.00000 0.00000 ({cc_mean} {cc_stdev} {cc_fraction}) {weight}")
-                    #echo "{IWid} "$i" 0.00000 0.00000 0.00000 ("$cc_mean $cc_stdev $cc_fraction") "$weight >> $slave_ovr_res
-                    pass
-                
+                    slave_ovr_res.write(f"{IWid} {i} 0.00000 0.00000 0.00000 ({cc_mean} {cc_stdev} {cc_fraction}) {weight}\n")
+
                 # TODO: Redundant code... remove? or was this intentional in bash and they've forgotten to do something with it?
                 #if samples > 0:
                 #    average = sum / sum_weight
@@ -1180,9 +1132,7 @@ class CoregisterSlc:
             # Compute average
             average = sum / sum_weight if samples > 0 else 0.0
             _LOG.info(f"{IWid} average: {average}")
-            #echo "{IWid} average: "$average >> $slave_ovr_res
-            #echo "" >> $slave_ovr_res
-            pass
+            slave_ovr_res.write(f"{IWid} average: {average}\n")
 
         calc_phase_offsets(1) # IW1
         calc_phase_offsets(2) # IW2
@@ -1195,27 +1145,26 @@ class CoregisterSlc:
             average_all = sum_all / sum_weight_all
         else:
             average_all = 0.0
-        
+
         _LOG.info(f"all {average_all}")
-        #echo "all "$average_all >> $slave_ovr_res
-        pass
+        slave_ovr_res.write(f"all {average_all}")
 
         # conversion of phase offset (in radian) to azimuth offset (in SLC pixel)
         azimuth_pixel_offset = -dpix_factor * average_all
         _LOG.info(f"azimuth_pixel_offset {azimuth_pixel_offset} [azimuth SLC pixel]")
-        #echo "azimuth_pixel_offset "$azimuth_pixel_offset" [azimuth SLC pixel]" >> $slave_ovr_res
-        pass
+        slave_ovr_res.write(f"azimuth_pixel_offset {azimuth_pixel_offset} [azimuth SLC pixel]")
 
         # correct offset file for determined additional azimuth offset
         azpol = self._grep_offset_parameter(slave_off_start, "azimuth_offset_polynomial")
+        azpol = [float(x) for x in azpol]
 
         azpol[0] = azpol[0] + azimuth_pixel_offset
         _LOG.info(f"azpol_1_out {' '.join(azpol)}")
 
         # set_value $slave_off_start $slave_off azimuth_offset_polynomial $azpol_1_out $azpol_2 $azpol_3 $azpol_4 $azpol_5 $azpol_6 0
         pg.set_value(
-            slave_off_start,
-            slave_off,
+            str(slave_off_start),
+            str(slave_off),
             "azimuth_offset_polynomial",
             *azpol,
             0

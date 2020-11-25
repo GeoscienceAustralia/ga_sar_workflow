@@ -13,6 +13,8 @@ from pathlib import Path
 import re
 import shutil
 import structlog
+import PIL
+import numpy as np
 
 from insar.py_gamma_ga import GammaInterface, auto_logging_decorator, subprocess_wrapper
 from insar.subprocess_utils import working_directory, run_command
@@ -628,7 +630,7 @@ class CoregisterSlc:
             # initialize the output text file
             slave_ovr_res.writelines([
                 "    Burst Overlap Results",
-                f"        thresholds applied: cc_thresh: {slave_s1_cct},  ph_fraction_thresh: {slave_s1_frac}, ph_stdev_thresh (rad): {slave_s1_stdev}",
+                f"        thresholds applied: cc_thresh: {proc.coreg_s1_cc_thresh},  ph_fraction_thresh: {proc.coreg_s1_frac_thresh}, ph_stdev_thresh (rad): {proc.coreg_s1_stdev_thresh}",
                 "",
                 "        IW  overlap  ph_mean ph_stdev ph_fraction   (cc_mean cc_stdev cc_fraction)    weight",
                 "",
@@ -661,39 +663,40 @@ class CoregisterSlc:
                 elif list_idx == "0":  # coregister to adjacent slave
                     # get slave position in slaves.list
                     # slave_pos=`grep -n $slave $slave_list | cut -f1 -d:`
-                    self._get_matching_lineno(slave_list, slave)
+                    slave_pos = self._get_matching_lineno(proc.slave_list, slave)
 
                     if int(slave) < int(proc.ref_master_scene):
-                        coreg_pos = slave_pos+1
+                        coreg_pos = slave_pos + 1
 
                     elif int(slave) > int(proc.ref_master_scene):
-                        coreg_pos = slave_pos-1
+                        coreg_pos = slave_pos - 1
 
                     # coreg_slave=`head -n $coreg_pos $slave_list | tail -1`
-                    coreg_slave = self._read_line(slave_list, coreg_pos)
-                    r_coreg_slave_tab = f'{slc_dir}/{coreg_slave}/r{coreg_slave}_{polar}_tab'
+                    coreg_slave = self._read_line(proc.slave_list, coreg_pos)
+                    r_coreg_slave_tab = f'{proc.slc_dir}/{coreg_slave}/r{coreg_slave}_{proc.polarisation}_tab'
 
                 elif int(list_idx) < 20140000:  # coregister to particular slave
                     coreg_slave = list_idx
-                    r_coreg_slave_tab = f'{slc_dir}/{coreg_slave}/r{coreg_slave}_{polar}_tab'
+                    r_coreg_slave_tab = f'{proc.slc_dir}/{coreg_slave}/r{coreg_slave}_{proc.polarisation}_tab'
 
                 else:  # coregister to slave image with short temporal baseline
                     # take the first/last slave of the previous list for coregistration
-                    prev_list_idx = list_idx-1
+                    prev_list_idx = int(list_idx) - 1
 
-                    if int(slave) < int(master_scene):
+                    if int(slave) < int(proc.ref_master_scene):
                         # coreg_slave=`head $list_dir/slaves$prev_list_idx.list -n1`
-                        coreg_slave = self._read_line(list_dir/f'slaves{prev_list_idx}.list', 0)
+                        coreg_slave = self._read_line(Path(proc.list_dir) / f'slaves{prev_list_idx}.list', 0)
 
-                    elif int(slave) > int(master_scene):
+                    elif int(slave) > int(proc.ref_master_scene):
                         # coreg_slave=`tail $list_dir/slaves$prev_list_idx.list -n1`
-                        coreg_slave = self._read_line(list_dir/f'slaves{prev_list_idx}.list', -1)
+                        coreg_slave = self._read_line(Path(proc.list_dir) / f'slaves{prev_list_idx}.list', -1)
 
-                    r_coreg_slave_tab = f'{slc_dir}/{coreg_slave}/r{coreg_slave}_{polar}_tab'
+                    r_coreg_slave_tab = f'{proc.slc_dir}/{coreg_slave}/r{coreg_slave}_{proc.polarisation}_tab'
 
-                # S1_COREG_OVERLAP $master_slc_tab $r_slave_slc_tab $slave_off_start $slave_off $slave_s1_cct $slave_s1_frac $slave_s1_stdev $r_coreg_slave_tab > $slave_off.az_ovr.$it.out
+                # S1_COREG_OVERLAP $master_slc_tab $r_slave_slc_tab $slave_off_start $slave_off $proc.coreg_s1_cc_thresh $proc.coreg_s1_frac_thresh $proc.coreg_s1_stdev_thresh $r_coreg_slave_tab > $slave_off.az_ovr.$it.out
                 azpol = self.S1_COREG_OVERLAP(
                     slave_ovr_res,
+                    proc.master_slave_name,
                     str(self.master_slc_tab),
                     str(self.r_slave_slc_tab),
                     str(slave_off_start),
@@ -719,13 +722,14 @@ class CoregisterSlc:
     def S1_COREG_OVERLAP(
         self,
         slave_ovr_res,
+        r_master_slave_name,
         master_slc_tab,
         r_slave_slc_tab,
         slave_off_start,
         slave_off,
-        slave_s1_cct,
-        slave_s1_frac,
-        slave_s1_stdev,
+        coreg_s1_cc_thresh,
+        coreg_s1_frac_thresh,
+        coreg_s1_stdev_thresh,
         r_slave2_slc_tab: Optional[Union[str, Path]]
     ):
         """S1_COREG_OVERLAP"""
@@ -751,15 +755,19 @@ class CoregisterSlc:
             return 0.5 + lines_offset_float
 
         # determine lines offset between start of burst1 and start of burst2
-        lines_offset_IW1 = calc_line_offset(master_IWs[0])
+        lines_offset_IWi = [None, None, None]
+
         # lines offset between start of burst1 and start of burst2
-        _LOG.info(f"lines_offset_IW1: {lines_offset_IW1}")
+        lines_offset_IWi[0] = calc_line_offset(master_IWs[0])
+        _LOG.info(f"lines_offset_IW1: {lines_offset_IWi[0]}")
 
         if master_IWs[1] is not None:
-            _LOG.info(f"lines_offset_IW2: {calc_line_offset(master_IWs[1])}")
+            lines_offset_IWi[1] = calc_line_offset(master_IWs[1])
+            _LOG.info(f"lines_offset_IW2: {lines_offset_IWi[1]}")
 
         if master_IWs[2] is not None:
-            _LOG.info(f"lines_offset_IW3: {calc_line_offset(master_IWs[2])}")
+            lines_offset_IWi[2] = calc_line_offset(master_IWs[2])
+            _LOG.info(f"lines_offset_IW3: {lines_offset_IWi[2]}")
 
         # calculate lines_offset for the second scene (for comparsion)
         _LOG.info(f"lines_offset_IW1: {calc_line_offset(r_slave_IWs[0])}")
@@ -772,11 +780,10 @@ class CoregisterSlc:
 
         # set some parameters used
         master_IW1_par = pg.ParFile(master_IWs[0].par)
-        master_IW1_TOPS = pg.ParFile(master_IWs[0].TOPS_par)
 
         # FIXME: Magic constants...
         azimuth_line_time = master_IW1_par.get_value("azimuth_line_time", dtype=float, index=0)
-        dDC = 1739.43 * azimuth_line_time * lines_offset_IW1
+        dDC = 1739.43 * azimuth_line_time * lines_offset_IWi[0]
         dt = 0.159154 / dDC
         dpix_factor = dt / azimuth_line_time
 
@@ -800,7 +807,7 @@ class CoregisterSlc:
 
             number_of_bursts_IWi = master_IWi_TOPS.get_value("number_of_bursts", dtype=int, index=0)
             lines_per_burst = master_IWi_TOPS.get_value("lines_per_burst", dtype=int, index=0)
-            lines_offset = lines_offset_IWs[subswath_id-1]
+            lines_offset = lines_offset_IWi[subswath_id-1]
             lines_overlap = lines_per_burst - lines_offset
             range_samples = master_IWi_par.get_value("range_samples", dtype=int, index=0)
             samples = 0
@@ -854,8 +861,8 @@ class CoregisterSlc:
 
                 # calculate the 2 single look interferograms for the burst overlap region i
                 # using the earlier burst --> *.int1, using the later burst --> *.int2
-                off1 = Path(f"r_master_slave_name.{IWid}.{i}.off1")
-                int1 = Path(f"r_master_slave_name.{IWid}.{i}.int1")
+                off1 = Path(f"{r_master_slave_name}.{IWid}.{i}.off1")
+                int1 = Path(f"{r_master_slave_name}.{IWid}.{i}.int1")
                 off1.unlink(missing_ok=True)
                 int1.unlink(missing_ok=True)
                 
@@ -886,8 +893,8 @@ class CoregisterSlc:
                     0
                 )
 
-                off2 = Path(f"r_master_slave_name.{IWid}.{i}.off2")
-                int2 = Path(f"r_master_slave_name.{IWid}.{i}.int2")
+                off2 = Path(f"{r_master_slave_name}.{IWid}.{i}.off2")
+                int2 = Path(f"{r_master_slave_name}.{IWid}.{i}.int2")
                 off2.unlink(missing_ok=True)
                 int2.unlink(missing_ok=True)
 
@@ -920,8 +927,8 @@ class CoregisterSlc:
 
                 # calculate the single look double difference interferogram for the burst overlap region i
                 # insar phase of earlier burst is subtracted from interferogram of later burst
-                diff_par1 = Path(f"r_master_slave_name.{IWid}.{i}.diff_par")
-                diff1 = Path(f"r_master_slave_name.{IWid}.{i}.diff")
+                diff_par1 = Path(f"{r_master_slave_name}.{IWid}.{i}.diff_par")
+                diff1 = Path(f"{r_master_slave_name}.{IWid}.{i}.diff")
                 diff_par1.unlink(missing_ok=True)
 
                 # create_diff_par $off1 $off2 $diff_par1 0 0
@@ -952,8 +959,8 @@ class CoregisterSlc:
                 )
 
                 # multi-look the double difference interferogram (200 range x 4 azimuth looks)
-                diff20 = Path(f"r_master_slave_name.{IWid}.{i}.diff20")
-                off20 = Path(f"r_master_slave_name.{IWid}.{i}.off20")
+                diff20 = Path(f"{r_master_slave_name}.{IWid}.{i}.diff20")
+                off20 = Path(f"{r_master_slave_name}.{IWid}.{i}.off20")
 
                 # multi_cpx $diff1 $off1 $diff20 $off20 200 4
                 pg.multi_cpx(
@@ -968,14 +975,16 @@ class CoregisterSlc:
                 off20_par = pg.ParFile(off20)
                 range_samples20 = off20_par.get_value("interferogram_width", dtype=int, index=0)
                 azimuth_lines20 = off20_par.get_value("interferogram_azimuth_lines", dtype=int, index=0)
-                range_samples20_half = range_samples20 / 2 # TODO: awk does /2, and everything in awk is a float... but was this actually intended? (odd / 2 would result in a fraction)
+
+                # TBD: awk does /2, and everything in awk is a float... but was this actually intended? (odd / 2 would result in a fraction)
+                range_samples20_half = range_samples20 / 2
                 azimuth_lines20_half = azimuth_lines20 / 2
                 _LOG.info(f"range_samples20_half: {range_samples20_half}")
                 _LOG.info(f"azimuth_samples20_half: {azimuth_lines20_half}")
 
                 # determine coherence and coherence mask based on unfiltered double differential interferogram
-                diff20cc = Path(f"r_master_slave_name.{IWid}.{i}.diff20.cc")
-                diff20cc_ras = Path(f"r_master_slave_name.{IWid}.{i}.diff20.cc.ras")
+                diff20cc = Path(f"{r_master_slave_name}.{IWid}.{i}.diff20.cc")
+                diff20cc_ras = Path(f"{r_master_slave_name}.{IWid}.{i}.diff20.cc.ras")
 
                 # cc_wave $diff20  - - $diff20cc $range_samples20 5 5 0
                 pg.cc_wave(
@@ -989,7 +998,7 @@ class CoregisterSlc:
                     0
                 )
 
-                # rascc_mask $diff20cc - $range_samples20 1 1 0 1 1 $slave_s1_cct - 0.0 1.0 1. .35 1 $diff20cc_ras
+                # rascc_mask $diff20cc - $range_samples20 1 1 0 1 1 $coreg_s1_cc_thresh - 0.0 1.0 1. .35 1 $diff20cc_ras
                 pg.rascc_mask(
                     str(diff20cc),
                     "-".
@@ -999,7 +1008,7 @@ class CoregisterSlc:
                     0,
                     1,
                     1,
-                    slave_s1_cct,
+                    coreg_s1_cc_thresh,
                     "-",
                     0.0,
                     1.0,
@@ -1010,8 +1019,8 @@ class CoregisterSlc:
                 )
 
                 # adf filtering of double differential interferogram
-                diff20adf = Path(f"r_master_slave_name.{IWid}.{i}.diff20.adf")
-                diff20adfcc = Path(f"r_master_slave_name.{IWid}.{i}.diff20.adf.cc")
+                diff20adf = Path(f"{r_master_slave_name}.{IWid}.{i}.diff20.adf")
+                diff20adfcc = Path(f"{r_master_slave_name}.{IWid}.{i}.diff20.adf.cc")
 
                 # adf $diff20 $diff20adf $diff20adfcc $range_samples20 0.4 16 7 2
                 pg.adf(
@@ -1028,9 +1037,9 @@ class CoregisterSlc:
                 diff20adfcc.unlink(missing_ok=True)
 
                 # unwrapping of filtered phase considering coherence and mask determined from unfiltered double differential interferogram
-                diff20cc = Path(f"r_master_slave_name.{IWid}.{i}.diff20.cc")
-                diff20cc_ras = Path(f"r_master_slave_name.{IWid}.{i}.diff20.cc.ras")
-                diff20phase = Path(f"r_master_slave_name.{IWid}.{i}.diff20.phase")
+                diff20cc = Path(f"{r_master_slave_name}.{IWid}.{i}.diff20.cc")
+                diff20cc_ras = Path(f"{r_master_slave_name}.{IWid}.{i}.diff20.cc.ras")
+                diff20phase = Path(f"{r_master_slave_name}.{IWid}.{i}.diff20.phase")
 
                 # mcf $diff20adf $diff20cc $diff20cc_ras $diff20phase $range_samples20 1 0 0 - - 1 1 512 $range_samples20_half $azimuth_lines20_half
                 pg.mcf(
@@ -1054,9 +1063,9 @@ class CoregisterSlc:
                 size = diff20phase.stat().st_size
 
                 # determine overlap phase average (in radian), standard deviation (in radian), and valid data fraction
-                if diff20cc.exists():
-                    diff20ccstat = Path(f"r_master_slave_name.{IWid}.{i}.diff20.cc.stat")
-                    diff20phasestat = Path(f"r_master_slave_name.{IWid}.{i}.diff20.phase.stat")
+                if diff20cc.exists() and size > 0:
+                    diff20ccstat = Path(f"{r_master_slave_name}.{IWid}.{i}.diff20.cc.stat")
+                    diff20phasestat = Path(f"{r_master_slave_name}.{IWid}.{i}.diff20.phase.stat")
 
                     # image_stat $diff20cc $range_samples20 - - - - $diff20ccstat
                     pg.image_stat(
@@ -1091,20 +1100,20 @@ class CoregisterSlc:
                     fraction = diff20phasestat["fraction_valid"]
 
                 else:
-                    cc_mean=0
-                    cc_stdev=0
-                    cc_fraction=0
-                    mean=0
-                    stdev=0
-                    fraction=0
+                    cc_mean = 0
+                    cc_stdev = 0
+                    cc_fraction = 0
+                    mean = 0
+                    stdev = 0
+                    fraction = 0
 
-                _LOG.info(f"cc_fraction1000: {cc_fraction1000 * 1000.0}")
+                _LOG.info(f"cc_fraction1000: {cc_fraction * 1000.0}")
 
-                # only for overlap regions with a significant area with high coherence and phase standard deviation < slave_s1_stdev
+                # only for overlap regions with a significant area with high coherence and phase standard deviation < coreg_s1_stdev_thresh
                 weight = 0.0
 
-                if fraction > slave_s1_frac and stdev < slave_s1_stdev:
-                    weight = fraction / (stdev + 0.1) / (stdev + 0.1) # +0.1 to limit maximum weights for very low stdev
+                if fraction > coreg_s1_frac_thresh and stdev < coreg_s1_stdev_thresh:
+                    weight = fraction / (stdev + 0.1) / (stdev + 0.1)  # +0.1 to limit maximum weights for very low stdev
 
                     sum += mean * fraction
                     samples += 1
@@ -1124,9 +1133,9 @@ class CoregisterSlc:
                     slave_ovr_res.write(f"{IWid} {i} 0.00000 0.00000 0.00000 ({cc_mean} {cc_stdev} {cc_fraction}) {weight}\n")
 
                 # TODO: Redundant code... remove? or was this intentional in bash and they've forgotten to do something with it?
-                #if samples > 0:
+                # if samples > 0:
                 #    average = sum / sum_weight
-                #else:
+                # else:
                 #    average = 0.0
 
             # Compute average
@@ -1134,9 +1143,9 @@ class CoregisterSlc:
             _LOG.info(f"{IWid} average: {average}")
             slave_ovr_res.write(f"{IWid} average: {average}\n")
 
-        calc_phase_offsets(1) # IW1
-        calc_phase_offsets(2) # IW2
-        calc_phase_offsets(3) # IW3
+        calc_phase_offsets(1)  # IW1
+        calc_phase_offsets(2)  # IW2
+        calc_phase_offsets(3)  # IW3
 
         ###################################################################################################################
 
@@ -1312,14 +1321,22 @@ class CoregisterSlc:
                 )
 
                 # image magick conversion routine
-                command = [
-                    "convert",
-                    temp_bmp.as_posix(),
-                    "-transparent",
-                    "black",
-                    slave_png.as_posix(),
-                ]
-                run_command(command, os.getcwd())
+                if False:
+                    command = [
+                        "convert",
+                        temp_bmp.as_posix(),
+                        "-transparent",
+                        "black",
+                        slave_png.as_posix(),
+                    ]
+                    run_command(command, os.getcwd())
+
+                else:
+                    img = PIL.Image.open(temp_bmp.as_posix())
+                    img = np.array(img.convert('RGBA'))
+                    # Convert black to transparent
+                    img[img[:, :, :3] == (0, 0, 0)] = (0, 0, 0, 0)
+                    PIL.Image.fromarray(img).save(slave_png.as_posix())
 
                 # convert gamma0 Gamma file to GeoTIFF
                 dem_par_pathname = str(self.eqa_dem_par)

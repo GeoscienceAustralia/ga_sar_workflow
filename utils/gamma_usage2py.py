@@ -7,23 +7,23 @@ def usage2decl(module, program, file):
     params = OrderedDict()
 
     for line in file.read().splitlines():
-        if len(line.strip()) == 0:
+        if line.strip().startswith('**') or len(line.strip()) == 0:
             continue
 
         if state == 0:
             if line.startswith('usage:'):
                 # Grab arugments from 'usage' line:
                 m = regex.match(r'usage: +([\w\-\\/_]+)( *\<([\w\-_]+)\>)*( *\[([\w\-_]+)\])*', line)
-                
+
                 try:
                     nci_path = m.captures(1)[0]
                     required_args = m.captures(3)
                     optional_args = m.captures(5)
                     all_args = required_args + optional_args
                     state = 1
-                
+
                 except Exception as e:
-                    print('line:',line)
+                    print('line:', line)
                     print(m)
                     print(e)
                     exit()
@@ -39,23 +39,28 @@ def usage2decl(module, program, file):
             if not line.startswith('    '):  # Start parsing new arg
                 argname = line.split()[0]
 
-                if argname != 'NOTE:':
+                ignore_arg = argname.lower().startswith('note:')
+                ignore_arg |= argname.lower().startswith('remark')
+                ignore_arg |= argname.lower().startswith('example:')
+                ignore_arg |= argname.startswith('...')  # HACK: This is... not ideal, ... (usually?) means variable number of arguments
+
+                if not ignore_arg:
                     # Assert we're reading in the correct order
-                    #assert(all_args.index(argname) == last_arg+1)
+                    # assert(all_args.index(argname) == last_arg+1)
                     # DISABLED for now... their documentation has inconsistent namings...
                     last_arg += 1
 
-                    params[argname] = { 'desc': '' }
+                    params[argname] = {'desc': ''}
 
                 desc = line[len(argname)+2:].lstrip()
-                
+
                 is_infile = desc.startswith('(input)')
                 is_outfile = desc.startswith('(output)')
-            
-            else: # continue parsing existing arg
+
+            else:  # continue parsing existing arg
                 desc = line.lstrip()
 
-            if argname == 'NOTE:':
+            if ignore_arg:
                 continue
 
             params[argname]['desc'] += desc + '\n'
@@ -87,21 +92,35 @@ def usage2decl(module, program, file):
         'params': params
     }
 
+
 if __name__ == '__main__':
     basedir = Path.home() / 'GA/gamma_usage'
 
     decls = {}
 
+    # A set of programs our parser doesn't handle properly yet
+    blacklist = [
+        'coord_trans',  # This isn't a normal gamma command
+        'mosaic',
+        'PALSAR_antpat',
+        'JERS_fix',
+        'comb_hsi',
+        'soil_moisture',
+        'validate',
+        'ASAR_XCA'  # This has two programs of the same name?
+    ]
+
     # Parse program details
     for module_dir in basedir.iterdir():
         module = module_dir.name
-        
+
         decls[module] = {}
 
         for usage_path in module_dir.iterdir():
             program = usage_path.stem
 
-            if program == 'coord_trans':
+            # Ignore some unused problematic programs
+            if program in blacklist:
                 continue
 
             with usage_path.open('r') as usage_file:
@@ -127,6 +146,7 @@ if __name__ == '__main__':
             '',
             'PyGammaCall = NamedTuple["PyGammaCall", [("module", str), ("program", str), ("parameters", Dict[str, object])]]',
             '',
+            '',
             'class PyGammaTestProxy(object):',
         ]))
 
@@ -134,11 +154,10 @@ if __name__ == '__main__':
             'call_sequence: Sequence[PyGammaCall]',
             'call_count: Dict[str, int]',
             '',
-            '',
-            'def __init__(self)',
+            'def __init__(self):',
             '    self.reset_proxy()',
             '',
-            'def reset_proxy(self)',
+            'def reset_proxy(self):',
             '    self.call_sequence = []',
             '    self.call_count = {}',
             '',
@@ -146,7 +165,7 @@ if __name__ == '__main__':
             '    stat, stdout, stderr = result',
             '',
             '    # TODO: error stats?',
-            '    stat = stat if condition else 1',
+            '    stat = stat if condition else -1',
             '    # TODO: stderr?',
             '',
             '    return stat, stdout, stderr',
@@ -161,29 +180,35 @@ if __name__ == '__main__':
                     if args != '':
                         args += ', '
 
-                    args += argname.replace('-', '_')
+                    argname = argname.replace('-', '_').replace('/', '_').replace('\\', '_')
+                    argname = 'definition' if argname == 'def' else argname
+
+                    args += argname
 
                     if param['type'] == 'path':
                         args += ': str'
 
                 writeline('\n'.join(indent(1, [
                     '',
-                    f'def {program}(self, {args}):',
+                    f'def {program.replace("-", "_")}(self, {args}):',
                     '    supplied_args = locals()',
                     '    result = (0, "", "")',
                     '',
-                    f'    self.call_sequence.append(("{module}", "{program}", supplied_args))',
+                    f'    self.call_sequence.append(PyGammaCall("{module}", "{program}", supplied_args))',
                     '',
                     f'    if "{program}" in self.call_count:',
                     f'        self.call_count["{program}"] += 1',
                     '    else:',
-                    f'        self.call_count["{program}"]  = 1',
+                    f'        self.call_count["{program}"] = 1',
                     '',
                 ])))
 
                 # validate args, ensure input files exist, touch output files, etc
                 # # TODO: maybe generate stdout where appropriate?
                 for argname, param in decl['params'].items():
+                    argname = argname.replace('-', '_').replace('/', '_').replace('\\', '_')
+                    argname = 'definition' if argname == 'def' else argname
+
                     if param['type'] == 'path':
                         # Touch output files
                         if param['is_outfile']:
@@ -206,6 +231,5 @@ if __name__ == '__main__':
                         ])))
 
                 writeline('\n'.join(indent(2, [
-                    '',
                     'return result',
                 ])))

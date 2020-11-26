@@ -50,12 +50,22 @@ def usage2decl(module, program, file):
                     # DISABLED for now... their documentation has inconsistent namings...
                     last_arg += 1
 
-                    params[argname] = {'desc': ''}
+                    # HACK: gamma's help is full of typos, we trust the initial argnames... not what's in the desc
+                    try:
+                        positional_argname = all_args[last_arg]
+                        argname = positional_argname
+                    except:
+                        pass # print('!!!', last_arg, all_args)
+
+                    params[argname] = {
+                        'desc': '',
+                        'optional': last_arg >= len(required_args)  # argname in optional_args
+                    }
 
                 desc = line[len(argname)+2:].lstrip()
 
-                is_infile = desc.startswith('(input)')
-                is_outfile = desc.startswith('(output)')
+                is_infile = desc.startswith('(input)') or desc.startswith('(input/output)')
+                is_outfile = desc.startswith('(output)') or desc.startswith('(input/output)')
 
             else:  # continue parsing existing arg
                 desc = line.lstrip()
@@ -71,6 +81,7 @@ def usage2decl(module, program, file):
             # detect filepath params
             if is_infile or is_outfile:
                 params[argname]['type'] = 'path'
+                params[argname]['is_infile'] = is_infile
                 params[argname]['is_outfile'] = is_outfile
 
             # detect enum params
@@ -144,13 +155,35 @@ if __name__ == '__main__':
             'from pathlib import Path',
             'from typing import Sequence, NamedTuple, Dict, Union',
             '',
-            'PyGammaCall = NamedTuple["PyGammaCall", [("module", str), ("program", str), ("parameters", Dict[str, object])]]',
+            'PyGammaCall = NamedTuple("PyGammaCall", [("module", str), ("program", str), ("parameters", Dict[str, object])])',
+            '',
+            '',
+            'class SimpleParFile(object):',
+            '    values = {}',
+            '',
+            '    def __init__(self, path):',
+            '        with open(path, \'r\') as file:',
+            '            lines = file.read().splitlines()[2:]  # Skip header lines',
+            '',
+            '            for line in lines:',
+            '                value_id = line.split(\':\')[0]',
+            '                value_data = line[len(value_id)+2:].strip()',
+            '',
+            '                self.values[value_id] = value_data',
+            '',
+            '    def get_value(self, value_id: str, dtype = str, index: int = 0):',
+            '        if dtype == str:',
+            '            return self.values[value_id]',
+            '',
+            '        return dtype(self.values[value_id].split()[index])',
             '',
             '',
             'class PyGammaTestProxy(object):',
         ]))
 
         writeline('\n'.join(indent(1, [
+            'ParFile = SimpleParFile',
+            '',
             'call_sequence: Sequence[PyGammaCall]',
             'call_count: Dict[str, int]',
             '',
@@ -188,6 +221,9 @@ if __name__ == '__main__':
                     if param['type'] == 'path':
                         args += ': str'
 
+                    if param['optional']:
+                        args += ' = None'
+
                 writeline('\n'.join(indent(1, [
                     '',
                     f'def {program.replace("-", "_")}(self, {args}):',
@@ -209,17 +245,28 @@ if __name__ == '__main__':
                     argname = argname.replace('-', '_').replace('/', '_').replace('\\', '_')
                     argname = 'definition' if argname == 'def' else argname
 
+                    # TODO: assert required args are not None, and allow optionals to be none
+
                     if param['type'] == 'path':
-                        # Touch output files
-                        if param['is_outfile']:
+                        # Touch in/out files if they don't already exist
+                        if param['is_outfile'] and param['is_infile']:
                             writeline('\n'.join(indent(2, [
-                                f'Path({argname}).touch()',
+                                f'if {argname} is not None and not Path({argname}).exists():',
+                                f'    Path({argname}).touch()',
+                            ])))
+
+                        # Touch output files
+                        elif param['is_outfile']:
+                            writeline('\n'.join(indent(2, [
+                                f'if {argname} is not None:',
+                                f'    Path({argname}).touch()',
                             ])))
 
                         # Check input files exist
                         else:
                             writeline('\n'.join(indent(2, [
-                                f'result = self._validate(Path({argname}).exists(), result)',
+                                f'if {argname} is not None:',
+                                f'    result = self._validate(Path({argname}).exists(), result)',
                             ])))
 
                     elif param['type'] == 'enum':

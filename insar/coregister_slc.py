@@ -13,7 +13,7 @@ from pathlib import Path
 import re
 import shutil
 import structlog
-import PIL
+from PIL import Image
 import numpy as np
 
 from insar.py_gamma_ga import GammaInterface, auto_logging_decorator, subprocess_wrapper
@@ -83,6 +83,7 @@ class DemParFileParser:
 class CoregisterSlc:
     def __init__(
         self,
+        proc: ProcConfig,
         slc_master: Union[str, Path],
         slc_slave: Union[str, Path],
         slave_mli: Union[str, Path],
@@ -99,6 +100,8 @@ class CoregisterSlc:
         """
         Co-registers Sentinel-1 IW SLC to a chosen master SLC geometry.
 
+        :param proc:
+            The gamma proc configuration file for the coregistration processing.
         :param slc_master:
             A full path to a master (reference) SLC image file.
         :param slc_slave:
@@ -124,6 +127,7 @@ class CoregisterSlc:
         :param outdir:
             A full path to a output directory.
         """
+        self.proc = proc
         self.slc_master = slc_master
         self.slc_slave = slc_slave
         self.rdc_dem = rdc_dem
@@ -460,7 +464,7 @@ class CoregisterSlc:
                     range_stdev, azimuth_stdev = re.findall(
                         "[-+]?[0-9]*\.?[0-9]+",
                         self._grep_stdout(
-                            cout, "final model fit std. dev. (samples) range:"
+                            cout.splitlines(), "final model fit std. dev. (samples) range:"
                         ),
                     )
 
@@ -611,7 +615,6 @@ class CoregisterSlc:
 
     def fine_registration(
         self,
-        proc: ProcConfig,
         slave: Union[str, int],
         list_idx: Union[str, int],
         max_iteration: Optional[int] = 5,
@@ -624,13 +627,13 @@ class CoregisterSlc:
 
         _LOG.info("Iterative improvement of refinement offset azimuth overlap regions:")
 
-        with tempfile.TemporaryDirectory() as temp_dir, open(temp_dir.joinpath(f"{self.master_slave_prefix}.ovr_results"), 'w') as slave_ovr_res:
+        with tempfile.TemporaryDirectory() as temp_dir, open(Path(temp_dir) / f"{self.master_slave_prefix}.ovr_results", 'w') as slave_ovr_res:
             temp_dir = Path(temp_dir)
 
             # initialize the output text file
             slave_ovr_res.writelines([
                 "    Burst Overlap Results",
-                f"        thresholds applied: cc_thresh: {proc.coreg_s1_cc_thresh},  ph_fraction_thresh: {proc.coreg_s1_frac_thresh}, ph_stdev_thresh (rad): {proc.coreg_s1_stdev_thresh}",
+                f"        thresholds applied: cc_thresh: {self.proc.coreg_s1_cc_thresh},  ph_fraction_thresh: {self.proc.coreg_s1_frac_thresh}, ph_stdev_thresh (rad): {self.proc.coreg_s1_stdev_thresh}",
                 "",
                 "        IW  overlap  ph_mean ph_stdev ph_fraction   (cc_mean cc_stdev cc_fraction)    weight",
                 "",
@@ -663,47 +666,47 @@ class CoregisterSlc:
                 elif list_idx == "0":  # coregister to adjacent slave
                     # get slave position in slaves.list
                     # slave_pos=`grep -n $slave $slave_list | cut -f1 -d:`
-                    slave_pos = self._get_matching_lineno(proc.slave_list, slave)
+                    slave_pos = self._get_matching_lineno(self.proc.slave_list, slave)
 
-                    if int(slave) < int(proc.ref_master_scene):
+                    if int(slave) < int(self.proc.ref_master_scene):
                         coreg_pos = slave_pos + 1
 
-                    elif int(slave) > int(proc.ref_master_scene):
+                    elif int(slave) > int(self.proc.ref_master_scene):
                         coreg_pos = slave_pos - 1
 
                     # coreg_slave=`head -n $coreg_pos $slave_list | tail -1`
-                    coreg_slave = self._read_line(proc.slave_list, coreg_pos)
-                    r_coreg_slave_tab = f'{proc.slc_dir}/{coreg_slave}/r{coreg_slave}_{proc.polarisation}_tab'
+                    coreg_slave = self._read_line(self.proc.slave_list, coreg_pos)
+                    r_coreg_slave_tab = f'{self.proc.slc_dir}/{coreg_slave}/r{coreg_slave}_{self.proc.polarisation}_tab'
 
                 elif int(list_idx) < 20140000:  # coregister to particular slave
                     coreg_slave = list_idx
-                    r_coreg_slave_tab = f'{proc.slc_dir}/{coreg_slave}/r{coreg_slave}_{proc.polarisation}_tab'
+                    r_coreg_slave_tab = f'{self.proc.slc_dir}/{coreg_slave}/r{coreg_slave}_{self.proc.polarisation}_tab'
 
                 else:  # coregister to slave image with short temporal baseline
                     # take the first/last slave of the previous list for coregistration
                     prev_list_idx = int(list_idx) - 1
 
-                    if int(slave) < int(proc.ref_master_scene):
+                    if int(slave) < int(self.proc.ref_master_scene):
                         # coreg_slave=`head $list_dir/slaves$prev_list_idx.list -n1`
-                        coreg_slave = self._read_line(Path(proc.list_dir) / f'slaves{prev_list_idx}.list', 0)
+                        coreg_slave = self._read_line(Path(self.proc.list_dir) / f'slaves{prev_list_idx}.list', 0)
 
-                    elif int(slave) > int(proc.ref_master_scene):
+                    elif int(slave) > int(self.proc.ref_master_scene):
                         # coreg_slave=`tail $list_dir/slaves$prev_list_idx.list -n1`
-                        coreg_slave = self._read_line(Path(proc.list_dir) / f'slaves{prev_list_idx}.list', -1)
+                        coreg_slave = self._read_line(Path(self.proc.list_dir) / f'slaves{prev_list_idx}.list', -1)
 
-                    r_coreg_slave_tab = f'{proc.slc_dir}/{coreg_slave}/r{coreg_slave}_{proc.polarisation}_tab'
+                    r_coreg_slave_tab = f'{self.proc.slc_dir}/{coreg_slave}/r{coreg_slave}_{self.proc.polarisation}_tab'
 
-                # S1_COREG_OVERLAP $master_slc_tab $r_slave_slc_tab $slave_off_start $slave_off $proc.coreg_s1_cc_thresh $proc.coreg_s1_frac_thresh $proc.coreg_s1_stdev_thresh $r_coreg_slave_tab > $slave_off.az_ovr.$it.out
+                # S1_COREG_OVERLAP $master_slc_tab $r_slave_slc_tab $slave_off_start $slave_off $self.proc.coreg_s1_cc_thresh $self.proc.coreg_s1_frac_thresh $self.proc.coreg_s1_stdev_thresh $r_coreg_slave_tab > $slave_off.az_ovr.$it.out
                 azpol = self.S1_COREG_OVERLAP(
                     slave_ovr_res,
-                    proc.master_slave_name,
+                    self.proc.master_slave_name,
                     str(self.master_slc_tab),
                     str(self.r_slave_slc_tab),
                     str(slave_off_start),
                     str(self.slave_off),
-                    proc.coreg_s1_cc_thresh,
-                    proc.coreg_s1_frac_thresh,
-                    proc.coreg_s1_stdev_thresh,
+                    self.proc.coreg_s1_cc_thresh,
+                    self.proc.coreg_s1_frac_thresh,
+                    self.proc.coreg_s1_stdev_thresh,
                     r_coreg_slave_tab,
                 )  # TODO: cout -> $slave_off.az_ovr.$it.out
 
@@ -1332,11 +1335,11 @@ class CoregisterSlc:
                     run_command(command, os.getcwd())
 
                 else:
-                    img = PIL.Image.open(temp_bmp.as_posix())
+                    img = Image.open(temp_bmp.as_posix())
                     img = np.array(img.convert('RGBA'))
                     # Convert black to transparent
-                    img[img[:, :, :3] == (0, 0, 0)] = (0, 0, 0, 0)
-                    PIL.Image.fromarray(img).save(slave_png.as_posix())
+                    img[(img[:, :, :3] == (0, 0, 0)).all(axis=-1)] = (0, 0, 0, 0)
+                    Image.fromarray(img).save(slave_png.as_posix())
 
                 # convert gamma0 Gamma file to GeoTIFF
                 dem_par_pathname = str(self.eqa_dem_par)
@@ -1402,7 +1405,7 @@ class CoregisterSlc:
             self.set_tab_files()
             self.get_lookup()
             self.reduce_offset()
-            self.coarse_registration()
+            self.fine_registration('-', '-')
             self.resample_full()
             self.multi_look()
             self.generate_normalised_backscatter()

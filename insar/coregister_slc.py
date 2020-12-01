@@ -19,6 +19,7 @@ import numpy as np
 from insar.py_gamma_ga import GammaInterface, auto_logging_decorator, subprocess_wrapper
 from insar.subprocess_utils import working_directory, run_command
 from insar.project import ProcConfig
+import insar.constant as const
 
 _LOG = structlog.get_logger("insar")
 
@@ -436,11 +437,11 @@ class CoregisterSlc:
                         str(slave_doff),
                         str(slave_offs),
                         str(slave_snr),
-                        128,   # rwin
-                        64,    # azwin
-                        "-",   # offsets
-                        1,     # n_ovr
-                        0.2,   # thres
+                        128,                 # rwin
+                        64,                  # azwin
+                        const.NOT_PROVIDED,  # offsets
+                        1,                   # n_ovr
+                        0.2,                 # thres
                         self.range_step,
                         self.azimuth_step,
                         self.master_sample.slc_width_start,
@@ -454,11 +455,11 @@ class CoregisterSlc:
                         str(slave_offs),
                         str(slave_snr),
                         str(slave_doff),
-                        "-",  # coffs
-                        "-",  # coffsets
-                        0.2,  # thresh
-                        1,    # npolynomial
-                        0,    # non-interactive
+                        const.NOT_PROVIDED,  # coffs
+                        const.NOT_PROVIDED,  # coffsets
+                        0.2,                 # thresh
+                        1,                   # npolynomial
+                        0,                   # non-interactive
                     )
 
                     range_stdev, azimuth_stdev = re.findall(
@@ -598,18 +599,21 @@ class CoregisterSlc:
 
             _LOG.info(f'{tab_file} nrows: {nrows} ncols: {ncols}')
 
+            with open(tab_file, 'r') as file:
+                tab_lines = file.read().splitlines()
+
             # first line
-            IW1_result = tab_record(*self._read_line(tab_file, 0).split())
+            IW1_result = tab_record(*tab_lines[0].split())
 
             # second line
             IW2_result = None
             if nrows > 1:
-                IW2_result = tab_record(*self._read_line(tab_file, 1).split())
+                IW2_result = tab_record(*tab_lines[1].split())
 
             # third line
             IW3_result = None
             if nrows > 2:
-                IW3_result = tab_record(*self._read_line(tab_file, 2).split())
+                IW3_result = tab_record(*tab_lines[2].split())
 
             return (IW1_result, IW2_result, IW3_result)
 
@@ -660,7 +664,7 @@ class CoregisterSlc:
                 )
 
                 # coregister to nearest slave if list_idx is given
-                if list_idx == "-":  # coregister to master
+                if list_idx == const.NOT_PROVIDED:  # coregister to master
                     r_coreg_slave_tab = None
 
                 elif list_idx == "0":  # coregister to adjacent slave
@@ -831,9 +835,14 @@ class CoregisterSlc:
                 pg.SLC_copy(
                     master_IWi.slc if r_slave2_slc_tab is None else r_slave2_IWi.slc,
                     master_IWi.par,
-                    f"{mas_IWi_slc}.{i}.1", f"{mas_IWi_par}.{i}.1",
-                    "-", 1.0, 0,
-                    range_samples, starting_line1, lines_overlap
+                    f"{mas_IWi_slc}.{i}.1",
+                    f"{mas_IWi_par}.{i}.1",
+                    const.NOT_PROVIDED,
+                    1.0,
+                    0,
+                    range_samples,
+                    starting_line1,
+                    lines_overlap
                 )
 
                 # SLC_copy master_IWi.slc master_IWi.par mas_IWi_slc.{i}.2 mas_IWi_par.{i}.2 - 1. 0 $range_samples $starting_line2 $lines_overlap
@@ -841,25 +850,42 @@ class CoregisterSlc:
                 pg.SLC_copy(
                     master_IWi.slc if r_slave2_slc_tab is None else r_slave2_IWi.slc,
                     master_IWi.par,
-                    f"{mas_IWi_slc}.{i}.2", f"{mas_IWi_par}.{i}.2",
-                    "-", 1.0, 0,
-                    range_samples, starting_line2, lines_overlap
+                    f"{mas_IWi_slc}.{i}.2",
+                    f"{mas_IWi_par}.{i}.2",
+                    const.NOT_PROVIDED,
+                    1.0,
+                    0,
+                    range_samples,
+                    starting_line2,
+                    lines_overlap
                 )
 
                 # SLC_copy $r_slave_IWi.slc $master_IWi.par $r_slave_IWi.slc.{i}.1 $r_slave_IWi.par.{i}.1 - 1. 0 $range_samples $starting_line1 $lines_overlap
                 pg.SLC_copy(
-                    r_slave_IWi.slc, master_IWi.par,
-                    f"{r_slave_IWi.slc}.{i}.1", f"{r_slave_IWi.par}.{i}.1",
-                    "-", 1.0, 0,
-                    range_samples, starting_line1, lines_overlap
+                    r_slave_IWi.slc,
+                    master_IWi.par,
+                    f"{r_slave_IWi.slc}.{i}.1",
+                    f"{r_slave_IWi.par}.{i}.1",
+                    const.NOT_PROVIDED,
+                    1.0,
+                    0,
+                    range_samples,
+                    starting_line1,
+                    lines_overlap
                 )
 
                 # SLC_copy $r_slave_IWi.slc $master_IWi.par $r_slave_IWi.slc.{i}.2 $r_slave_IWi.par.{i}.2 - 1. 0 $range_samples $starting_line2 $lines_overlap
                 pg.SLC_copy(
-                    r_slave_IWi.slc, master_IWi.par,
-                    f"{r_slave_IWi.slc}.{i}.2", f"{r_slave_IWi.par}.{i}.2",
-                    "-", 1.0, 0,
-                    range_samples, starting_line2, lines_overlap
+                    r_slave_IWi.slc,
+                    master_IWi.par,
+                    f"{r_slave_IWi.slc}.{i}.2",
+                    f"{r_slave_IWi.par}.{i}.2",
+                    const.NOT_PROVIDED,
+                    1.0,
+                    0,
+                    range_samples,
+                    starting_line2,
+                    lines_overlap
                 )
 
                 # calculate the 2 single look interferograms for the burst overlap region i
@@ -891,7 +917,7 @@ class CoregisterSlc:
                     1,
                     1,
                     0,
-                    "-",
+                    const.NOT_PROVIDED,
                     0,
                     0
                 )
@@ -923,7 +949,7 @@ class CoregisterSlc:
                     1,
                     1,
                     0,
-                    "-",
+                    const.NOT_PROVIDED,
                     0,
                     0
                 )
@@ -992,8 +1018,8 @@ class CoregisterSlc:
                 # cc_wave $diff20  - - $diff20cc $range_samples20 5 5 0
                 pg.cc_wave(
                     str(diff20),
-                    "-",
-                    "-",
+                    const.NOT_PROVIDED,
+                    const.NOT_PROVIDED,
                     str(diff20cc),
                     range_samples20,
                     5,
@@ -1004,7 +1030,7 @@ class CoregisterSlc:
                 # rascc_mask $diff20cc - $range_samples20 1 1 0 1 1 $coreg_s1_cc_thresh - 0.0 1.0 1. .35 1 $diff20cc_ras
                 pg.rascc_mask(
                     str(diff20cc),
-                    "-".
+                    const.NOT_PROVIDED,
                     range_samples20,
                     1,
                     1,
@@ -1012,7 +1038,7 @@ class CoregisterSlc:
                     1,
                     1,
                     coreg_s1_cc_thresh,
-                    "-",
+                    const.NOT_PROVIDED,
                     0.0,
                     1.0,
                     1.0,
@@ -1054,8 +1080,8 @@ class CoregisterSlc:
                     1,
                     0,
                     0,
-                    "-",
-                    "-",
+                    const.NOT_PROVIDED,
+                    const.NOT_PROVIDED,
                     1,
                     1,
                     512,
@@ -1074,10 +1100,10 @@ class CoregisterSlc:
                     pg.image_stat(
                         str(diff20cc),
                         range_samples20,
-                        "-",
-                        "-",
-                        "-",
-                        "-",
+                        const.NOT_PROVIDED,
+                        const.NOT_PROVIDED,
+                        const.NOT_PROVIDED,
+                        const.NOT_PROVIDED,
                         str(diff20ccstat)
                     )
 
@@ -1085,10 +1111,10 @@ class CoregisterSlc:
                     pg.image_stat(
                         str(diff20phase),
                         range_samples20,
-                        "-",
-                        "-",
-                        "-",
-                        "-",
+                        const.NOT_PROVIDED,
+                        const.NOT_PROVIDED,
+                        const.NOT_PROVIDED,
+                        const.NOT_PROVIDED,
                         str(diff20phasestat)
                     )
 
@@ -1273,11 +1299,11 @@ class CoregisterSlc:
             lookup_table_pathname = str(self.dem_lt_fine)
             data_out_pathname = str(slave_gamma0_eqa)
             width_out = dem_width
-            nlines_out = "-"
+            nlines_out = const.NOT_PROVIDED
             interp_mode = 5  # B-spline interpolation
             dtype = 0  # float
-            lr_in = "-"
-            lr_out = "-"
+            lr_in = const.NOT_PROVIDED
+            lr_out = const.NOT_PROVIDED
             order = 5  # B-spline degree
 
             pg.geocode_back(
@@ -1305,9 +1331,9 @@ class CoregisterSlc:
                 nlines = 0
                 pixavr = 20
                 pixavaz = 20
-                scale = "-"
-                exp = "-"
-                lr = "-"
+                scale = const.NOT_PROVIDED
+                exp = const.NOT_PROVIDED
+                lr = const.NOT_PROVIDED
                 rasf_pathname = str(temp_bmp)
 
                 pg.raspwr(
@@ -1323,23 +1349,11 @@ class CoregisterSlc:
                     rasf_pathname,
                 )
 
-                # image magick conversion routine
-                if False:
-                    command = [
-                        "convert",
-                        temp_bmp.as_posix(),
-                        "-transparent",
-                        "black",
-                        slave_png.as_posix(),
-                    ]
-                    run_command(command, os.getcwd())
-
-                else:
-                    img = Image.open(temp_bmp.as_posix())
-                    img = np.array(img.convert('RGBA'))
-                    # Convert black to transparent
-                    img[(img[:, :, :3] == (0, 0, 0)).all(axis=-1)] = (0, 0, 0, 0)
-                    Image.fromarray(img).save(slave_png.as_posix())
+                # Convert the bitmap to a PNG w/ black pixels made transparent
+                img = Image.open(temp_bmp.as_posix())
+                img = np.array(img.convert('RGBA'))
+                img[(img[:, :, :3] == (0, 0, 0)).all(axis=-1)] = (0, 0, 0, 0)
+                Image.fromarray(img).save(slave_png.as_posix())
 
                 # convert gamma0 Gamma file to GeoTIFF
                 dem_par_pathname = str(self.eqa_dem_par)
@@ -1369,11 +1383,11 @@ class CoregisterSlc:
                 lookup_table_pathname = str(self.dem_lt_fine)
                 data_out_pathname = str(slave_sigma0_eqa)
                 width_out = dem_width
-                nlines_out = "-"
+                nlines_out = const.NOT_PROVIDED
                 interp_mode = 0  # nearest-neighbor
                 dtype = 0  # float
-                lr_in = "-"
-                lr_out = "-"
+                lr_in = const.NOT_PROVIDED
+                lr_out = const.NOT_PROVIDED
 
                 pg.geocode_back(
                     data_in_pathname,

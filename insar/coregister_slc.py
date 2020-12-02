@@ -734,9 +734,9 @@ class CoregisterSlc:
         r_slave_slc_tab,
         slave_off_start,
         slave_off,
-        coreg_s1_cc_thresh,
-        coreg_s1_frac_thresh,
-        coreg_s1_stdev_thresh,
+        slave_s1_cct,
+        slave_s1_frac,
+        slave_s1_stdev,
         r_slave2_slc_tab: Optional[Union[str, Path]]
     ):
         """S1_COREG_OVERLAP"""
@@ -1027,7 +1027,7 @@ class CoregisterSlc:
                     0
                 )
 
-                # rascc_mask $diff20cc - $range_samples20 1 1 0 1 1 $coreg_s1_cc_thresh - 0.0 1.0 1. .35 1 $diff20cc_ras
+                # rascc_mask $diff20cc - $range_samples20 1 1 0 1 1 $slave_s1_cct - 0.0 1.0 1. .35 1 $diff20cc_ras
                 pg.rascc_mask(
                     str(diff20cc),
                     const.NOT_PROVIDED,
@@ -1037,7 +1037,7 @@ class CoregisterSlc:
                     0,
                     1,
                     1,
-                    coreg_s1_cc_thresh,
+                    slave_s1_cct,
                     const.NOT_PROVIDED,
                     0.0,
                     1.0,
@@ -1138,10 +1138,10 @@ class CoregisterSlc:
 
                 _LOG.info(f"cc_fraction1000: {cc_fraction * 1000.0}")
 
-                # only for overlap regions with a significant area with high coherence and phase standard deviation < coreg_s1_stdev_thresh
+                # only for overlap regions with a significant area with high coherence and phase standard deviation < slave_s1_stdev
                 weight = 0.0
 
-                if fraction > coreg_s1_frac_thresh and stdev < coreg_s1_stdev_thresh:
+                if fraction > slave_s1_frac and stdev < slave_s1_stdev:
                     weight = fraction / (stdev + 0.1) / (stdev + 0.1)  # +0.1 to limit maximum weights for very low stdev
 
                     sum += mean * fraction

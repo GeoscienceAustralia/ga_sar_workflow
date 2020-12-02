@@ -1089,13 +1089,17 @@ class CoregisterSlc:
                     azimuth_lines20_half
                 )
 
-                size = diff20phase.stat().st_size
-
                 # determine overlap phase average (in radian), standard deviation (in radian), and valid data fraction
-                if diff20cc.exists() and size > 0:
-                    diff20ccstat = Path(f"{r_master_slave_name}.{IWid}.{i}.diff20.cc.stat")
-                    diff20phasestat = Path(f"{r_master_slave_name}.{IWid}.{i}.diff20.phase.stat")
+                cc_mean = 0
+                cc_stdev = 0
+                cc_fraction = 0
+                mean = 0
+                stdev = 0
+                fraction = 0
 
+                if diff20cc.exists():
+                    diff20ccstat = Path(f"{r_master_slave_name}.{IWid}.{i}.diff20.cc.stat")
+                    
                     # image_stat $diff20cc $range_samples20 - - - - $diff20ccstat
                     pg.image_stat(
                         str(diff20cc),
@@ -1106,6 +1110,17 @@ class CoregisterSlc:
                         const.NOT_PROVIDED,
                         str(diff20ccstat)
                     )
+                    
+                    diff20ccstat = self._grep_offset_parameter(diff20ccstat)
+                    cc_mean = diff20ccstat["mean"]
+                    cc_stdev = diff20ccstat["stdev"]
+                    cc_fraction = diff20ccstat["fraction_valid"]
+                
+                # Check size of diff20phase file if it exists (I assume there's been issues with partial failures in the past?)
+                diff20phase_size = diff20phase.stat().st_size if diff20phase.exists() else 0
+
+                if diff20phase_size > 0:
+                    diff20phasestat = Path(f"{r_master_slave_name}.{IWid}.{i}.diff20.phase.stat")
 
                     # image_stat $diff20phase $range_samples20 - - - - $diff20phasestat
                     pg.image_stat(
@@ -1118,23 +1133,10 @@ class CoregisterSlc:
                         str(diff20phasestat)
                     )
 
-                    diff20ccstat = self._grep_offset_parameter(diff20ccstat)
-                    cc_mean = diff20ccstat["mean"]
-                    cc_stdev = diff20ccstat["stdev"]
-                    cc_fraction = diff20ccstat["fraction_valid"]
-
                     diff20phasestat = self._grep_offset_parameter(diff20phasestat)
                     mean = diff20phasestat["mean"]
                     stdev = diff20phasestat["stdev"]
                     fraction = diff20phasestat["fraction_valid"]
-
-                else:
-                    cc_mean = 0
-                    cc_stdev = 0
-                    cc_fraction = 0
-                    mean = 0
-                    stdev = 0
-                    fraction = 0
 
                 _LOG.info(f"cc_fraction1000: {cc_fraction * 1000.0}")
 

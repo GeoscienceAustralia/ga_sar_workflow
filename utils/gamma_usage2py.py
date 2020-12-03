@@ -195,6 +195,7 @@ if __name__ == '__main__':
             '',
             '_exception_type: type',
             '_wraps: object',
+            '_fail_reason: str',
             '',
             'def __init__(self, exception_type=None, wraps=None):',
             '    self.reset_proxy()',
@@ -205,12 +206,14 @@ if __name__ == '__main__':
             '    self.call_sequence = []',
             '    self.call_count = {}',
             '    self.error_count = 0',
+            '    self._fail_reason = None',
             '',
-            'def _validate(self, condition, result):',
+            'def _validate(self, cmd, condition, result, fail_reason):',
             '    stat, stdout, stderr = result',
             '',
             '    self.error_count += 0 if condition else 1',
             '    stat = stat if condition else -1',
+            '    self._fail_reason = self._fail_reason if condition else fail_reason',
             '    # TODO: stderr?',
             '',
             '    return stat, stdout, stderr',
@@ -222,7 +225,7 @@ if __name__ == '__main__':
             '    if self._exception_type is None:',
             '        return',
             '',
-            '    raise self._exception_type(f"failed to execute pg.{cmd}")',
+            '    raise self._exception_type(f"failed to execute pg.{cmd} ({self._fail_reason})")',
         ])))
 
         for module, programs in decls.items():
@@ -285,7 +288,7 @@ if __name__ == '__main__':
                         else:
                             writeline('\n'.join(indent(2, [
                                 f'if {argname} is not None:',
-                                f'    result = self._validate(Path({argname}).exists(), result)',
+                                f'    result = self._validate("{program}", Path({argname}).exists(), result, f"{argname} path does not exist ({{{argname}}})")',
                             ])))
 
                     elif param['type'] == 'enum':
@@ -293,12 +296,12 @@ if __name__ == '__main__':
 
                         writeline('\n'.join(indent(2, [
                             f'valid_values = {repr(valid_values)}',
-                            f'result = self._validate({argname} in valid_values, result)',
+                            f'result = self._validate("{program}", {argname} in valid_values, result, f"{argname} is not a valid value (expects: {{{valid_values}}})")',
                         ])))
 
                 writeline('\n'.join(indent(2, [
                     'if self._wraps is not None:',
-                    '    result = self._wraps.{program}(*supplied_args)',
+                    f'    result = self._wraps.{program}(*supplied_args)',
                     '',
                     f'self.call_sequence.append(PyGammaCall("{module}", "{program}", supplied_args, result[0]))',
                     f'self._on_error("{program}", supplied_args, result[0])',

@@ -38,6 +38,7 @@ class PyGammaTestProxy(object):
 
     _exception_type: type
     _wraps: object
+    _fail_reason: str
 
     def __init__(self, exception_type=None, wraps=None):
         self.reset_proxy()
@@ -48,12 +49,14 @@ class PyGammaTestProxy(object):
         self.call_sequence = []
         self.call_count = {}
         self.error_count = 0
+        self._fail_reason = None
 
-    def _validate(self, condition, result):
+    def _validate(self, cmd, condition, result, fail_reason):
         stat, stdout, stderr = result
 
         self.error_count += 0 if condition else 1
         stat = stat if condition else -1
+        self._fail_reason = self._fail_reason if condition else fail_reason
         # TODO: stderr?
 
         return stat, stdout, stderr
@@ -65,7 +68,7 @@ class PyGammaTestProxy(object):
         if self._exception_type is None:
             return
 
-        raise self._exception_type(f"failed to execute pg.{cmd}")
+        raise self._exception_type(f"failed to execute pg.{cmd} ({self._fail_reason})")
 
     def gc_map_fine(self, gc_in: str, width, DIFF_par, gc_out: str, ref_flg = None):
         supplied_args = locals()
@@ -77,13 +80,13 @@ class PyGammaTestProxy(object):
             self.call_count["gc_map_fine"] = 1
 
         if gc_in is not None:
-            result = self._validate(Path(gc_in).exists(), result)
+            result = self._validate("gc_map_fine", Path(gc_in).exists(), result, f"gc_in path does not exist ({gc_in})")
         if gc_out is not None:
             Path(gc_out).touch()
         valid_values = [0, 1]
-        result = self._validate(ref_flg in valid_values, result)
+        result = self._validate("gc_map_fine", ref_flg in valid_values, result, f"ref_flg is not a valid value (expects: {[0, 1]})")
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.gc_map_fine(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("DIFF", "gc_map_fine", supplied_args, result[0]))
         self._on_error("gc_map_fine", supplied_args, result[0])
@@ -99,15 +102,15 @@ class PyGammaTestProxy(object):
             self.call_count["diff_ls_fit"] = 1
 
         if unw_1 is not None:
-            result = self._validate(Path(unw_1).exists(), result)
+            result = self._validate("diff_ls_fit", Path(unw_1).exists(), result, f"unw_1 path does not exist ({unw_1})")
         if unw_2 is not None:
-            result = self._validate(Path(unw_2).exists(), result)
+            result = self._validate("diff_ls_fit", Path(unw_2).exists(), result, f"unw_2 path does not exist ({unw_2})")
         if DIFF_par is not None:
-            result = self._validate(Path(DIFF_par).exists(), result)
+            result = self._validate("diff_ls_fit", Path(DIFF_par).exists(), result, f"DIFF_par path does not exist ({DIFF_par})")
         if plot_data is not None:
             Path(plot_data).touch()
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.diff_ls_fit(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("DIFF", "diff_ls_fit", supplied_args, result[0]))
         self._on_error("diff_ls_fit", supplied_args, result[0])
@@ -123,15 +126,15 @@ class PyGammaTestProxy(object):
             self.call_count["WSS_mosaic"] = 1
 
         if WSS_tab is not None:
-            result = self._validate(Path(WSS_tab).exists(), result)
+            result = self._validate("WSS_mosaic", Path(WSS_tab).exists(), result, f"WSS_tab path does not exist ({WSS_tab})")
         if MLI_par is not None:
             Path(MLI_par).touch()
         if WSS_data is not None:
             Path(WSS_data).touch()
         valid_values = [0, 1]
-        result = self._validate(type in valid_values, result)
+        result = self._validate("WSS_mosaic", type in valid_values, result, f"type is not a valid value (expects: {[0, 1]})")
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.WSS_mosaic(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("DIFF", "WSS_mosaic", supplied_args, result[0]))
         self._on_error("WSS_mosaic", supplied_args, result[0])
@@ -147,17 +150,17 @@ class PyGammaTestProxy(object):
             self.call_count["dispmap_vec_offset"] = 1
 
         if DEM_par is not None:
-            result = self._validate(Path(DEM_par).exists(), result)
+            result = self._validate("dispmap_vec_offset", Path(DEM_par).exists(), result, f"DEM_par path does not exist ({DEM_par})")
         if DEM is not None:
-            result = self._validate(Path(DEM).exists(), result)
+            result = self._validate("dispmap_vec_offset", Path(DEM).exists(), result, f"DEM path does not exist ({DEM})")
         if dispmap_r is not None:
-            result = self._validate(Path(dispmap_r).exists(), result)
+            result = self._validate("dispmap_vec_offset", Path(dispmap_r).exists(), result, f"dispmap_r path does not exist ({dispmap_r})")
         if dispmap_az is not None:
-            result = self._validate(Path(dispmap_az).exists(), result)
+            result = self._validate("dispmap_vec_offset", Path(dispmap_az).exists(), result, f"dispmap_az path does not exist ({dispmap_az})")
         if lv_theta is not None:
-            result = self._validate(Path(lv_theta).exists(), result)
+            result = self._validate("dispmap_vec_offset", Path(lv_theta).exists(), result, f"lv_theta path does not exist ({lv_theta})")
         if lv_phi is not None:
-            result = self._validate(Path(lv_phi).exists(), result)
+            result = self._validate("dispmap_vec_offset", Path(lv_phi).exists(), result, f"lv_phi path does not exist ({lv_phi})")
         if dv_norm is not None:
             Path(dv_norm).touch()
         if dv_theta is not None:
@@ -171,9 +174,9 @@ class PyGammaTestProxy(object):
         if dv_z is not None:
             Path(dv_z).touch()
         valid_values = [0, 1]
-        result = self._validate(mode in valid_values, result)
+        result = self._validate("dispmap_vec_offset", mode in valid_values, result, f"mode is not a valid value (expects: {[0, 1]})")
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.dispmap_vec_offset(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("DIFF", "dispmap_vec_offset", supplied_args, result[0]))
         self._on_error("dispmap_vec_offset", supplied_args, result[0])
@@ -189,17 +192,17 @@ class PyGammaTestProxy(object):
             self.call_count["create_diff_par"] = 1
 
         if PAR_1 is not None:
-            result = self._validate(Path(PAR_1).exists(), result)
+            result = self._validate("create_diff_par", Path(PAR_1).exists(), result, f"PAR_1 path does not exist ({PAR_1})")
         if PAR_2 is not None:
-            result = self._validate(Path(PAR_2).exists(), result)
+            result = self._validate("create_diff_par", Path(PAR_2).exists(), result, f"PAR_2 path does not exist ({PAR_2})")
         if DIFF_par is not None and not Path(DIFF_par).exists():
             Path(DIFF_par).touch()
         valid_values = [0, 1, 2]
-        result = self._validate(PAR_type in valid_values, result)
+        result = self._validate("create_diff_par", PAR_type in valid_values, result, f"PAR_type is not a valid value (expects: {[0, 1, 2]})")
         valid_values = [0, 1]
-        result = self._validate(iflg in valid_values, result)
+        result = self._validate("create_diff_par", iflg in valid_values, result, f"iflg is not a valid value (expects: {[0, 1]})")
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.create_diff_par(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("DIFF", "create_diff_par", supplied_args, result[0]))
         self._on_error("create_diff_par", supplied_args, result[0])
@@ -215,11 +218,11 @@ class PyGammaTestProxy(object):
             self.call_count["gc_map_grd"] = 1
 
         if MLI_par is not None:
-            result = self._validate(Path(MLI_par).exists(), result)
+            result = self._validate("gc_map_grd", Path(MLI_par).exists(), result, f"MLI_par path does not exist ({MLI_par})")
         if DEM_par is not None:
-            result = self._validate(Path(DEM_par).exists(), result)
+            result = self._validate("gc_map_grd", Path(DEM_par).exists(), result, f"DEM_par path does not exist ({DEM_par})")
         if DEM is not None:
-            result = self._validate(Path(DEM).exists(), result)
+            result = self._validate("gc_map_grd", Path(DEM).exists(), result, f"DEM path does not exist ({DEM})")
         if DEM_seg_par is not None and not Path(DEM_seg_par).exists():
             Path(DEM_seg_par).touch()
         if DEM_seg is not None:
@@ -241,9 +244,9 @@ class PyGammaTestProxy(object):
         if ls_map is not None:
             Path(ls_map).touch()
         valid_values = [0, 1, 2, 3]
-        result = self._validate(ls_mode in valid_values, result)
+        result = self._validate("gc_map_grd", ls_mode in valid_values, result, f"ls_mode is not a valid value (expects: {[0, 1, 2, 3]})")
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.gc_map_grd(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("DIFF", "gc_map_grd", supplied_args, result[0]))
         self._on_error("gc_map_grd", supplied_args, result[0])
@@ -259,17 +262,17 @@ class PyGammaTestProxy(object):
             self.call_count["multi_mosaic"] = 1
 
         if data_tab is not None:
-            result = self._validate(Path(data_tab).exists(), result)
+            result = self._validate("multi_mosaic", Path(data_tab).exists(), result, f"data_tab path does not exist ({data_tab})")
         if data_out is not None:
             Path(data_out).touch()
         if DEM_par_out is not None:
             Path(DEM_par_out).touch()
         valid_values = [0, 1]
-        result = self._validate(mode in valid_values, result)
+        result = self._validate("multi_mosaic", mode in valid_values, result, f"mode is not a valid value (expects: {[0, 1]})")
         valid_values = [0, 1, 2, 3, 4, 5]
-        result = self._validate(format_flag in valid_values, result)
+        result = self._validate("multi_mosaic", format_flag in valid_values, result, f"format_flag is not a valid value (expects: {[0, 1, 2, 3, 4, 5]})")
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.multi_mosaic(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("DIFF", "multi_mosaic", supplied_args, result[0]))
         self._on_error("multi_mosaic", supplied_args, result[0])
@@ -285,13 +288,13 @@ class PyGammaTestProxy(object):
             self.call_count["gc_map1"] = 1
 
         if MLI_par is not None:
-            result = self._validate(Path(MLI_par).exists(), result)
+            result = self._validate("gc_map1", Path(MLI_par).exists(), result, f"MLI_par path does not exist ({MLI_par})")
         if OFF_par is not None:
-            result = self._validate(Path(OFF_par).exists(), result)
+            result = self._validate("gc_map1", Path(OFF_par).exists(), result, f"OFF_par path does not exist ({OFF_par})")
         if DEM_par is not None:
-            result = self._validate(Path(DEM_par).exists(), result)
+            result = self._validate("gc_map1", Path(DEM_par).exists(), result, f"DEM_par path does not exist ({DEM_par})")
         if DEM is not None:
-            result = self._validate(Path(DEM).exists(), result)
+            result = self._validate("gc_map1", Path(DEM).exists(), result, f"DEM path does not exist ({DEM})")
         if DEM_seg_par is not None and not Path(DEM_seg_par).exists():
             Path(DEM_seg_par).touch()
         if DEM_seg is not None:
@@ -313,9 +316,9 @@ class PyGammaTestProxy(object):
         if ls_map is not None:
             Path(ls_map).touch()
         valid_values = [0, 1, 2, 3]
-        result = self._validate(ls_mode in valid_values, result)
+        result = self._validate("gc_map1", ls_mode in valid_values, result, f"ls_mode is not a valid value (expects: {[0, 1, 2, 3]})")
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.gc_map1(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("DIFF", "gc_map1", supplied_args, result[0]))
         self._on_error("gc_map1", supplied_args, result[0])
@@ -331,29 +334,29 @@ class PyGammaTestProxy(object):
             self.call_count["SLC_diff_intf"] = 1
 
         if SLC_1 is not None:
-            result = self._validate(Path(SLC_1).exists(), result)
+            result = self._validate("SLC_diff_intf", Path(SLC_1).exists(), result, f"SLC_1 path does not exist ({SLC_1})")
         if SLC_2R is not None:
-            result = self._validate(Path(SLC_2R).exists(), result)
+            result = self._validate("SLC_diff_intf", Path(SLC_2R).exists(), result, f"SLC_2R path does not exist ({SLC_2R})")
         if SLC1_par is not None:
-            result = self._validate(Path(SLC1_par).exists(), result)
+            result = self._validate("SLC_diff_intf", Path(SLC1_par).exists(), result, f"SLC1_par path does not exist ({SLC1_par})")
         if SLC2R_par is not None:
-            result = self._validate(Path(SLC2R_par).exists(), result)
+            result = self._validate("SLC_diff_intf", Path(SLC2R_par).exists(), result, f"SLC2R_par path does not exist ({SLC2R_par})")
         if OFF_par is not None:
-            result = self._validate(Path(OFF_par).exists(), result)
+            result = self._validate("SLC_diff_intf", Path(OFF_par).exists(), result, f"OFF_par path does not exist ({OFF_par})")
         if sim_unw is not None:
-            result = self._validate(Path(sim_unw).exists(), result)
+            result = self._validate("SLC_diff_intf", Path(sim_unw).exists(), result, f"sim_unw path does not exist ({sim_unw})")
         if diff_int is not None:
             Path(diff_int).touch()
         valid_values = [1, 0]
-        result = self._validate(sps_flg in valid_values, result)
+        result = self._validate("SLC_diff_intf", sps_flg in valid_values, result, f"sps_flg is not a valid value (expects: {[1, 0]})")
         valid_values = [1, 0]
-        result = self._validate(azf_flg in valid_values, result)
+        result = self._validate("SLC_diff_intf", azf_flg in valid_values, result, f"azf_flg is not a valid value (expects: {[1, 0]})")
         valid_values = [0, 1]
-        result = self._validate(rp1_flg in valid_values, result)
+        result = self._validate("SLC_diff_intf", rp1_flg in valid_values, result, f"rp1_flg is not a valid value (expects: {[0, 1]})")
         valid_values = [0, 1]
-        result = self._validate(rp2_flg in valid_values, result)
+        result = self._validate("SLC_diff_intf", rp2_flg in valid_values, result, f"rp2_flg is not a valid value (expects: {[0, 1]})")
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.SLC_diff_intf(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("DIFF", "SLC_diff_intf", supplied_args, result[0]))
         self._on_error("SLC_diff_intf", supplied_args, result[0])
@@ -369,17 +372,17 @@ class PyGammaTestProxy(object):
             self.call_count["pixel_area"] = 1
 
         if MLI_par is not None:
-            result = self._validate(Path(MLI_par).exists(), result)
+            result = self._validate("pixel_area", Path(MLI_par).exists(), result, f"MLI_par path does not exist ({MLI_par})")
         if DEM_par is not None:
-            result = self._validate(Path(DEM_par).exists(), result)
+            result = self._validate("pixel_area", Path(DEM_par).exists(), result, f"DEM_par path does not exist ({DEM_par})")
         if DEM is not None:
-            result = self._validate(Path(DEM).exists(), result)
+            result = self._validate("pixel_area", Path(DEM).exists(), result, f"DEM path does not exist ({DEM})")
         if lookup_table is not None:
-            result = self._validate(Path(lookup_table).exists(), result)
+            result = self._validate("pixel_area", Path(lookup_table).exists(), result, f"lookup_table path does not exist ({lookup_table})")
         if ls_map is not None:
-            result = self._validate(Path(ls_map).exists(), result)
+            result = self._validate("pixel_area", Path(ls_map).exists(), result, f"ls_map path does not exist ({ls_map})")
         if inc_map is not None:
-            result = self._validate(Path(inc_map).exists(), result)
+            result = self._validate("pixel_area", Path(inc_map).exists(), result, f"inc_map path does not exist ({inc_map})")
         if pix_sigma0 is not None:
             Path(pix_sigma0).touch()
         if pix_gamma0 is not None:
@@ -389,7 +392,7 @@ class PyGammaTestProxy(object):
         if gamma0_ratio is not None:
             Path(gamma0_ratio).touch()
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.pixel_area(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("DIFF", "pixel_area", supplied_args, result[0]))
         self._on_error("pixel_area", supplied_args, result[0])
@@ -405,15 +408,15 @@ class PyGammaTestProxy(object):
             self.call_count["extract_gcp"] = 1
 
         if DEM_rdc is not None:
-            result = self._validate(Path(DEM_rdc).exists(), result)
+            result = self._validate("extract_gcp", Path(DEM_rdc).exists(), result, f"DEM_rdc path does not exist ({DEM_rdc})")
         if OFF_par is not None:
-            result = self._validate(Path(OFF_par).exists(), result)
+            result = self._validate("extract_gcp", Path(OFF_par).exists(), result, f"OFF_par path does not exist ({OFF_par})")
         if GCP is not None:
             Path(GCP).touch()
         if mask is not None:
-            result = self._validate(Path(mask).exists(), result)
+            result = self._validate("extract_gcp", Path(mask).exists(), result, f"mask path does not exist ({mask})")
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.extract_gcp(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("DIFF", "extract_gcp", supplied_args, result[0]))
         self._on_error("extract_gcp", supplied_args, result[0])
@@ -429,11 +432,11 @@ class PyGammaTestProxy(object):
             self.call_count["gc_map2"] = 1
 
         if MLI_par is not None:
-            result = self._validate(Path(MLI_par).exists(), result)
+            result = self._validate("gc_map2", Path(MLI_par).exists(), result, f"MLI_par path does not exist ({MLI_par})")
         if DEM_par is not None:
-            result = self._validate(Path(DEM_par).exists(), result)
+            result = self._validate("gc_map2", Path(DEM_par).exists(), result, f"DEM_par path does not exist ({DEM_par})")
         if DEM is not None:
-            result = self._validate(Path(DEM).exists(), result)
+            result = self._validate("gc_map2", Path(DEM).exists(), result, f"DEM path does not exist ({DEM})")
         if DEM_seg_par is not None:
             Path(DEM_seg_par).touch()
         if DEM_seg is not None:
@@ -461,15 +464,15 @@ class PyGammaTestProxy(object):
         if pix is not None:
             Path(pix).touch()
         valid_values = [0, 1, 2, 3]
-        result = self._validate(mask in valid_values, result)
+        result = self._validate("gc_map2", mask in valid_values, result, f"mask is not a valid value (expects: {[0, 1, 2, 3]})")
         valid_values = [0, 1]
-        result = self._validate(ls_scaling in valid_values, result)
+        result = self._validate("gc_map2", ls_scaling in valid_values, result, f"ls_scaling is not a valid value (expects: {[0, 1]})")
         if DIFF_par is not None:
-            result = self._validate(Path(DIFF_par).exists(), result)
+            result = self._validate("gc_map2", Path(DIFF_par).exists(), result, f"DIFF_par path does not exist ({DIFF_par})")
         valid_values = [0, 1]
-        result = self._validate(ref_flg in valid_values, result)
+        result = self._validate("gc_map2", ref_flg in valid_values, result, f"ref_flg is not a valid value (expects: {[0, 1]})")
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.gc_map2(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("DIFF", "gc_map2", supplied_args, result[0]))
         self._on_error("gc_map2", supplied_args, result[0])
@@ -485,23 +488,23 @@ class PyGammaTestProxy(object):
             self.call_count["dem_trans"] = 1
 
         if DEM1_par is not None:
-            result = self._validate(Path(DEM1_par).exists(), result)
+            result = self._validate("dem_trans", Path(DEM1_par).exists(), result, f"DEM1_par path does not exist ({DEM1_par})")
         if DEM1 is not None:
-            result = self._validate(Path(DEM1).exists(), result)
+            result = self._validate("dem_trans", Path(DEM1).exists(), result, f"DEM1 path does not exist ({DEM1})")
         if DEM2_par is not None and not Path(DEM2_par).exists():
             Path(DEM2_par).touch()
         if DEM2 is not None:
             Path(DEM2).touch()
         valid_values = [0, 1]
-        result = self._validate(datum_shift in valid_values, result)
+        result = self._validate("dem_trans", datum_shift in valid_values, result, f"datum_shift is not a valid value (expects: {[0, 1]})")
         valid_values = [0, 1]
-        result = self._validate(bflg in valid_values, result)
+        result = self._validate("dem_trans", bflg in valid_values, result, f"bflg is not a valid value (expects: {[0, 1]})")
         if lookup_table is not None:
             Path(lookup_table).touch()
         valid_values = [0, 1, 2]
-        result = self._validate(interp_mode in valid_values, result)
+        result = self._validate("dem_trans", interp_mode in valid_values, result, f"interp_mode is not a valid value (expects: {[0, 1, 2]})")
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.dem_trans(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("DIFF", "dem_trans", supplied_args, result[0]))
         self._on_error("dem_trans", supplied_args, result[0])
@@ -517,17 +520,17 @@ class PyGammaTestProxy(object):
             self.call_count["quad_sub"] = 1
 
         if int_1 is not None:
-            result = self._validate(Path(int_1).exists(), result)
+            result = self._validate("quad_sub", Path(int_1).exists(), result, f"int_1 path does not exist ({int_1})")
         if DIFF_par is not None:
-            result = self._validate(Path(DIFF_par).exists(), result)
+            result = self._validate("quad_sub", Path(DIFF_par).exists(), result, f"DIFF_par path does not exist ({DIFF_par})")
         if int_2 is not None:
             Path(int_2).touch()
         valid_values = [0, 1]
-        result = self._validate(int_type in valid_values, result)
+        result = self._validate("quad_sub", int_type in valid_values, result, f"int_type is not a valid value (expects: {[0, 1]})")
         valid_values = [0, 1]
-        result = self._validate(mode in valid_values, result)
+        result = self._validate("quad_sub", mode in valid_values, result, f"mode is not a valid value (expects: {[0, 1]})")
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.quad_sub(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("DIFF", "quad_sub", supplied_args, result[0]))
         self._on_error("quad_sub", supplied_args, result[0])
@@ -543,13 +546,13 @@ class PyGammaTestProxy(object):
             self.call_count["phase_sum"] = 1
 
         if im_list is not None:
-            result = self._validate(Path(im_list).exists(), result)
+            result = self._validate("phase_sum", Path(im_list).exists(), result, f"im_list path does not exist ({im_list})")
         if sum is not None:
             Path(sum).touch()
         valid_values = [0, 1]
-        result = self._validate(zflag in valid_values, result)
+        result = self._validate("phase_sum", zflag in valid_values, result, f"zflag is not a valid value (expects: {[0, 1]})")
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.phase_sum(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("DIFF", "phase_sum", supplied_args, result[0]))
         self._on_error("phase_sum", supplied_args, result[0])
@@ -565,13 +568,13 @@ class PyGammaTestProxy(object):
             self.call_count["base_add"] = 1
 
         if base_1 is not None:
-            result = self._validate(Path(base_1).exists(), result)
+            result = self._validate("base_add", Path(base_1).exists(), result, f"base_1 path does not exist ({base_1})")
         if base_2 is not None:
-            result = self._validate(Path(base_2).exists(), result)
+            result = self._validate("base_add", Path(base_2).exists(), result, f"base_2 path does not exist ({base_2})")
         if base_out is not None:
             Path(base_out).touch()
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.base_add(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("DIFF", "base_add", supplied_args, result[0]))
         self._on_error("base_add", supplied_args, result[0])
@@ -587,17 +590,17 @@ class PyGammaTestProxy(object):
             self.call_count["gec_map_grd"] = 1
 
         if GRD_par is not None:
-            result = self._validate(Path(GRD_par).exists(), result)
+            result = self._validate("gec_map_grd", Path(GRD_par).exists(), result, f"GRD_par path does not exist ({GRD_par})")
         if DEM_par is not None:
-            result = self._validate(Path(DEM_par).exists(), result)
+            result = self._validate("gec_map_grd", Path(DEM_par).exists(), result, f"DEM_par path does not exist ({DEM_par})")
         if href is not None:
-            result = self._validate(Path(href).exists(), result)
+            result = self._validate("gec_map_grd", Path(href).exists(), result, f"href path does not exist ({href})")
         if DEM_seg_par is not None and not Path(DEM_seg_par).exists():
             Path(DEM_seg_par).touch()
         if lookup_table is not None:
             Path(lookup_table).touch()
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.gec_map_grd(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("DIFF", "gec_map_grd", supplied_args, result[0]))
         self._on_error("gec_map_grd", supplied_args, result[0])
@@ -613,17 +616,17 @@ class PyGammaTestProxy(object):
             self.call_count["sarpix_coord_list"] = 1
 
         if SLC_par is not None:
-            result = self._validate(Path(SLC_par).exists(), result)
+            result = self._validate("sarpix_coord_list", Path(SLC_par).exists(), result, f"SLC_par path does not exist ({SLC_par})")
         if OFF_par is not None:
-            result = self._validate(Path(OFF_par).exists(), result)
+            result = self._validate("sarpix_coord_list", Path(OFF_par).exists(), result, f"OFF_par path does not exist ({OFF_par})")
         if DEM_par is not None:
-            result = self._validate(Path(DEM_par).exists(), result)
+            result = self._validate("sarpix_coord_list", Path(DEM_par).exists(), result, f"DEM_par path does not exist ({DEM_par})")
         if SAR_coord is not None:
-            result = self._validate(Path(SAR_coord).exists(), result)
+            result = self._validate("sarpix_coord_list", Path(SAR_coord).exists(), result, f"SAR_coord path does not exist ({SAR_coord})")
         if MAP_coord is not None:
             Path(MAP_coord).touch()
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.sarpix_coord_list(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("DIFF", "sarpix_coord_list", supplied_args, result[0]))
         self._on_error("sarpix_coord_list", supplied_args, result[0])
@@ -639,17 +642,17 @@ class PyGammaTestProxy(object):
             self.call_count["dispmap_vec"] = 1
 
         if DEM_par is not None:
-            result = self._validate(Path(DEM_par).exists(), result)
+            result = self._validate("dispmap_vec", Path(DEM_par).exists(), result, f"DEM_par path does not exist ({DEM_par})")
         if dispmap is not None:
-            result = self._validate(Path(dispmap).exists(), result)
+            result = self._validate("dispmap_vec", Path(dispmap).exists(), result, f"dispmap path does not exist ({dispmap})")
         if lv_theta is not None:
-            result = self._validate(Path(lv_theta).exists(), result)
+            result = self._validate("dispmap_vec", Path(lv_theta).exists(), result, f"lv_theta path does not exist ({lv_theta})")
         if lv_phi is not None:
-            result = self._validate(Path(lv_phi).exists(), result)
+            result = self._validate("dispmap_vec", Path(lv_phi).exists(), result, f"lv_phi path does not exist ({lv_phi})")
         if fv_theta is not None:
-            result = self._validate(Path(fv_theta).exists(), result)
+            result = self._validate("dispmap_vec", Path(fv_theta).exists(), result, f"fv_theta path does not exist ({fv_theta})")
         if fv_phi is not None:
-            result = self._validate(Path(fv_phi).exists(), result)
+            result = self._validate("dispmap_vec", Path(fv_phi).exists(), result, f"fv_phi path does not exist ({fv_phi})")
         if dv_norm is not None:
             Path(dv_norm).touch()
         if dv_theta is not None:
@@ -663,7 +666,7 @@ class PyGammaTestProxy(object):
         if dv_z is not None:
             Path(dv_z).touch()
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.dispmap_vec(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("DIFF", "dispmap_vec", supplied_args, result[0]))
         self._on_error("dispmap_vec", supplied_args, result[0])
@@ -679,23 +682,23 @@ class PyGammaTestProxy(object):
             self.call_count["scale_base"] = 1
 
         if unw_2 is not None:
-            result = self._validate(Path(unw_2).exists(), result)
+            result = self._validate("scale_base", Path(unw_2).exists(), result, f"unw_2 path does not exist ({unw_2})")
         if scaled_unw_2 is not None:
             Path(scaled_unw_2).touch()
         if baseline_1 is not None:
-            result = self._validate(Path(baseline_1).exists(), result)
+            result = self._validate("scale_base", Path(baseline_1).exists(), result, f"baseline_1 path does not exist ({baseline_1})")
         if SLC1_par_1 is not None:
-            result = self._validate(Path(SLC1_par_1).exists(), result)
+            result = self._validate("scale_base", Path(SLC1_par_1).exists(), result, f"SLC1_par_1 path does not exist ({SLC1_par_1})")
         if OFF_par_1 is not None:
-            result = self._validate(Path(OFF_par_1).exists(), result)
+            result = self._validate("scale_base", Path(OFF_par_1).exists(), result, f"OFF_par_1 path does not exist ({OFF_par_1})")
         if baseline_2 is not None:
-            result = self._validate(Path(baseline_2).exists(), result)
+            result = self._validate("scale_base", Path(baseline_2).exists(), result, f"baseline_2 path does not exist ({baseline_2})")
         if SLC_1_par_2 is not None:
-            result = self._validate(Path(SLC_1_par_2).exists(), result)
+            result = self._validate("scale_base", Path(SLC_1_par_2).exists(), result, f"SLC_1_par_2 path does not exist ({SLC_1_par_2})")
         if OFF_par_2 is not None:
-            result = self._validate(Path(OFF_par_2).exists(), result)
+            result = self._validate("scale_base", Path(OFF_par_2).exists(), result, f"OFF_par_2 path does not exist ({OFF_par_2})")
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.scale_base(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("DIFF", "scale_base", supplied_args, result[0]))
         self._on_error("scale_base", supplied_args, result[0])
@@ -711,17 +714,17 @@ class PyGammaTestProxy(object):
             self.call_count["par_EORC_PALSAR_geo"] = 1
 
         if CEOS_leader is not None:
-            result = self._validate(Path(CEOS_leader).exists(), result)
+            result = self._validate("par_EORC_PALSAR_geo", Path(CEOS_leader).exists(), result, f"CEOS_leader path does not exist ({CEOS_leader})")
         if MLI_par is not None:
             Path(MLI_par).touch()
         if DEM_par is not None:
             Path(DEM_par).touch()
         if CEOS_data is not None:
-            result = self._validate(Path(CEOS_data).exists(), result)
+            result = self._validate("par_EORC_PALSAR_geo", Path(CEOS_data).exists(), result, f"CEOS_data path does not exist ({CEOS_data})")
         if MLI is not None:
             Path(MLI).touch()
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.par_EORC_PALSAR_geo(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("DIFF", "par_EORC_PALSAR_geo", supplied_args, result[0]))
         self._on_error("par_EORC_PALSAR_geo", supplied_args, result[0])
@@ -737,11 +740,11 @@ class PyGammaTestProxy(object):
             self.call_count["SLC_intf_geo"] = 1
 
         if SLC_1 is not None:
-            result = self._validate(Path(SLC_1).exists(), result)
+            result = self._validate("SLC_intf_geo", Path(SLC_1).exists(), result, f"SLC_1 path does not exist ({SLC_1})")
         if SLC_2 is not None:
-            result = self._validate(Path(SLC_2).exists(), result)
+            result = self._validate("SLC_intf_geo", Path(SLC_2).exists(), result, f"SLC_2 path does not exist ({SLC_2})")
         if DEM_par is not None:
-            result = self._validate(Path(DEM_par).exists(), result)
+            result = self._validate("SLC_intf_geo", Path(DEM_par).exists(), result, f"DEM_par path does not exist ({DEM_par})")
         if interf is not None:
             Path(interf).touch()
         if DEM_par2 is not None:
@@ -751,7 +754,7 @@ class PyGammaTestProxy(object):
         if MLI_2 is not None:
             Path(MLI_2).touch()
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.SLC_intf_geo(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("DIFF", "SLC_intf_geo", supplied_args, result[0]))
         self._on_error("SLC_intf_geo", supplied_args, result[0])
@@ -767,21 +770,21 @@ class PyGammaTestProxy(object):
             self.call_count["map_trans"] = 1
 
         if DEM1_par is not None:
-            result = self._validate(Path(DEM1_par).exists(), result)
+            result = self._validate("map_trans", Path(DEM1_par).exists(), result, f"DEM1_par path does not exist ({DEM1_par})")
         if data1 is not None:
-            result = self._validate(Path(data1).exists(), result)
+            result = self._validate("map_trans", Path(data1).exists(), result, f"data1 path does not exist ({data1})")
         if DEM2_par is not None and not Path(DEM2_par).exists():
             Path(DEM2_par).touch()
         if data2 is not None:
             Path(data2).touch()
         valid_values = [0, 1, 2, 3, 4, 5]
-        result = self._validate(dtype in valid_values, result)
+        result = self._validate("map_trans", dtype in valid_values, result, f"dtype is not a valid value (expects: {[0, 1, 2, 3, 4, 5]})")
         valid_values = [0, 1]
-        result = self._validate(bflg in valid_values, result)
+        result = self._validate("map_trans", bflg in valid_values, result, f"bflg is not a valid value (expects: {[0, 1]})")
         if lookup_table is not None:
             Path(lookup_table).touch()
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.map_trans(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("DIFF", "map_trans", supplied_args, result[0]))
         self._on_error("map_trans", supplied_args, result[0])
@@ -797,9 +800,9 @@ class PyGammaTestProxy(object):
             self.call_count["gc_map_inversion"] = 1
 
         valid_values = [0, 1, 2, 3, 4]
-        result = self._validate(interp_mode in valid_values, result)
+        result = self._validate("gc_map_inversion", interp_mode in valid_values, result, f"interp_mode is not a valid value (expects: {[0, 1, 2, 3, 4]})")
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.gc_map_inversion(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("DIFF", "gc_map_inversion", supplied_args, result[0]))
         self._on_error("gc_map_inversion", supplied_args, result[0])
@@ -815,9 +818,9 @@ class PyGammaTestProxy(object):
             self.call_count["par_JERS_geo"] = 1
 
         if CEOS_leader is not None:
-            result = self._validate(Path(CEOS_leader).exists(), result)
+            result = self._validate("par_JERS_geo", Path(CEOS_leader).exists(), result, f"CEOS_leader path does not exist ({CEOS_leader})")
         if CEOS_data is not None:
-            result = self._validate(Path(CEOS_data).exists(), result)
+            result = self._validate("par_JERS_geo", Path(CEOS_data).exists(), result, f"CEOS_data path does not exist ({CEOS_data})")
         if MLI_par is not None:
             Path(MLI_par).touch()
         if DEM_par is not None:
@@ -825,7 +828,7 @@ class PyGammaTestProxy(object):
         if GEO is not None:
             Path(GEO).touch()
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.par_JERS_geo(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("DIFF", "par_JERS_geo", supplied_args, result[0]))
         self._on_error("par_JERS_geo", supplied_args, result[0])
@@ -841,15 +844,15 @@ class PyGammaTestProxy(object):
             self.call_count["interp_data"] = 1
 
         if data2 is not None:
-            result = self._validate(Path(data2).exists(), result)
+            result = self._validate("interp_data", Path(data2).exists(), result, f"data2 path does not exist ({data2})")
         if DIFF_par is not None:
-            result = self._validate(Path(DIFF_par).exists(), result)
+            result = self._validate("interp_data", Path(DIFF_par).exists(), result, f"DIFF_par path does not exist ({DIFF_par})")
         if data2_out is not None:
             Path(data2_out).touch()
         valid_values = [0, 1, 2, 3, 4, 5, 6]
-        result = self._validate(dtype in valid_values, result)
+        result = self._validate("interp_data", dtype in valid_values, result, f"dtype is not a valid value (expects: {[0, 1, 2, 3, 4, 5, 6]})")
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.interp_data(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("DIFF", "interp_data", supplied_args, result[0]))
         self._on_error("interp_data", supplied_args, result[0])
@@ -865,15 +868,15 @@ class PyGammaTestProxy(object):
             self.call_count["rdc_trans"] = 1
 
         if MLI1_par is not None:
-            result = self._validate(Path(MLI1_par).exists(), result)
+            result = self._validate("rdc_trans", Path(MLI1_par).exists(), result, f"MLI1_par path does not exist ({MLI1_par})")
         if DEM_RDC is not None:
-            result = self._validate(Path(DEM_RDC).exists(), result)
+            result = self._validate("rdc_trans", Path(DEM_RDC).exists(), result, f"DEM_RDC path does not exist ({DEM_RDC})")
         if MLI2_par is not None:
-            result = self._validate(Path(MLI2_par).exists(), result)
+            result = self._validate("rdc_trans", Path(MLI2_par).exists(), result, f"MLI2_par path does not exist ({MLI2_par})")
         if lt is not None:
             Path(lt).touch()
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.rdc_trans(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("DIFF", "rdc_trans", supplied_args, result[0]))
         self._on_error("rdc_trans", supplied_args, result[0])
@@ -889,21 +892,21 @@ class PyGammaTestProxy(object):
             self.call_count["SLC_interp_lt_ScanSAR"] = 1
 
         if SLC2_tab is not None:
-            result = self._validate(Path(SLC2_tab).exists(), result)
+            result = self._validate("SLC_interp_lt_ScanSAR", Path(SLC2_tab).exists(), result, f"SLC2_tab path does not exist ({SLC2_tab})")
         if SLC2_par is not None:
-            result = self._validate(Path(SLC2_par).exists(), result)
+            result = self._validate("SLC_interp_lt_ScanSAR", Path(SLC2_par).exists(), result, f"SLC2_par path does not exist ({SLC2_par})")
         if SLC1_tab is not None:
-            result = self._validate(Path(SLC1_tab).exists(), result)
+            result = self._validate("SLC_interp_lt_ScanSAR", Path(SLC1_tab).exists(), result, f"SLC1_tab path does not exist ({SLC1_tab})")
         if SLC1_par is not None:
-            result = self._validate(Path(SLC1_par).exists(), result)
+            result = self._validate("SLC_interp_lt_ScanSAR", Path(SLC1_par).exists(), result, f"SLC1_par path does not exist ({SLC1_par})")
         if lookup_table is not None:
-            result = self._validate(Path(lookup_table).exists(), result)
+            result = self._validate("SLC_interp_lt_ScanSAR", Path(lookup_table).exists(), result, f"lookup_table path does not exist ({lookup_table})")
         if MLI1_par is not None:
-            result = self._validate(Path(MLI1_par).exists(), result)
+            result = self._validate("SLC_interp_lt_ScanSAR", Path(MLI1_par).exists(), result, f"MLI1_par path does not exist ({MLI1_par})")
         if MLI2_par is not None:
-            result = self._validate(Path(MLI2_par).exists(), result)
+            result = self._validate("SLC_interp_lt_ScanSAR", Path(MLI2_par).exists(), result, f"MLI2_par path does not exist ({MLI2_par})")
         if OFF_par is not None:
-            result = self._validate(Path(OFF_par).exists(), result)
+            result = self._validate("SLC_interp_lt_ScanSAR", Path(OFF_par).exists(), result, f"OFF_par path does not exist ({OFF_par})")
         if SLC2R_tab is not None and not Path(SLC2R_tab).exists():
             Path(SLC2R_tab).touch()
         if SLC_2R is not None:
@@ -911,9 +914,9 @@ class PyGammaTestProxy(object):
         if SLC2R_par is not None:
             Path(SLC2R_par).touch()
         valid_values = [0, 1]
-        result = self._validate(mode in valid_values, result)
+        result = self._validate("SLC_interp_lt_ScanSAR", mode in valid_values, result, f"mode is not a valid value (expects: {[0, 1]})")
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.SLC_interp_lt_ScanSAR(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("DIFF", "SLC_interp_lt_ScanSAR", supplied_args, result[0]))
         self._on_error("SLC_interp_lt_ScanSAR", supplied_args, result[0])
@@ -929,11 +932,11 @@ class PyGammaTestProxy(object):
             self.call_count["par_CS_geo"] = 1
 
         if HDF5 is not None:
-            result = self._validate(Path(HDF5).exists(), result)
+            result = self._validate("par_CS_geo", Path(HDF5).exists(), result, f"HDF5 path does not exist ({HDF5})")
         if MLI_par is not None:
-            result = self._validate(Path(MLI_par).exists(), result)
+            result = self._validate("par_CS_geo", Path(MLI_par).exists(), result, f"MLI_par path does not exist ({MLI_par})")
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.par_CS_geo(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("DIFF", "par_CS_geo", supplied_args, result[0]))
         self._on_error("par_CS_geo", supplied_args, result[0])
@@ -949,7 +952,7 @@ class PyGammaTestProxy(object):
             self.call_count["par_RCM_geo"] = 1
 
         if RCM_dir is not None:
-            result = self._validate(Path(RCM_dir).exists(), result)
+            result = self._validate("par_RCM_geo", Path(RCM_dir).exists(), result, f"RCM_dir path does not exist ({RCM_dir})")
         if MLI_par is not None:
             Path(MLI_par).touch()
         if DEM_par is not None:
@@ -957,9 +960,9 @@ class PyGammaTestProxy(object):
         if GEO is not None:
             Path(GEO).touch()
         valid_values = [0, 1]
-        result = self._validate(dtype in valid_values, result)
+        result = self._validate("par_RCM_geo", dtype in valid_values, result, f"dtype is not a valid value (expects: {[0, 1]})")
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.par_RCM_geo(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("DIFF", "par_RCM_geo", supplied_args, result[0]))
         self._on_error("par_RCM_geo", supplied_args, result[0])
@@ -975,29 +978,29 @@ class PyGammaTestProxy(object):
             self.call_count["offset_pwr_trackingm2"] = 1
 
         if MLI_1 is not None:
-            result = self._validate(Path(MLI_1).exists(), result)
+            result = self._validate("offset_pwr_trackingm2", Path(MLI_1).exists(), result, f"MLI_1 path does not exist ({MLI_1})")
         if MLI_2 is not None:
-            result = self._validate(Path(MLI_2).exists(), result)
+            result = self._validate("offset_pwr_trackingm2", Path(MLI_2).exists(), result, f"MLI_2 path does not exist ({MLI_2})")
         if DIFF_par is not None:
-            result = self._validate(Path(DIFF_par).exists(), result)
+            result = self._validate("offset_pwr_trackingm2", Path(DIFF_par).exists(), result, f"DIFF_par path does not exist ({DIFF_par})")
         if offs is not None:
             Path(offs).touch()
         if ccp is not None:
             Path(ccp).touch()
         if DIFF_par2 is not None:
-            result = self._validate(Path(DIFF_par2).exists(), result)
+            result = self._validate("offset_pwr_trackingm2", Path(DIFF_par2).exists(), result, f"DIFF_par2 path does not exist ({DIFF_par2})")
         if offs2 is not None:
-            result = self._validate(Path(offs2).exists(), result)
+            result = self._validate("offset_pwr_trackingm2", Path(offs2).exists(), result, f"offs2 path does not exist ({offs2})")
         if offsets is not None:
             Path(offsets).touch()
         valid_values = [0, 1]
-        result = self._validate(pflag in valid_values, result)
+        result = self._validate("offset_pwr_trackingm2", pflag in valid_values, result, f"pflag is not a valid value (expects: {[0, 1]})")
         valid_values = [0, 1, 2, 3]
-        result = self._validate(pltflg in valid_values, result)
+        result = self._validate("offset_pwr_trackingm2", pltflg in valid_values, result, f"pltflg is not a valid value (expects: {[0, 1, 2, 3]})")
         if ccs is not None:
             Path(ccs).touch()
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.offset_pwr_trackingm2(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("DIFF", "offset_pwr_trackingm2", supplied_args, result[0]))
         self._on_error("offset_pwr_trackingm2", supplied_args, result[0])
@@ -1013,15 +1016,15 @@ class PyGammaTestProxy(object):
             self.call_count["init_offset_orbitm"] = 1
 
         if MLI1_par is not None:
-            result = self._validate(Path(MLI1_par).exists(), result)
+            result = self._validate("init_offset_orbitm", Path(MLI1_par).exists(), result, f"MLI1_par path does not exist ({MLI1_par})")
         if MLI2_par is not None:
-            result = self._validate(Path(MLI2_par).exists(), result)
+            result = self._validate("init_offset_orbitm", Path(MLI2_par).exists(), result, f"MLI2_par path does not exist ({MLI2_par})")
         if DIFF_par is not None and not Path(DIFF_par).exists():
             Path(DIFF_par).touch()
         valid_values = [0, 1]
-        result = self._validate(cflag in valid_values, result)
+        result = self._validate("init_offset_orbitm", cflag in valid_values, result, f"cflag is not a valid value (expects: {[0, 1]})")
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.init_offset_orbitm(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("DIFF", "init_offset_orbitm", supplied_args, result[0]))
         self._on_error("init_offset_orbitm", supplied_args, result[0])
@@ -1037,17 +1040,17 @@ class PyGammaTestProxy(object):
             self.call_count["quad_fit"] = 1
 
         if unw is not None:
-            result = self._validate(Path(unw).exists(), result)
+            result = self._validate("quad_fit", Path(unw).exists(), result, f"unw path does not exist ({unw})")
         if DIFF_par is not None:
-            result = self._validate(Path(DIFF_par).exists(), result)
+            result = self._validate("quad_fit", Path(DIFF_par).exists(), result, f"DIFF_par path does not exist ({DIFF_par})")
         if plot_data is not None:
             Path(plot_data).touch()
         valid_values = [0, 1, 2, 3, 4, 5, 6, 7]
-        result = self._validate(model in valid_values, result)
+        result = self._validate("quad_fit", model in valid_values, result, f"model is not a valid value (expects: {[0, 1, 2, 3, 4, 5, 6, 7]})")
         if pmodel is not None:
             Path(pmodel).touch()
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.quad_fit(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("DIFF", "quad_fit", supplied_args, result[0]))
         self._on_error("quad_fit", supplied_args, result[0])
@@ -1063,7 +1066,7 @@ class PyGammaTestProxy(object):
             self.call_count["stacking"] = 1
 
         if DIFF_tab is not None:
-            result = self._validate(Path(DIFF_tab).exists(), result)
+            result = self._validate("stacking", Path(DIFF_tab).exists(), result, f"DIFF_tab path does not exist ({DIFF_tab})")
         if ph_rate is not None:
             Path(ph_rate).touch()
         if sig_ph_rate is not None:
@@ -1071,9 +1074,9 @@ class PyGammaTestProxy(object):
         if sig_ph is not None:
             Path(sig_ph).touch()
         valid_values = [0, 1]
-        result = self._validate(tscale in valid_values, result)
+        result = self._validate("stacking", tscale in valid_values, result, f"tscale is not a valid value (expects: {[0, 1]})")
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.stacking(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("DIFF", "stacking", supplied_args, result[0]))
         self._on_error("stacking", supplied_args, result[0])
@@ -1089,21 +1092,21 @@ class PyGammaTestProxy(object):
             self.call_count["atm_mod2"] = 1
 
         if diff_unw is not None:
-            result = self._validate(Path(diff_unw).exists(), result)
+            result = self._validate("atm_mod2", Path(diff_unw).exists(), result, f"diff_unw path does not exist ({diff_unw})")
         if hgt is not None:
-            result = self._validate(Path(hgt).exists(), result)
+            result = self._validate("atm_mod2", Path(hgt).exists(), result, f"hgt path does not exist ({hgt})")
         if MLI_par is not None:
-            result = self._validate(Path(MLI_par).exists(), result)
+            result = self._validate("atm_mod2", Path(MLI_par).exists(), result, f"MLI_par path does not exist ({MLI_par})")
         if model is not None:
             Path(model).touch()
         if mask is not None:
-            result = self._validate(Path(mask).exists(), result)
+            result = self._validate("atm_mod2", Path(mask).exists(), result, f"mask path does not exist ({mask})")
         valid_values = [0, 1, 2, 3]
-        result = self._validate(mode in valid_values, result)
+        result = self._validate("atm_mod2", mode in valid_values, result, f"mode is not a valid value (expects: {[0, 1, 2, 3]})")
         if report is not None:
             Path(report).touch()
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.atm_mod2(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("DIFF", "atm_mod2", supplied_args, result[0]))
         self._on_error("atm_mod2", supplied_args, result[0])
@@ -1119,13 +1122,13 @@ class PyGammaTestProxy(object):
             self.call_count["par_UAVSAR_geo"] = 1
 
         if ann is not None:
-            result = self._validate(Path(ann).exists(), result)
+            result = self._validate("par_UAVSAR_geo", Path(ann).exists(), result, f"ann path does not exist ({ann})")
         if SLC_MLI_par is not None:
             Path(SLC_MLI_par).touch()
         if DEM_par is not None:
             Path(DEM_par).touch()
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.par_UAVSAR_geo(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("DIFF", "par_UAVSAR_geo", supplied_args, result[0]))
         self._on_error("par_UAVSAR_geo", supplied_args, result[0])
@@ -1141,25 +1144,25 @@ class PyGammaTestProxy(object):
             self.call_count["dem_import"] = 1
 
         if input_DEM is not None:
-            result = self._validate(Path(input_DEM).exists(), result)
+            result = self._validate("dem_import", Path(input_DEM).exists(), result, f"input_DEM path does not exist ({input_DEM})")
         if DEM is not None:
             Path(DEM).touch()
         if DEM_par is not None and not Path(DEM_par).exists():
             Path(DEM_par).touch()
         valid_values = [0, 1, 2, 3, 4]
-        result = self._validate(input_type in valid_values, result)
+        result = self._validate("dem_import", input_type in valid_values, result, f"input_type is not a valid value (expects: {[0, 1, 2, 3, 4]})")
         valid_values = [0, 1]
-        result = self._validate(priority in valid_values, result)
+        result = self._validate("dem_import", priority in valid_values, result, f"priority is not a valid value (expects: {[0, 1]})")
         if geoid is not None:
-            result = self._validate(Path(geoid).exists(), result)
+            result = self._validate("dem_import", Path(geoid).exists(), result, f"geoid path does not exist ({geoid})")
         if geoid_par is not None:
-            result = self._validate(Path(geoid_par).exists(), result)
+            result = self._validate("dem_import", Path(geoid_par).exists(), result, f"geoid_par path does not exist ({geoid_par})")
         valid_values = [0, 1]
-        result = self._validate(geoid_type in valid_values, result)
+        result = self._validate("dem_import", geoid_type in valid_values, result, f"geoid_type is not a valid value (expects: {[0, 1]})")
         valid_values = [0, 1]
-        result = self._validate(zflg in valid_values, result)
+        result = self._validate("dem_import", zflg in valid_values, result, f"zflg is not a valid value (expects: {[0, 1]})")
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.dem_import(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("DIFF", "dem_import", supplied_args, result[0]))
         self._on_error("dem_import", supplied_args, result[0])
@@ -1175,27 +1178,27 @@ class PyGammaTestProxy(object):
             self.call_count["SLC_interp_lt"] = 1
 
         if SLC_2 is not None:
-            result = self._validate(Path(SLC_2).exists(), result)
+            result = self._validate("SLC_interp_lt", Path(SLC_2).exists(), result, f"SLC_2 path does not exist ({SLC_2})")
         if SLC1_par is not None:
-            result = self._validate(Path(SLC1_par).exists(), result)
+            result = self._validate("SLC_interp_lt", Path(SLC1_par).exists(), result, f"SLC1_par path does not exist ({SLC1_par})")
         if SLC2_par is not None:
-            result = self._validate(Path(SLC2_par).exists(), result)
+            result = self._validate("SLC_interp_lt", Path(SLC2_par).exists(), result, f"SLC2_par path does not exist ({SLC2_par})")
         if lookup_table is not None:
-            result = self._validate(Path(lookup_table).exists(), result)
+            result = self._validate("SLC_interp_lt", Path(lookup_table).exists(), result, f"lookup_table path does not exist ({lookup_table})")
         if MLI1_par is not None:
-            result = self._validate(Path(MLI1_par).exists(), result)
+            result = self._validate("SLC_interp_lt", Path(MLI1_par).exists(), result, f"MLI1_par path does not exist ({MLI1_par})")
         if MLI2_par is not None:
-            result = self._validate(Path(MLI2_par).exists(), result)
+            result = self._validate("SLC_interp_lt", Path(MLI2_par).exists(), result, f"MLI2_par path does not exist ({MLI2_par})")
         if OFF_par is not None:
-            result = self._validate(Path(OFF_par).exists(), result)
+            result = self._validate("SLC_interp_lt", Path(OFF_par).exists(), result, f"OFF_par path does not exist ({OFF_par})")
         if SLC_2R is not None:
             Path(SLC_2R).touch()
         if SLC2R_par is not None:
             Path(SLC2R_par).touch()
         valid_values = [0, 1]
-        result = self._validate(mode in valid_values, result)
+        result = self._validate("SLC_interp_lt", mode in valid_values, result, f"mode is not a valid value (expects: {[0, 1]})")
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.SLC_interp_lt(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("DIFF", "SLC_interp_lt", supplied_args, result[0]))
         self._on_error("SLC_interp_lt", supplied_args, result[0])
@@ -1211,17 +1214,17 @@ class PyGammaTestProxy(object):
             self.call_count["dispmap"] = 1
 
         if unw is not None:
-            result = self._validate(Path(unw).exists(), result)
+            result = self._validate("dispmap", Path(unw).exists(), result, f"unw path does not exist ({unw})")
         if hgt is not None:
-            result = self._validate(Path(hgt).exists(), result)
+            result = self._validate("dispmap", Path(hgt).exists(), result, f"hgt path does not exist ({hgt})")
         if MLI_par is not None:
-            result = self._validate(Path(MLI_par).exists(), result)
+            result = self._validate("dispmap", Path(MLI_par).exists(), result, f"MLI_par path does not exist ({MLI_par})")
         if OFF_par is not None:
-            result = self._validate(Path(OFF_par).exists(), result)
+            result = self._validate("dispmap", Path(OFF_par).exists(), result, f"OFF_par path does not exist ({OFF_par})")
         if disp_map is not None:
             Path(disp_map).touch()
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.dispmap(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("DIFF", "dispmap", supplied_args, result[0]))
         self._on_error("dispmap", supplied_args, result[0])
@@ -1237,19 +1240,19 @@ class PyGammaTestProxy(object):
             self.call_count["atm_mod"] = 1
 
         if diff_unw is not None:
-            result = self._validate(Path(diff_unw).exists(), result)
+            result = self._validate("atm_mod", Path(diff_unw).exists(), result, f"diff_unw path does not exist ({diff_unw})")
         if hgt is not None:
-            result = self._validate(Path(hgt).exists(), result)
+            result = self._validate("atm_mod", Path(hgt).exists(), result, f"hgt path does not exist ({hgt})")
         if DIFF_par is not None:
-            result = self._validate(Path(DIFF_par).exists(), result)
+            result = self._validate("atm_mod", Path(DIFF_par).exists(), result, f"DIFF_par path does not exist ({DIFF_par})")
         if model is not None:
             Path(model).touch()
         if mask is not None:
-            result = self._validate(Path(mask).exists(), result)
+            result = self._validate("atm_mod", Path(mask).exists(), result, f"mask path does not exist ({mask})")
         valid_values = [0, 1]
-        result = self._validate(mode in valid_values, result)
+        result = self._validate("atm_mod", mode in valid_values, result, f"mode is not a valid value (expects: {[0, 1]})")
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.atm_mod(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("DIFF", "atm_mod", supplied_args, result[0]))
         self._on_error("atm_mod", supplied_args, result[0])
@@ -1265,11 +1268,11 @@ class PyGammaTestProxy(object):
             self.call_count["dispmap_LOS"] = 1
 
         if unw is not None:
-            result = self._validate(Path(unw).exists(), result)
+            result = self._validate("dispmap_LOS", Path(unw).exists(), result, f"unw path does not exist ({unw})")
         if disp_map is not None:
             Path(disp_map).touch()
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.dispmap_LOS(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("DIFF", "dispmap_LOS", supplied_args, result[0]))
         self._on_error("dispmap_LOS", supplied_args, result[0])
@@ -1285,19 +1288,19 @@ class PyGammaTestProxy(object):
             self.call_count["sub_phase"] = 1
 
         if int_1 is not None:
-            result = self._validate(Path(int_1).exists(), result)
+            result = self._validate("sub_phase", Path(int_1).exists(), result, f"int_1 path does not exist ({int_1})")
         if unw_2 is not None:
-            result = self._validate(Path(unw_2).exists(), result)
+            result = self._validate("sub_phase", Path(unw_2).exists(), result, f"unw_2 path does not exist ({unw_2})")
         if DIFF_par is not None:
-            result = self._validate(Path(DIFF_par).exists(), result)
+            result = self._validate("sub_phase", Path(DIFF_par).exists(), result, f"DIFF_par path does not exist ({DIFF_par})")
         if diff_int is not None:
             Path(diff_int).touch()
         valid_values = [0, 1, 2]
-        result = self._validate(dtype in valid_values, result)
+        result = self._validate("sub_phase", dtype in valid_values, result, f"dtype is not a valid value (expects: {[0, 1, 2]})")
         valid_values = [0, 1]
-        result = self._validate(mode in valid_values, result)
+        result = self._validate("sub_phase", mode in valid_values, result, f"mode is not a valid value (expects: {[0, 1]})")
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.sub_phase(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("DIFF", "sub_phase", supplied_args, result[0]))
         self._on_error("sub_phase", supplied_args, result[0])
@@ -1313,31 +1316,31 @@ class PyGammaTestProxy(object):
             self.call_count["phase_sim"] = 1
 
         if SLC1_par is not None:
-            result = self._validate(Path(SLC1_par).exists(), result)
+            result = self._validate("phase_sim", Path(SLC1_par).exists(), result, f"SLC1_par path does not exist ({SLC1_par})")
         if OFF_par is not None:
-            result = self._validate(Path(OFF_par).exists(), result)
+            result = self._validate("phase_sim", Path(OFF_par).exists(), result, f"OFF_par path does not exist ({OFF_par})")
         if baseline is not None:
-            result = self._validate(Path(baseline).exists(), result)
+            result = self._validate("phase_sim", Path(baseline).exists(), result, f"baseline path does not exist ({baseline})")
         if hgt is not None:
-            result = self._validate(Path(hgt).exists(), result)
+            result = self._validate("phase_sim", Path(hgt).exists(), result, f"hgt path does not exist ({hgt})")
         if sim_unw is not None:
             Path(sim_unw).touch()
         valid_values = [0, 1]
-        result = self._validate(ph_flag in valid_values, result)
+        result = self._validate("phase_sim", ph_flag in valid_values, result, f"ph_flag is not a valid value (expects: {[0, 1]})")
         valid_values = [0, 1]
-        result = self._validate(bflag in valid_values, result)
+        result = self._validate("phase_sim", bflag in valid_values, result, f"bflag is not a valid value (expects: {[0, 1]})")
         if definition is not None:
-            result = self._validate(Path(definition).exists(), result)
+            result = self._validate("phase_sim", Path(definition).exists(), result, f"definition path does not exist ({definition})")
         if delta_t is not None:
-            result = self._validate(Path(delta_t).exists(), result)
+            result = self._validate("phase_sim", Path(delta_t).exists(), result, f"delta_t path does not exist ({delta_t})")
         if int_mode is not None:
-            result = self._validate(Path(int_mode).exists(), result)
+            result = self._validate("phase_sim", Path(int_mode).exists(), result, f"int_mode path does not exist ({int_mode})")
         if SLC2R_par is not None:
-            result = self._validate(Path(SLC2R_par).exists(), result)
+            result = self._validate("phase_sim", Path(SLC2R_par).exists(), result, f"SLC2R_par path does not exist ({SLC2R_par})")
         valid_values = [0, 1]
-        result = self._validate(ph_mode in valid_values, result)
+        result = self._validate("phase_sim", ph_mode in valid_values, result, f"ph_mode is not a valid value (expects: {[0, 1]})")
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.phase_sim(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("DIFF", "phase_sim", supplied_args, result[0]))
         self._on_error("phase_sim", supplied_args, result[0])
@@ -1353,11 +1356,11 @@ class PyGammaTestProxy(object):
             self.call_count["par_RISAT_geo"] = 1
 
         if annotation_XML is not None:
-            result = self._validate(Path(annotation_XML).exists(), result)
+            result = self._validate("par_RISAT_geo", Path(annotation_XML).exists(), result, f"annotation_XML path does not exist ({annotation_XML})")
         if GeoTIFF is not None:
-            result = self._validate(Path(GeoTIFF).exists(), result)
+            result = self._validate("par_RISAT_geo", Path(GeoTIFF).exists(), result, f"GeoTIFF path does not exist ({GeoTIFF})")
         if polarization is not None:
-            result = self._validate(Path(polarization).exists(), result)
+            result = self._validate("par_RISAT_geo", Path(polarization).exists(), result, f"polarization path does not exist ({polarization})")
         if DEM_par is not None:
             Path(DEM_par).touch()
         if MLI_par is not None:
@@ -1365,7 +1368,7 @@ class PyGammaTestProxy(object):
         if MLI is not None:
             Path(MLI).touch()
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.par_RISAT_geo(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("DIFF", "par_RISAT_geo", supplied_args, result[0]))
         self._on_error("par_RISAT_geo", supplied_args, result[0])
@@ -1381,25 +1384,25 @@ class PyGammaTestProxy(object):
             self.call_count["MLI_interp_lt"] = 1
 
         if MLI_2 is not None:
-            result = self._validate(Path(MLI_2).exists(), result)
+            result = self._validate("MLI_interp_lt", Path(MLI_2).exists(), result, f"MLI_2 path does not exist ({MLI_2})")
         if MLI1_par is not None:
-            result = self._validate(Path(MLI1_par).exists(), result)
+            result = self._validate("MLI_interp_lt", Path(MLI1_par).exists(), result, f"MLI1_par path does not exist ({MLI1_par})")
         if MLI2_par is not None:
-            result = self._validate(Path(MLI2_par).exists(), result)
+            result = self._validate("MLI_interp_lt", Path(MLI2_par).exists(), result, f"MLI2_par path does not exist ({MLI2_par})")
         if lookup_table is not None:
-            result = self._validate(Path(lookup_table).exists(), result)
+            result = self._validate("MLI_interp_lt", Path(lookup_table).exists(), result, f"lookup_table path does not exist ({lookup_table})")
         if MLI3_par is not None:
-            result = self._validate(Path(MLI3_par).exists(), result)
+            result = self._validate("MLI_interp_lt", Path(MLI3_par).exists(), result, f"MLI3_par path does not exist ({MLI3_par})")
         if MLI4_par is not None:
-            result = self._validate(Path(MLI4_par).exists(), result)
+            result = self._validate("MLI_interp_lt", Path(MLI4_par).exists(), result, f"MLI4_par path does not exist ({MLI4_par})")
         if DIFF_par is not None:
-            result = self._validate(Path(DIFF_par).exists(), result)
+            result = self._validate("MLI_interp_lt", Path(DIFF_par).exists(), result, f"DIFF_par path does not exist ({DIFF_par})")
         if MLI_2R is not None:
             Path(MLI_2R).touch()
         if MLI2R_par is not None:
             Path(MLI2R_par).touch()
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.MLI_interp_lt(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("DIFF", "MLI_interp_lt", supplied_args, result[0]))
         self._on_error("MLI_interp_lt", supplied_args, result[0])
@@ -1415,13 +1418,13 @@ class PyGammaTestProxy(object):
             self.call_count["lk_vec_lt"] = 1
 
         if MLI_par is not None:
-            result = self._validate(Path(MLI_par).exists(), result)
+            result = self._validate("lk_vec_lt", Path(MLI_par).exists(), result, f"MLI_par path does not exist ({MLI_par})")
         if DEM_par is not None:
-            result = self._validate(Path(DEM_par).exists(), result)
+            result = self._validate("lk_vec_lt", Path(DEM_par).exists(), result, f"DEM_par path does not exist ({DEM_par})")
         if DEM is not None:
-            result = self._validate(Path(DEM).exists(), result)
+            result = self._validate("lk_vec_lt", Path(DEM).exists(), result, f"DEM path does not exist ({DEM})")
         if lt is not None:
-            result = self._validate(Path(lt).exists(), result)
+            result = self._validate("lk_vec_lt", Path(lt).exists(), result, f"lt path does not exist ({lt})")
         if lv_theta is not None:
             Path(lv_theta).touch()
         if lv_phi is not None:
@@ -1431,7 +1434,7 @@ class PyGammaTestProxy(object):
         if azv_ENU is not None:
             Path(azv_ENU).touch()
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.lk_vec_lt(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("DIFF", "lk_vec_lt", supplied_args, result[0]))
         self._on_error("lk_vec_lt", supplied_args, result[0])
@@ -1447,17 +1450,17 @@ class PyGammaTestProxy(object):
             self.call_count["coord_to_sarpix"] = 1
 
         if OFF_par is not None:
-            result = self._validate(Path(OFF_par).exists(), result)
+            result = self._validate("coord_to_sarpix", Path(OFF_par).exists(), result, f"OFF_par path does not exist ({OFF_par})")
         if DEM_par is not None:
-            result = self._validate(Path(DEM_par).exists(), result)
+            result = self._validate("coord_to_sarpix", Path(DEM_par).exists(), result, f"DEM_par path does not exist ({DEM_par})")
         if north_lat is not None:
-            result = self._validate(Path(north_lat).exists(), result)
+            result = self._validate("coord_to_sarpix", Path(north_lat).exists(), result, f"north_lat path does not exist ({north_lat})")
         if east_lon is not None:
-            result = self._validate(Path(east_lon).exists(), result)
+            result = self._validate("coord_to_sarpix", Path(east_lon).exists(), result, f"east_lon path does not exist ({east_lon})")
         if hgt is not None:
-            result = self._validate(Path(hgt).exists(), result)
+            result = self._validate("coord_to_sarpix", Path(hgt).exists(), result, f"hgt path does not exist ({hgt})")
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.coord_to_sarpix(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("DIFF", "coord_to_sarpix", supplied_args, result[0]))
         self._on_error("coord_to_sarpix", supplied_args, result[0])
@@ -1473,25 +1476,25 @@ class PyGammaTestProxy(object):
             self.call_count["WSS_intf"] = 1
 
         if SLC_1 is not None:
-            result = self._validate(Path(SLC_1).exists(), result)
+            result = self._validate("WSS_intf", Path(SLC_1).exists(), result, f"SLC_1 path does not exist ({SLC_1})")
         if SLC_2R is not None:
-            result = self._validate(Path(SLC_2R).exists(), result)
+            result = self._validate("WSS_intf", Path(SLC_2R).exists(), result, f"SLC_2R path does not exist ({SLC_2R})")
         if SLC1_par is not None:
-            result = self._validate(Path(SLC1_par).exists(), result)
+            result = self._validate("WSS_intf", Path(SLC1_par).exists(), result, f"SLC1_par path does not exist ({SLC1_par})")
         if SLC2R_par is not None:
-            result = self._validate(Path(SLC2R_par).exists(), result)
+            result = self._validate("WSS_intf", Path(SLC2R_par).exists(), result, f"SLC2R_par path does not exist ({SLC2R_par})")
         if OFF_par is not None:
             Path(OFF_par).touch()
         if interf is not None:
             Path(interf).touch()
         valid_values = [1, 0]
-        result = self._validate(sps_flg in valid_values, result)
+        result = self._validate("WSS_intf", sps_flg in valid_values, result, f"sps_flg is not a valid value (expects: {[1, 0]})")
         valid_values = [1, 0]
-        result = self._validate(azf_flg in valid_values, result)
+        result = self._validate("WSS_intf", azf_flg in valid_values, result, f"azf_flg is not a valid value (expects: {[1, 0]})")
         valid_values = [0, 1]
-        result = self._validate(m_flg in valid_values, result)
+        result = self._validate("WSS_intf", m_flg in valid_values, result, f"m_flg is not a valid value (expects: {[0, 1]})")
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.WSS_intf(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("DIFF", "WSS_intf", supplied_args, result[0]))
         self._on_error("WSS_intf", supplied_args, result[0])
@@ -1507,21 +1510,21 @@ class PyGammaTestProxy(object):
             self.call_count["map_section"] = 1
 
         if DEM_par is not None:
-            result = self._validate(Path(DEM_par).exists(), result)
+            result = self._validate("map_section", Path(DEM_par).exists(), result, f"DEM_par path does not exist ({DEM_par})")
         if DEM_par2 is not None:
             Path(DEM_par2).touch()
         if lt is not None:
-            result = self._validate(Path(lt).exists(), result)
+            result = self._validate("map_section", Path(lt).exists(), result, f"lt path does not exist ({lt})")
         if MLI_par1 is not None:
-            result = self._validate(Path(MLI_par1).exists(), result)
+            result = self._validate("map_section", Path(MLI_par1).exists(), result, f"MLI_par1 path does not exist ({MLI_par1})")
         if MLI_par2 is not None:
-            result = self._validate(Path(MLI_par2).exists(), result)
+            result = self._validate("map_section", Path(MLI_par2).exists(), result, f"MLI_par2 path does not exist ({MLI_par2})")
         if lt2 is not None:
             Path(lt2).touch()
         if MLI_coord is not None:
             Path(MLI_coord).touch()
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.map_section(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("DIFF", "map_section", supplied_args, result[0]))
         self._on_error("map_section", supplied_args, result[0])
@@ -1537,23 +1540,23 @@ class PyGammaTestProxy(object):
             self.call_count["offset_list_fitm"] = 1
 
         if cp_list is not None:
-            result = self._validate(Path(cp_list).exists(), result)
+            result = self._validate("offset_list_fitm", Path(cp_list).exists(), result, f"cp_list path does not exist ({cp_list})")
         if DIFF_par is not None and not Path(DIFF_par).exists():
             Path(DIFF_par).touch()
         if DEM_par is not None:
-            result = self._validate(Path(DEM_par).exists(), result)
+            result = self._validate("offset_list_fitm", Path(DEM_par).exists(), result, f"DEM_par path does not exist ({DEM_par})")
         if lookup_table is not None:
-            result = self._validate(Path(lookup_table).exists(), result)
+            result = self._validate("offset_list_fitm", Path(lookup_table).exists(), result, f"lookup_table path does not exist ({lookup_table})")
         valid_values = [1, 2]
-        result = self._validate(lt_type in valid_values, result)
+        result = self._validate("offset_list_fitm", lt_type in valid_values, result, f"lt_type is not a valid value (expects: {[1, 2]})")
         valid_values = [1, 2, 3]
-        result = self._validate(type1 in valid_values, result)
+        result = self._validate("offset_list_fitm", type1 in valid_values, result, f"type1 is not a valid value (expects: {[1, 2, 3]})")
         valid_values = [1, 2, 3]
-        result = self._validate(type2 in valid_values, result)
+        result = self._validate("offset_list_fitm", type2 in valid_values, result, f"type2 is not a valid value (expects: {[1, 2, 3]})")
         if coffsets is not None:
             Path(coffsets).touch()
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.offset_list_fitm(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("DIFF", "offset_list_fitm", supplied_args, result[0]))
         self._on_error("offset_list_fitm", supplied_args, result[0])
@@ -1569,13 +1572,13 @@ class PyGammaTestProxy(object):
             self.call_count["dem_RDC_list"] = 1
 
         if DEM_par1 is not None:
-            result = self._validate(Path(DEM_par1).exists(), result)
+            result = self._validate("dem_RDC_list", Path(DEM_par1).exists(), result, f"DEM_par1 path does not exist ({DEM_par1})")
         if gc_map is not None:
-            result = self._validate(Path(gc_map).exists(), result)
+            result = self._validate("dem_RDC_list", Path(gc_map).exists(), result, f"gc_map path does not exist ({gc_map})")
         if MLI_par is not None:
-            result = self._validate(Path(MLI_par).exists(), result)
+            result = self._validate("dem_RDC_list", Path(MLI_par).exists(), result, f"MLI_par path does not exist ({MLI_par})")
         if mask is not None:
-            result = self._validate(Path(mask).exists(), result)
+            result = self._validate("dem_RDC_list", Path(mask).exists(), result, f"mask path does not exist ({mask})")
         if clist_RDC is not None:
             Path(clist_RDC).touch()
         if clist_MAP is not None:
@@ -1583,7 +1586,7 @@ class PyGammaTestProxy(object):
         if DEM_par2 is not None:
             Path(DEM_par2).touch()
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.dem_RDC_list(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("DIFF", "dem_RDC_list", supplied_args, result[0]))
         self._on_error("dem_RDC_list", supplied_args, result[0])
@@ -1599,17 +1602,17 @@ class PyGammaTestProxy(object):
             self.call_count["multi_look_geo"] = 1
 
         if geo_SLC is not None:
-            result = self._validate(Path(geo_SLC).exists(), result)
+            result = self._validate("multi_look_geo", Path(geo_SLC).exists(), result, f"geo_SLC path does not exist ({geo_SLC})")
         if SLC_DEM_par is not None:
-            result = self._validate(Path(SLC_DEM_par).exists(), result)
+            result = self._validate("multi_look_geo", Path(SLC_DEM_par).exists(), result, f"SLC_DEM_par path does not exist ({SLC_DEM_par})")
         if MLI is not None:
             Path(MLI).touch()
         if MLI_DEM_par is not None:
             Path(MLI_DEM_par).touch()
         valid_values = [0, 1]
-        result = self._validate(dtype in valid_values, result)
+        result = self._validate("multi_look_geo", dtype in valid_values, result, f"dtype is not a valid value (expects: {[0, 1]})")
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.multi_look_geo(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("DIFF", "multi_look_geo", supplied_args, result[0]))
         self._on_error("multi_look_geo", supplied_args, result[0])
@@ -1625,21 +1628,21 @@ class PyGammaTestProxy(object):
             self.call_count["WSS_interp_lt"] = 1
 
         if SLC_1 is not None:
-            result = self._validate(Path(SLC_1).exists(), result)
+            result = self._validate("WSS_interp_lt", Path(SLC_1).exists(), result, f"SLC_1 path does not exist ({SLC_1})")
         if SLC_2 is not None:
-            result = self._validate(Path(SLC_2).exists(), result)
+            result = self._validate("WSS_interp_lt", Path(SLC_2).exists(), result, f"SLC_2 path does not exist ({SLC_2})")
         if SLC1_par is not None:
-            result = self._validate(Path(SLC1_par).exists(), result)
+            result = self._validate("WSS_interp_lt", Path(SLC1_par).exists(), result, f"SLC1_par path does not exist ({SLC1_par})")
         if SLC2_par is not None:
-            result = self._validate(Path(SLC2_par).exists(), result)
+            result = self._validate("WSS_interp_lt", Path(SLC2_par).exists(), result, f"SLC2_par path does not exist ({SLC2_par})")
         if lookup_table is not None:
-            result = self._validate(Path(lookup_table).exists(), result)
+            result = self._validate("WSS_interp_lt", Path(lookup_table).exists(), result, f"lookup_table path does not exist ({lookup_table})")
         if MLI1_par is not None:
-            result = self._validate(Path(MLI1_par).exists(), result)
+            result = self._validate("WSS_interp_lt", Path(MLI1_par).exists(), result, f"MLI1_par path does not exist ({MLI1_par})")
         if MLI2_par is not None:
-            result = self._validate(Path(MLI2_par).exists(), result)
+            result = self._validate("WSS_interp_lt", Path(MLI2_par).exists(), result, f"MLI2_par path does not exist ({MLI2_par})")
         if DIFF_par1 is not None:
-            result = self._validate(Path(DIFF_par1).exists(), result)
+            result = self._validate("WSS_interp_lt", Path(DIFF_par1).exists(), result, f"DIFF_par1 path does not exist ({DIFF_par1})")
         if SLC_2R is not None:
             Path(SLC_2R).touch()
         if SLC2R_par is not None:
@@ -1647,7 +1650,7 @@ class PyGammaTestProxy(object):
         if DIFF_par2 is not None:
             Path(DIFF_par2).touch()
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.WSS_interp_lt(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("DIFF", "WSS_interp_lt", supplied_args, result[0]))
         self._on_error("WSS_interp_lt", supplied_args, result[0])
@@ -1663,21 +1666,21 @@ class PyGammaTestProxy(object):
             self.call_count["dispmap_vec2"] = 1
 
         if DEM_par is not None:
-            result = self._validate(Path(DEM_par).exists(), result)
+            result = self._validate("dispmap_vec2", Path(DEM_par).exists(), result, f"DEM_par path does not exist ({DEM_par})")
         if DEM is not None:
-            result = self._validate(Path(DEM).exists(), result)
+            result = self._validate("dispmap_vec2", Path(DEM).exists(), result, f"DEM path does not exist ({DEM})")
         if dispmap1 is not None:
-            result = self._validate(Path(dispmap1).exists(), result)
+            result = self._validate("dispmap_vec2", Path(dispmap1).exists(), result, f"dispmap1 path does not exist ({dispmap1})")
         if lv1_theta is not None:
-            result = self._validate(Path(lv1_theta).exists(), result)
+            result = self._validate("dispmap_vec2", Path(lv1_theta).exists(), result, f"lv1_theta path does not exist ({lv1_theta})")
         if lv1_phi is not None:
-            result = self._validate(Path(lv1_phi).exists(), result)
+            result = self._validate("dispmap_vec2", Path(lv1_phi).exists(), result, f"lv1_phi path does not exist ({lv1_phi})")
         if dispmap2 is not None:
-            result = self._validate(Path(dispmap2).exists(), result)
+            result = self._validate("dispmap_vec2", Path(dispmap2).exists(), result, f"dispmap2 path does not exist ({dispmap2})")
         if lv2_theta is not None:
-            result = self._validate(Path(lv2_theta).exists(), result)
+            result = self._validate("dispmap_vec2", Path(lv2_theta).exists(), result, f"lv2_theta path does not exist ({lv2_theta})")
         if lv2_phi is not None:
-            result = self._validate(Path(lv2_phi).exists(), result)
+            result = self._validate("dispmap_vec2", Path(lv2_phi).exists(), result, f"lv2_phi path does not exist ({lv2_phi})")
         if dv_norm is not None:
             Path(dv_norm).touch()
         if dv_theta is not None:
@@ -1691,9 +1694,9 @@ class PyGammaTestProxy(object):
         if dv_z is not None:
             Path(dv_z).touch()
         valid_values = [0, 1, 2]
-        result = self._validate(mode in valid_values, result)
+        result = self._validate("dispmap_vec2", mode in valid_values, result, f"mode is not a valid value (expects: {[0, 1, 2]})")
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.dispmap_vec2(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("DIFF", "dispmap_vec2", supplied_args, result[0]))
         self._on_error("dispmap_vec2", supplied_args, result[0])
@@ -1709,15 +1712,15 @@ class PyGammaTestProxy(object):
             self.call_count["diff_ls_unw"] = 1
 
         if int_1 is not None:
-            result = self._validate(Path(int_1).exists(), result)
+            result = self._validate("diff_ls_unw", Path(int_1).exists(), result, f"int_1 path does not exist ({int_1})")
         if unw_2 is not None:
-            result = self._validate(Path(unw_2).exists(), result)
+            result = self._validate("diff_ls_unw", Path(unw_2).exists(), result, f"unw_2 path does not exist ({unw_2})")
         if DIFF_par is not None:
-            result = self._validate(Path(DIFF_par).exists(), result)
+            result = self._validate("diff_ls_unw", Path(DIFF_par).exists(), result, f"DIFF_par path does not exist ({DIFF_par})")
         if diff_int is not None:
             Path(diff_int).touch()
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.diff_ls_unw(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("DIFF", "diff_ls_unw", supplied_args, result[0]))
         self._on_error("diff_ls_unw", supplied_args, result[0])
@@ -1733,19 +1736,19 @@ class PyGammaTestProxy(object):
             self.call_count["offset_pwr_list"] = 1
 
         if SLC_1 is not None:
-            result = self._validate(Path(SLC_1).exists(), result)
+            result = self._validate("offset_pwr_list", Path(SLC_1).exists(), result, f"SLC_1 path does not exist ({SLC_1})")
         if SLC_2 is not None:
-            result = self._validate(Path(SLC_2).exists(), result)
+            result = self._validate("offset_pwr_list", Path(SLC_2).exists(), result, f"SLC_2 path does not exist ({SLC_2})")
         if SLC1_par is not None:
-            result = self._validate(Path(SLC1_par).exists(), result)
+            result = self._validate("offset_pwr_list", Path(SLC1_par).exists(), result, f"SLC1_par path does not exist ({SLC1_par})")
         if SLC2_par is not None:
-            result = self._validate(Path(SLC2_par).exists(), result)
+            result = self._validate("offset_pwr_list", Path(SLC2_par).exists(), result, f"SLC2_par path does not exist ({SLC2_par})")
         if OFF_par is not None:
-            result = self._validate(Path(OFF_par).exists(), result)
+            result = self._validate("offset_pwr_list", Path(OFF_par).exists(), result, f"OFF_par path does not exist ({OFF_par})")
         if clist_RDC is not None:
-            result = self._validate(Path(clist_RDC).exists(), result)
+            result = self._validate("offset_pwr_list", Path(clist_RDC).exists(), result, f"clist_RDC path does not exist ({clist_RDC})")
         if clist_MAP is not None:
-            result = self._validate(Path(clist_MAP).exists(), result)
+            result = self._validate("offset_pwr_list", Path(clist_MAP).exists(), result, f"clist_MAP path does not exist ({clist_MAP})")
         if offs is not None:
             Path(offs).touch()
         if ccp is not None:
@@ -1753,15 +1756,15 @@ class PyGammaTestProxy(object):
         if offsets is not None:
             Path(offsets).touch()
         valid_values = [0, 1]
-        result = self._validate(int_filt in valid_values, result)
+        result = self._validate("offset_pwr_list", int_filt in valid_values, result, f"int_filt is not a valid value (expects: {[0, 1]})")
         valid_values = [0, 1]
-        result = self._validate(pflag in valid_values, result)
+        result = self._validate("offset_pwr_list", pflag in valid_values, result, f"pflag is not a valid value (expects: {[0, 1]})")
         valid_values = [0, 1, 2, 3]
-        result = self._validate(pltflg in valid_values, result)
+        result = self._validate("offset_pwr_list", pltflg in valid_values, result, f"pltflg is not a valid value (expects: {[0, 1, 2, 3]})")
         if ccs is not None:
             Path(ccs).touch()
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.offset_pwr_list(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("DIFF", "offset_pwr_list", supplied_args, result[0]))
         self._on_error("offset_pwr_list", supplied_args, result[0])
@@ -1777,17 +1780,17 @@ class PyGammaTestProxy(object):
             self.call_count["geocode"] = 1
 
         if lookup_table is not None:
-            result = self._validate(Path(lookup_table).exists(), result)
+            result = self._validate("geocode", Path(lookup_table).exists(), result, f"lookup_table path does not exist ({lookup_table})")
         if data_in is not None:
-            result = self._validate(Path(data_in).exists(), result)
+            result = self._validate("geocode", Path(data_in).exists(), result, f"data_in path does not exist ({data_in})")
         if data_out is not None:
             Path(data_out).touch()
         valid_values = [0, 1, 2, 3, 4]
-        result = self._validate(interp_mode in valid_values, result)
+        result = self._validate("geocode", interp_mode in valid_values, result, f"interp_mode is not a valid value (expects: {[0, 1, 2, 3, 4]})")
         valid_values = [0, 1, 2, 3, 4, 5, 6]
-        result = self._validate(dtype in valid_values, result)
+        result = self._validate("geocode", dtype in valid_values, result, f"dtype is not a valid value (expects: {[0, 1, 2, 3, 4, 5, 6]})")
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.geocode(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("DIFF", "geocode", supplied_args, result[0]))
         self._on_error("geocode", supplied_args, result[0])
@@ -1803,9 +1806,9 @@ class PyGammaTestProxy(object):
             self.call_count["par_TX_geo"] = 1
 
         if annotation_XML is not None:
-            result = self._validate(Path(annotation_XML).exists(), result)
+            result = self._validate("par_TX_geo", Path(annotation_XML).exists(), result, f"annotation_XML path does not exist ({annotation_XML})")
         if GeoTIFF is not None:
-            result = self._validate(Path(GeoTIFF).exists(), result)
+            result = self._validate("par_TX_geo", Path(GeoTIFF).exists(), result, f"GeoTIFF path does not exist ({GeoTIFF})")
         if MLI_par is not None:
             Path(MLI_par).touch()
         if DEM_par is not None:
@@ -1813,7 +1816,7 @@ class PyGammaTestProxy(object):
         if GEO is not None:
             Path(GEO).touch()
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.par_TX_geo(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("DIFF", "par_TX_geo", supplied_args, result[0]))
         self._on_error("par_TX_geo", supplied_args, result[0])
@@ -1829,15 +1832,15 @@ class PyGammaTestProxy(object):
             self.call_count["data2xyz"] = 1
 
         if DEM_par is not None:
-            result = self._validate(Path(DEM_par).exists(), result)
+            result = self._validate("data2xyz", Path(DEM_par).exists(), result, f"DEM_par path does not exist ({DEM_par})")
         if data is not None:
-            result = self._validate(Path(data).exists(), result)
+            result = self._validate("data2xyz", Path(data).exists(), result, f"data path does not exist ({data})")
         if data_xyz is not None:
             Path(data_xyz).touch()
         valid_values = [0, 1]
-        result = self._validate(dflg in valid_values, result)
+        result = self._validate("data2xyz", dflg in valid_values, result, f"dflg is not a valid value (expects: {[0, 1]})")
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.data2xyz(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("DIFF", "data2xyz", supplied_args, result[0]))
         self._on_error("data2xyz", supplied_args, result[0])
@@ -1853,17 +1856,17 @@ class PyGammaTestProxy(object):
             self.call_count["ScanSAR_burst_diff_intf"] = 1
 
         if SLC1_tab is not None:
-            result = self._validate(Path(SLC1_tab).exists(), result)
+            result = self._validate("ScanSAR_burst_diff_intf", Path(SLC1_tab).exists(), result, f"SLC1_tab path does not exist ({SLC1_tab})")
         if SLC2R_tab is not None:
-            result = self._validate(Path(SLC2R_tab).exists(), result)
+            result = self._validate("ScanSAR_burst_diff_intf", Path(SLC2R_tab).exists(), result, f"SLC2R_tab path does not exist ({SLC2R_tab})")
         if SIM_tab is not None:
-            result = self._validate(Path(SIM_tab).exists(), result)
+            result = self._validate("ScanSAR_burst_diff_intf", Path(SIM_tab).exists(), result, f"SIM_tab path does not exist ({SIM_tab})")
         if DIFF_tab is not None and not Path(DIFF_tab).exists():
             Path(DIFF_tab).touch()
         if SLCR_tab is not None:
-            result = self._validate(Path(SLCR_tab).exists(), result)
+            result = self._validate("ScanSAR_burst_diff_intf", Path(SLCR_tab).exists(), result, f"SLCR_tab path does not exist ({SLCR_tab})")
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.ScanSAR_burst_diff_intf(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("DIFF", "ScanSAR_burst_diff_intf", supplied_args, result[0]))
         self._on_error("ScanSAR_burst_diff_intf", supplied_args, result[0])
@@ -1879,13 +1882,13 @@ class PyGammaTestProxy(object):
             self.call_count["dem_xyz"] = 1
 
         if DEM_par is not None:
-            result = self._validate(Path(DEM_par).exists(), result)
+            result = self._validate("dem_xyz", Path(DEM_par).exists(), result, f"DEM_par path does not exist ({DEM_par})")
         if DEM is not None:
-            result = self._validate(Path(DEM).exists(), result)
+            result = self._validate("dem_xyz", Path(DEM).exists(), result, f"DEM path does not exist ({DEM})")
         if DEM_XYZ is not None:
             Path(DEM_XYZ).touch()
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.dem_xyz(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("DIFF", "dem_xyz", supplied_args, result[0]))
         self._on_error("dem_xyz", supplied_args, result[0])
@@ -1901,19 +1904,19 @@ class PyGammaTestProxy(object):
             self.call_count["look_vector"] = 1
 
         if SLC_par is not None:
-            result = self._validate(Path(SLC_par).exists(), result)
+            result = self._validate("look_vector", Path(SLC_par).exists(), result, f"SLC_par path does not exist ({SLC_par})")
         if OFF_par is not None:
-            result = self._validate(Path(OFF_par).exists(), result)
+            result = self._validate("look_vector", Path(OFF_par).exists(), result, f"OFF_par path does not exist ({OFF_par})")
         if DEM_par is not None:
-            result = self._validate(Path(DEM_par).exists(), result)
+            result = self._validate("look_vector", Path(DEM_par).exists(), result, f"DEM_par path does not exist ({DEM_par})")
         if DEM is not None:
-            result = self._validate(Path(DEM).exists(), result)
+            result = self._validate("look_vector", Path(DEM).exists(), result, f"DEM path does not exist ({DEM})")
         if lv_theta is not None:
             Path(lv_theta).touch()
         if lv_phi is not None:
             Path(lv_phi).touch()
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.look_vector(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("DIFF", "look_vector", supplied_args, result[0]))
         self._on_error("look_vector", supplied_args, result[0])
@@ -1931,11 +1934,11 @@ class PyGammaTestProxy(object):
         if DEM_par is not None and not Path(DEM_par).exists():
             Path(DEM_par).touch()
         if SLC_par is not None:
-            result = self._validate(Path(SLC_par).exists(), result)
+            result = self._validate("create_dem_par", Path(SLC_par).exists(), result, f"SLC_par path does not exist ({SLC_par})")
         valid_values = [0, 1]
-        result = self._validate(iflg in valid_values, result)
+        result = self._validate("create_dem_par", iflg in valid_values, result, f"iflg is not a valid value (expects: {[0, 1]})")
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.create_dem_par(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("DIFF", "create_dem_par", supplied_args, result[0]))
         self._on_error("create_dem_par", supplied_args, result[0])
@@ -1951,9 +1954,9 @@ class PyGammaTestProxy(object):
             self.call_count["dem_x_y_z"] = 1
 
         if DEM_par is not None:
-            result = self._validate(Path(DEM_par).exists(), result)
+            result = self._validate("dem_x_y_z", Path(DEM_par).exists(), result, f"DEM_par path does not exist ({DEM_par})")
         if DEM is not None:
-            result = self._validate(Path(DEM).exists(), result)
+            result = self._validate("dem_x_y_z", Path(DEM).exists(), result, f"DEM path does not exist ({DEM})")
         if DEM_X is not None:
             Path(DEM_X).touch()
         if DEM_Y is not None:
@@ -1961,9 +1964,9 @@ class PyGammaTestProxy(object):
         if DEM_Z is not None:
             Path(DEM_Z).touch()
         valid_values = [0, 1]
-        result = self._validate(format_flag in valid_values, result)
+        result = self._validate("dem_x_y_z", format_flag in valid_values, result, f"format_flag is not a valid value (expects: {[0, 1]})")
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.dem_x_y_z(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("DIFF", "dem_x_y_z", supplied_args, result[0]))
         self._on_error("dem_x_y_z", supplied_args, result[0])
@@ -1979,13 +1982,13 @@ class PyGammaTestProxy(object):
             self.call_count["ras_clist"] = 1
 
         if clist is not None:
-            result = self._validate(Path(clist).exists(), result)
+            result = self._validate("ras_clist", Path(clist).exists(), result, f"clist path does not exist ({clist})")
         if ras_in is not None:
-            result = self._validate(Path(ras_in).exists(), result)
+            result = self._validate("ras_clist", Path(ras_in).exists(), result, f"ras_in path does not exist ({ras_in})")
         if ras_out is not None:
             Path(ras_out).touch()
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.ras_clist(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("DIFF", "ras_clist", supplied_args, result[0]))
         self._on_error("ras_clist", supplied_args, result[0])
@@ -2001,19 +2004,19 @@ class PyGammaTestProxy(object):
             self.call_count["dispmap_sim"] = 1
 
         if LV is not None:
-            result = self._validate(Path(LV).exists(), result)
+            result = self._validate("dispmap_sim", Path(LV).exists(), result, f"LV path does not exist ({LV})")
         if DEM_par is not None:
-            result = self._validate(Path(DEM_par).exists(), result)
+            result = self._validate("dispmap_sim", Path(DEM_par).exists(), result, f"DEM_par path does not exist ({DEM_par})")
         if disp_east is not None:
-            result = self._validate(Path(disp_east).exists(), result)
+            result = self._validate("dispmap_sim", Path(disp_east).exists(), result, f"disp_east path does not exist ({disp_east})")
         if disp_north is not None:
-            result = self._validate(Path(disp_north).exists(), result)
+            result = self._validate("dispmap_sim", Path(disp_north).exists(), result, f"disp_north path does not exist ({disp_north})")
         if disp_up is not None:
-            result = self._validate(Path(disp_up).exists(), result)
+            result = self._validate("dispmap_sim", Path(disp_up).exists(), result, f"disp_up path does not exist ({disp_up})")
         if disp_LOS is not None:
             Path(disp_LOS).touch()
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.dispmap_sim(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("DIFF", "dispmap_sim", supplied_args, result[0]))
         self._on_error("dispmap_sim", supplied_args, result[0])
@@ -2029,9 +2032,9 @@ class PyGammaTestProxy(object):
             self.call_count["dem_gradient"] = 1
 
         if DEM_par is not None:
-            result = self._validate(Path(DEM_par).exists(), result)
+            result = self._validate("dem_gradient", Path(DEM_par).exists(), result, f"DEM_par path does not exist ({DEM_par})")
         if DEM is not None:
-            result = self._validate(Path(DEM).exists(), result)
+            result = self._validate("dem_gradient", Path(DEM).exists(), result, f"DEM path does not exist ({DEM})")
         if theta is not None:
             Path(theta).touch()
         if phi is not None:
@@ -2039,9 +2042,9 @@ class PyGammaTestProxy(object):
         if mag is not None:
             Path(mag).touch()
         valid_values = [0, 1]
-        result = self._validate(type in valid_values, result)
+        result = self._validate("dem_gradient", type in valid_values, result, f"type is not a valid value (expects: {[0, 1]})")
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.dem_gradient(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("DIFF", "dem_gradient", supplied_args, result[0]))
         self._on_error("dem_gradient", supplied_args, result[0])
@@ -2057,11 +2060,11 @@ class PyGammaTestProxy(object):
             self.call_count["offset_pwr_trackingm"] = 1
 
         if MLI_1 is not None:
-            result = self._validate(Path(MLI_1).exists(), result)
+            result = self._validate("offset_pwr_trackingm", Path(MLI_1).exists(), result, f"MLI_1 path does not exist ({MLI_1})")
         if MLI_2 is not None:
-            result = self._validate(Path(MLI_2).exists(), result)
+            result = self._validate("offset_pwr_trackingm", Path(MLI_2).exists(), result, f"MLI_2 path does not exist ({MLI_2})")
         if DIFF_par is not None:
-            result = self._validate(Path(DIFF_par).exists(), result)
+            result = self._validate("offset_pwr_trackingm", Path(DIFF_par).exists(), result, f"DIFF_par path does not exist ({DIFF_par})")
         if offs is not None:
             Path(offs).touch()
         if ccp is not None:
@@ -2069,13 +2072,13 @@ class PyGammaTestProxy(object):
         if offsets is not None:
             Path(offsets).touch()
         valid_values = [0, 1]
-        result = self._validate(pflag in valid_values, result)
+        result = self._validate("offset_pwr_trackingm", pflag in valid_values, result, f"pflag is not a valid value (expects: {[0, 1]})")
         valid_values = [0, 1, 2, 3]
-        result = self._validate(pltflg in valid_values, result)
+        result = self._validate("offset_pwr_trackingm", pltflg in valid_values, result, f"pltflg is not a valid value (expects: {[0, 1, 2, 3]})")
         if ccs is not None:
             Path(ccs).touch()
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.offset_pwr_trackingm(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("DIFF", "offset_pwr_trackingm", supplied_args, result[0]))
         self._on_error("offset_pwr_trackingm", supplied_args, result[0])
@@ -2091,13 +2094,13 @@ class PyGammaTestProxy(object):
             self.call_count["init_offsetm"] = 1
 
         if MLI_1 is not None:
-            result = self._validate(Path(MLI_1).exists(), result)
+            result = self._validate("init_offsetm", Path(MLI_1).exists(), result, f"MLI_1 path does not exist ({MLI_1})")
         if MLI_2 is not None:
-            result = self._validate(Path(MLI_2).exists(), result)
+            result = self._validate("init_offsetm", Path(MLI_2).exists(), result, f"MLI_2 path does not exist ({MLI_2})")
         valid_values = [0, 1]
-        result = self._validate(cflag in valid_values, result)
+        result = self._validate("init_offsetm", cflag in valid_values, result, f"cflag is not a valid value (expects: {[0, 1]})")
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.init_offsetm(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("DIFF", "init_offsetm", supplied_args, result[0]))
         self._on_error("init_offsetm", supplied_args, result[0])
@@ -2113,13 +2116,13 @@ class PyGammaTestProxy(object):
             self.call_count["gc_map_fd"] = 1
 
         if MLI_par is not None:
-            result = self._validate(Path(MLI_par).exists(), result)
+            result = self._validate("gc_map_fd", Path(MLI_par).exists(), result, f"MLI_par path does not exist ({MLI_par})")
         if fd_tab is not None:
-            result = self._validate(Path(fd_tab).exists(), result)
+            result = self._validate("gc_map_fd", Path(fd_tab).exists(), result, f"fd_tab path does not exist ({fd_tab})")
         if DEM_par is not None:
-            result = self._validate(Path(DEM_par).exists(), result)
+            result = self._validate("gc_map_fd", Path(DEM_par).exists(), result, f"DEM_par path does not exist ({DEM_par})")
         if DEM is not None:
-            result = self._validate(Path(DEM).exists(), result)
+            result = self._validate("gc_map_fd", Path(DEM).exists(), result, f"DEM path does not exist ({DEM})")
         if DEM_seg_par is not None and not Path(DEM_seg_par).exists():
             Path(DEM_seg_par).touch()
         if DEM_seg is not None:
@@ -2141,9 +2144,9 @@ class PyGammaTestProxy(object):
         if ls_map is not None:
             Path(ls_map).touch()
         valid_values = [0, 1, 2, 3]
-        result = self._validate(ls_mode in valid_values, result)
+        result = self._validate("gc_map_fd", ls_mode in valid_values, result, f"ls_mode is not a valid value (expects: {[0, 1, 2, 3]})")
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.gc_map_fd(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("DIFF", "gc_map_fd", supplied_args, result[0]))
         self._on_error("gc_map_fd", supplied_args, result[0])
@@ -2159,27 +2162,27 @@ class PyGammaTestProxy(object):
             self.call_count["phase_sim_orb"] = 1
 
         if SLC1_par is not None:
-            result = self._validate(Path(SLC1_par).exists(), result)
+            result = self._validate("phase_sim_orb", Path(SLC1_par).exists(), result, f"SLC1_par path does not exist ({SLC1_par})")
         if SLC2R_par is not None:
-            result = self._validate(Path(SLC2R_par).exists(), result)
+            result = self._validate("phase_sim_orb", Path(SLC2R_par).exists(), result, f"SLC2R_par path does not exist ({SLC2R_par})")
         if OFF_par is not None:
-            result = self._validate(Path(OFF_par).exists(), result)
+            result = self._validate("phase_sim_orb", Path(OFF_par).exists(), result, f"OFF_par path does not exist ({OFF_par})")
         if hgt is not None:
-            result = self._validate(Path(hgt).exists(), result)
+            result = self._validate("phase_sim_orb", Path(hgt).exists(), result, f"hgt path does not exist ({hgt})")
         if sim_unw is not None:
             Path(sim_unw).touch()
         if SLC_ref_par is not None:
-            result = self._validate(Path(SLC_ref_par).exists(), result)
+            result = self._validate("phase_sim_orb", Path(SLC_ref_par).exists(), result, f"SLC_ref_par path does not exist ({SLC_ref_par})")
         if definition is not None:
-            result = self._validate(Path(definition).exists(), result)
+            result = self._validate("phase_sim_orb", Path(definition).exists(), result, f"definition path does not exist ({definition})")
         if delta_t is not None:
-            result = self._validate(Path(delta_t).exists(), result)
+            result = self._validate("phase_sim_orb", Path(delta_t).exists(), result, f"delta_t path does not exist ({delta_t})")
         if int_mode is not None:
-            result = self._validate(Path(int_mode).exists(), result)
+            result = self._validate("phase_sim_orb", Path(int_mode).exists(), result, f"int_mode path does not exist ({int_mode})")
         valid_values = [0, 1]
-        result = self._validate(ph_mode in valid_values, result)
+        result = self._validate("phase_sim_orb", ph_mode in valid_values, result, f"ph_mode is not a valid value (expects: {[0, 1]})")
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.phase_sim_orb(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("DIFF", "phase_sim_orb", supplied_args, result[0]))
         self._on_error("phase_sim_orb", supplied_args, result[0])
@@ -2195,19 +2198,19 @@ class PyGammaTestProxy(object):
             self.call_count["gec_map"] = 1
 
         if SLC_par is not None:
-            result = self._validate(Path(SLC_par).exists(), result)
+            result = self._validate("gec_map", Path(SLC_par).exists(), result, f"SLC_par path does not exist ({SLC_par})")
         if OFF_par is not None:
-            result = self._validate(Path(OFF_par).exists(), result)
+            result = self._validate("gec_map", Path(OFF_par).exists(), result, f"OFF_par path does not exist ({OFF_par})")
         if DEM_par is not None:
-            result = self._validate(Path(DEM_par).exists(), result)
+            result = self._validate("gec_map", Path(DEM_par).exists(), result, f"DEM_par path does not exist ({DEM_par})")
         if href is not None:
-            result = self._validate(Path(href).exists(), result)
+            result = self._validate("gec_map", Path(href).exists(), result, f"href path does not exist ({href})")
         if DEM_seg_par is not None and not Path(DEM_seg_par).exists():
             Path(DEM_seg_par).touch()
         if lookup_table is not None:
             Path(lookup_table).touch()
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.gec_map(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("DIFF", "gec_map", supplied_args, result[0]))
         self._on_error("gec_map", supplied_args, result[0])
@@ -2223,25 +2226,25 @@ class PyGammaTestProxy(object):
             self.call_count["dh_map_orb"] = 1
 
         if SLC1_par is not None:
-            result = self._validate(Path(SLC1_par).exists(), result)
+            result = self._validate("dh_map_orb", Path(SLC1_par).exists(), result, f"SLC1_par path does not exist ({SLC1_par})")
         if SLC2R_par is not None:
-            result = self._validate(Path(SLC2R_par).exists(), result)
+            result = self._validate("dh_map_orb", Path(SLC2R_par).exists(), result, f"SLC2R_par path does not exist ({SLC2R_par})")
         if OFF_par is not None:
-            result = self._validate(Path(OFF_par).exists(), result)
+            result = self._validate("dh_map_orb", Path(OFF_par).exists(), result, f"OFF_par path does not exist ({OFF_par})")
         if hgt is not None:
-            result = self._validate(Path(hgt).exists(), result)
+            result = self._validate("dh_map_orb", Path(hgt).exists(), result, f"hgt path does not exist ({hgt})")
         if dp is not None:
-            result = self._validate(Path(dp).exists(), result)
+            result = self._validate("dh_map_orb", Path(dp).exists(), result, f"dp path does not exist ({dp})")
         if dpdh is not None:
             Path(dpdh).touch()
         if dh is not None:
             Path(dh).touch()
         if SLC_ref_par is not None:
-            result = self._validate(Path(SLC_ref_par).exists(), result)
+            result = self._validate("dh_map_orb", Path(SLC_ref_par).exists(), result, f"SLC_ref_par path does not exist ({SLC_ref_par})")
         if int_mode is not None:
-            result = self._validate(Path(int_mode).exists(), result)
+            result = self._validate("dh_map_orb", Path(int_mode).exists(), result, f"int_mode path does not exist ({int_mode})")
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.dh_map_orb(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("DIFF", "dh_map_orb", supplied_args, result[0]))
         self._on_error("dh_map_orb", supplied_args, result[0])
@@ -2257,13 +2260,13 @@ class PyGammaTestProxy(object):
             self.call_count["offset_subm"] = 1
 
         if offs is not None:
-            result = self._validate(Path(offs).exists(), result)
+            result = self._validate("offset_subm", Path(offs).exists(), result, f"offs path does not exist ({offs})")
         if DIFF_par is not None:
-            result = self._validate(Path(DIFF_par).exists(), result)
+            result = self._validate("offset_subm", Path(DIFF_par).exists(), result, f"DIFF_par path does not exist ({DIFF_par})")
         if offs_sub is not None:
             Path(offs_sub).touch()
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.offset_subm(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("DIFF", "offset_subm", supplied_args, result[0]))
         self._on_error("offset_subm", supplied_args, result[0])
@@ -2279,23 +2282,23 @@ class PyGammaTestProxy(object):
             self.call_count["offset_trackingm"] = 1
 
         if offs is not None:
-            result = self._validate(Path(offs).exists(), result)
+            result = self._validate("offset_trackingm", Path(offs).exists(), result, f"offs path does not exist ({offs})")
         if snr is not None:
-            result = self._validate(Path(snr).exists(), result)
+            result = self._validate("offset_trackingm", Path(snr).exists(), result, f"snr path does not exist ({snr})")
         if MLI_par is not None:
-            result = self._validate(Path(MLI_par).exists(), result)
+            result = self._validate("offset_trackingm", Path(MLI_par).exists(), result, f"MLI_par path does not exist ({MLI_par})")
         if DIFF_par is not None:
-            result = self._validate(Path(DIFF_par).exists(), result)
+            result = self._validate("offset_trackingm", Path(DIFF_par).exists(), result, f"DIFF_par path does not exist ({DIFF_par})")
         if coffs_map is not None:
             Path(coffs_map).touch()
         if coffsets is not None:
             Path(coffsets).touch()
         valid_values = [0, 1, 2]
-        result = self._validate(mode in valid_values, result)
+        result = self._validate("offset_trackingm", mode in valid_values, result, f"mode is not a valid value (expects: {[0, 1, 2]})")
         valid_values = [0, 1]
-        result = self._validate(poly_flag in valid_values, result)
+        result = self._validate("offset_trackingm", poly_flag in valid_values, result, f"poly_flag is not a valid value (expects: {[0, 1]})")
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.offset_trackingm(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("DIFF", "offset_trackingm", supplied_args, result[0]))
         self._on_error("offset_trackingm", supplied_args, result[0])
@@ -2311,7 +2314,7 @@ class PyGammaTestProxy(object):
             self.call_count["comb_interfs"] = 1
 
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.comb_interfs(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("DIFF", "comb_interfs", supplied_args, result[0]))
         self._on_error("comb_interfs", supplied_args, result[0])
@@ -2327,17 +2330,17 @@ class PyGammaTestProxy(object):
             self.call_count["gc_insar"] = 1
 
         if SLC_par is not None:
-            result = self._validate(Path(SLC_par).exists(), result)
+            result = self._validate("gc_insar", Path(SLC_par).exists(), result, f"SLC_par path does not exist ({SLC_par})")
         if OFF_par is not None:
-            result = self._validate(Path(OFF_par).exists(), result)
+            result = self._validate("gc_insar", Path(OFF_par).exists(), result, f"OFF_par path does not exist ({OFF_par})")
         if hgt is not None:
-            result = self._validate(Path(hgt).exists(), result)
+            result = self._validate("gc_insar", Path(hgt).exists(), result, f"hgt path does not exist ({hgt})")
         if DEM_par is not None:
-            result = self._validate(Path(DEM_par).exists(), result)
+            result = self._validate("gc_insar", Path(DEM_par).exists(), result, f"DEM_par path does not exist ({DEM_par})")
         if lookup_table is not None:
             Path(lookup_table).touch()
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.gc_insar(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("DIFF", "gc_insar", supplied_args, result[0]))
         self._on_error("gc_insar", supplied_args, result[0])
@@ -2353,11 +2356,11 @@ class PyGammaTestProxy(object):
             self.call_count["par_KS_geo"] = 1
 
         if HDF5 is not None:
-            result = self._validate(Path(HDF5).exists(), result)
+            result = self._validate("par_KS_geo", Path(HDF5).exists(), result, f"HDF5 path does not exist ({HDF5})")
         if MLI_par is not None:
-            result = self._validate(Path(MLI_par).exists(), result)
+            result = self._validate("par_KS_geo", Path(MLI_par).exists(), result, f"MLI_par path does not exist ({MLI_par})")
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.par_KS_geo(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("DIFF", "par_KS_geo", supplied_args, result[0]))
         self._on_error("par_KS_geo", supplied_args, result[0])
@@ -2373,11 +2376,11 @@ class PyGammaTestProxy(object):
             self.call_count["offset_pwrm"] = 1
 
         if MLI_1 is not None:
-            result = self._validate(Path(MLI_1).exists(), result)
+            result = self._validate("offset_pwrm", Path(MLI_1).exists(), result, f"MLI_1 path does not exist ({MLI_1})")
         if MLI_2 is not None:
-            result = self._validate(Path(MLI_2).exists(), result)
+            result = self._validate("offset_pwrm", Path(MLI_2).exists(), result, f"MLI_2 path does not exist ({MLI_2})")
         if DIFF_par is not None:
-            result = self._validate(Path(DIFF_par).exists(), result)
+            result = self._validate("offset_pwrm", Path(DIFF_par).exists(), result, f"DIFF_par path does not exist ({DIFF_par})")
         if offs is not None:
             Path(offs).touch()
         if ccp is not None:
@@ -2385,13 +2388,13 @@ class PyGammaTestProxy(object):
         if offsets is not None:
             Path(offsets).touch()
         valid_values = [0, 1]
-        result = self._validate(pflag in valid_values, result)
+        result = self._validate("offset_pwrm", pflag in valid_values, result, f"pflag is not a valid value (expects: {[0, 1]})")
         valid_values = [0, 1, 2, 3]
-        result = self._validate(pltflg in valid_values, result)
+        result = self._validate("offset_pwrm", pltflg in valid_values, result, f"pltflg is not a valid value (expects: {[0, 1, 2, 3]})")
         if ccs is not None:
             Path(ccs).touch()
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.offset_pwrm(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("DIFF", "offset_pwrm", supplied_args, result[0]))
         self._on_error("offset_pwrm", supplied_args, result[0])
@@ -2407,19 +2410,19 @@ class PyGammaTestProxy(object):
             self.call_count["coord_to_sarpix_list"] = 1
 
         if SLC_par is not None:
-            result = self._validate(Path(SLC_par).exists(), result)
+            result = self._validate("coord_to_sarpix_list", Path(SLC_par).exists(), result, f"SLC_par path does not exist ({SLC_par})")
         if OFF_par is not None:
-            result = self._validate(Path(OFF_par).exists(), result)
+            result = self._validate("coord_to_sarpix_list", Path(OFF_par).exists(), result, f"OFF_par path does not exist ({OFF_par})")
         if DEM_par is not None:
-            result = self._validate(Path(DEM_par).exists(), result)
+            result = self._validate("coord_to_sarpix_list", Path(DEM_par).exists(), result, f"DEM_par path does not exist ({DEM_par})")
         if MAP_coord is not None:
-            result = self._validate(Path(MAP_coord).exists(), result)
+            result = self._validate("coord_to_sarpix_list", Path(MAP_coord).exists(), result, f"MAP_coord path does not exist ({MAP_coord})")
         if SAR_coord is not None:
             Path(SAR_coord).touch()
         if DIFF_par is not None:
-            result = self._validate(Path(DIFF_par).exists(), result)
+            result = self._validate("coord_to_sarpix_list", Path(DIFF_par).exists(), result, f"DIFF_par path does not exist ({DIFF_par})")
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.coord_to_sarpix_list(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("DIFF", "coord_to_sarpix_list", supplied_args, result[0]))
         self._on_error("coord_to_sarpix_list", supplied_args, result[0])
@@ -2435,19 +2438,19 @@ class PyGammaTestProxy(object):
             self.call_count["offset_fitm"] = 1
 
         if offs is not None:
-            result = self._validate(Path(offs).exists(), result)
+            result = self._validate("offset_fitm", Path(offs).exists(), result, f"offs path does not exist ({offs})")
         if ccp is not None:
-            result = self._validate(Path(ccp).exists(), result)
+            result = self._validate("offset_fitm", Path(ccp).exists(), result, f"ccp path does not exist ({ccp})")
         if DIFF_par is not None:
-            result = self._validate(Path(DIFF_par).exists(), result)
+            result = self._validate("offset_fitm", Path(DIFF_par).exists(), result, f"DIFF_par path does not exist ({DIFF_par})")
         if coffs is not None:
             Path(coffs).touch()
         if coffsets is not None:
             Path(coffsets).touch()
         valid_values = [0, 1]
-        result = self._validate(interact_mode in valid_values, result)
+        result = self._validate("offset_fitm", interact_mode in valid_values, result, f"interact_mode is not a valid value (expects: {[0, 1]})")
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.offset_fitm(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("DIFF", "offset_fitm", supplied_args, result[0]))
         self._on_error("offset_fitm", supplied_args, result[0])
@@ -2463,13 +2466,13 @@ class PyGammaTestProxy(object):
             self.call_count["dispmap_ENU"] = 1
 
         if LV_tab is not None:
-            result = self._validate(Path(LV_tab).exists(), result)
+            result = self._validate("dispmap_ENU", Path(LV_tab).exists(), result, f"LV_tab path does not exist ({LV_tab})")
         if DISP_tab is not None:
-            result = self._validate(Path(DISP_tab).exists(), result)
+            result = self._validate("dispmap_ENU", Path(DISP_tab).exists(), result, f"DISP_tab path does not exist ({DISP_tab})")
         if SIGMA_tab is not None:
-            result = self._validate(Path(SIGMA_tab).exists(), result)
+            result = self._validate("dispmap_ENU", Path(SIGMA_tab).exists(), result, f"SIGMA_tab path does not exist ({SIGMA_tab})")
         if DEM_par is not None:
-            result = self._validate(Path(DEM_par).exists(), result)
+            result = self._validate("dispmap_ENU", Path(DEM_par).exists(), result, f"DEM_par path does not exist ({DEM_par})")
         if disp_east is not None:
             Path(disp_east).touch()
         if disp_north is not None:
@@ -2485,7 +2488,7 @@ class PyGammaTestProxy(object):
         if chi2 is not None:
             Path(chi2).touch()
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.dispmap_ENU(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("DIFF", "dispmap_ENU", supplied_args, result[0]))
         self._on_error("dispmap_ENU", supplied_args, result[0])
@@ -2501,15 +2504,15 @@ class PyGammaTestProxy(object):
             self.call_count["dem_coord"] = 1
 
         if DEM_par is not None:
-            result = self._validate(Path(DEM_par).exists(), result)
+            result = self._validate("dem_coord", Path(DEM_par).exists(), result, f"DEM_par path does not exist ({DEM_par})")
         if east is not None:
             Path(east).touch()
         if north is not None:
             Path(north).touch()
         valid_values = [0, 1]
-        result = self._validate(dtype in valid_values, result)
+        result = self._validate("dem_coord", dtype in valid_values, result, f"dtype is not a valid value (expects: {[0, 1]})")
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.dem_coord(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("DIFF", "dem_coord", supplied_args, result[0]))
         self._on_error("dem_coord", supplied_args, result[0])
@@ -2525,15 +2528,15 @@ class PyGammaTestProxy(object):
             self.call_count["rotate_image"] = 1
 
         if data_in is not None:
-            result = self._validate(Path(data_in).exists(), result)
+            result = self._validate("rotate_image", Path(data_in).exists(), result, f"data_in path does not exist ({data_in})")
         if data_out is not None:
             Path(data_out).touch()
         valid_values = [0, 1, 2, 3, 4, 5, 6, 7]
-        result = self._validate(interp_mode in valid_values, result)
+        result = self._validate("rotate_image", interp_mode in valid_values, result, f"interp_mode is not a valid value (expects: {[0, 1, 2, 3, 4, 5, 6, 7]})")
         valid_values = [0, 1, 2, 3, 4, 5]
-        result = self._validate(dtype in valid_values, result)
+        result = self._validate("rotate_image", dtype in valid_values, result, f"dtype is not a valid value (expects: {[0, 1, 2, 3, 4, 5]})")
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.rotate_image(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("DIFF", "rotate_image", supplied_args, result[0]))
         self._on_error("rotate_image", supplied_args, result[0])
@@ -2549,17 +2552,17 @@ class PyGammaTestProxy(object):
             self.call_count["geocode_back"] = 1
 
         if data_in is not None:
-            result = self._validate(Path(data_in).exists(), result)
+            result = self._validate("geocode_back", Path(data_in).exists(), result, f"data_in path does not exist ({data_in})")
         if lookup_table is not None:
-            result = self._validate(Path(lookup_table).exists(), result)
+            result = self._validate("geocode_back", Path(lookup_table).exists(), result, f"lookup_table path does not exist ({lookup_table})")
         if data_out is not None:
             Path(data_out).touch()
         valid_values = [0, 1, 2, 3, 4, 5]
-        result = self._validate(dtype in valid_values, result)
+        result = self._validate("geocode_back", dtype in valid_values, result, f"dtype is not a valid value (expects: {[0, 1, 2, 3, 4, 5]})")
         valid_values = [0, 1]
-        result = self._validate(e_flag in valid_values, result)
+        result = self._validate("geocode_back", e_flag in valid_values, result, f"e_flag is not a valid value (expects: {[0, 1]})")
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.geocode_back(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("DIFF", "geocode_back", supplied_args, result[0]))
         self._on_error("geocode_back", supplied_args, result[0])
@@ -2575,13 +2578,13 @@ class PyGammaTestProxy(object):
             self.call_count["sarpix_coord"] = 1
 
         if SLC_par is not None:
-            result = self._validate(Path(SLC_par).exists(), result)
+            result = self._validate("sarpix_coord", Path(SLC_par).exists(), result, f"SLC_par path does not exist ({SLC_par})")
         if OFF_par is not None:
-            result = self._validate(Path(OFF_par).exists(), result)
+            result = self._validate("sarpix_coord", Path(OFF_par).exists(), result, f"OFF_par path does not exist ({OFF_par})")
         if DEM_par is not None:
-            result = self._validate(Path(DEM_par).exists(), result)
+            result = self._validate("sarpix_coord", Path(DEM_par).exists(), result, f"DEM_par path does not exist ({DEM_par})")
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.sarpix_coord(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("DIFF", "sarpix_coord", supplied_args, result[0]))
         self._on_error("sarpix_coord", supplied_args, result[0])
@@ -2597,13 +2600,13 @@ class PyGammaTestProxy(object):
             self.call_count["resamp_image"] = 1
 
         if data_in is not None:
-            result = self._validate(Path(data_in).exists(), result)
+            result = self._validate("resamp_image", Path(data_in).exists(), result, f"data_in path does not exist ({data_in})")
         if data_out is not None:
             Path(data_out).touch()
         valid_values = [0, 1, 2, 3, 4, 5]
-        result = self._validate(dtype in valid_values, result)
+        result = self._validate("resamp_image", dtype in valid_values, result, f"dtype is not a valid value (expects: {[0, 1, 2, 3, 4, 5]})")
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.resamp_image(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("DIFF", "resamp_image", supplied_args, result[0]))
         self._on_error("resamp_image", supplied_args, result[0])
@@ -2619,9 +2622,9 @@ class PyGammaTestProxy(object):
             self.call_count["pol2rec"] = 1
 
         if data1 is not None:
-            result = self._validate(Path(data1).exists(), result)
+            result = self._validate("pol2rec", Path(data1).exists(), result, f"data1 path does not exist ({data1})")
         if SLC_par1 is not None:
-            result = self._validate(Path(SLC_par1).exists(), result)
+            result = self._validate("pol2rec", Path(SLC_par1).exists(), result, f"SLC_par1 path does not exist ({SLC_par1})")
         if data2 is not None:
             Path(data2).touch()
         if SLC_par2 is not None:
@@ -2629,11 +2632,11 @@ class PyGammaTestProxy(object):
         if pix_size is not None:
             Path(pix_size).touch()
         valid_values = [0, 1]
-        result = self._validate(dtype in valid_values, result)
+        result = self._validate("pol2rec", dtype in valid_values, result, f"dtype is not a valid value (expects: {[0, 1]})")
         valid_values = [0, 1]
-        result = self._validate(mode in valid_values, result)
+        result = self._validate("pol2rec", mode in valid_values, result, f"mode is not a valid value (expects: {[0, 1]})")
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.pol2rec(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("DIFF", "pol2rec", supplied_args, result[0]))
         self._on_error("pol2rec", supplied_args, result[0])
@@ -2649,21 +2652,21 @@ class PyGammaTestProxy(object):
             self.call_count["WSS_interp"] = 1
 
         if SLC_1 is not None:
-            result = self._validate(Path(SLC_1).exists(), result)
+            result = self._validate("WSS_interp", Path(SLC_1).exists(), result, f"SLC_1 path does not exist ({SLC_1})")
         if SLC_2 is not None:
-            result = self._validate(Path(SLC_2).exists(), result)
+            result = self._validate("WSS_interp", Path(SLC_2).exists(), result, f"SLC_2 path does not exist ({SLC_2})")
         if SLC1_par is not None:
-            result = self._validate(Path(SLC1_par).exists(), result)
+            result = self._validate("WSS_interp", Path(SLC1_par).exists(), result, f"SLC1_par path does not exist ({SLC1_par})")
         if SLC2_par is not None:
-            result = self._validate(Path(SLC2_par).exists(), result)
+            result = self._validate("WSS_interp", Path(SLC2_par).exists(), result, f"SLC2_par path does not exist ({SLC2_par})")
         if DIFF_par is not None:
-            result = self._validate(Path(DIFF_par).exists(), result)
+            result = self._validate("WSS_interp", Path(DIFF_par).exists(), result, f"DIFF_par path does not exist ({DIFF_par})")
         if SLC_2R is not None:
             Path(SLC_2R).touch()
         if SLC2R_par is not None:
             Path(SLC2R_par).touch()
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.WSS_interp(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("DIFF", "WSS_interp", supplied_args, result[0]))
         self._on_error("WSS_interp", supplied_args, result[0])
@@ -2679,11 +2682,11 @@ class PyGammaTestProxy(object):
             self.call_count["gc_GPRI_map"] = 1
 
         if MLI_par is not None:
-            result = self._validate(Path(MLI_par).exists(), result)
+            result = self._validate("gc_GPRI_map", Path(MLI_par).exists(), result, f"MLI_par path does not exist ({MLI_par})")
         if DEM_par is not None:
-            result = self._validate(Path(DEM_par).exists(), result)
+            result = self._validate("gc_GPRI_map", Path(DEM_par).exists(), result, f"DEM_par path does not exist ({DEM_par})")
         if DEM is not None:
-            result = self._validate(Path(DEM).exists(), result)
+            result = self._validate("gc_GPRI_map", Path(DEM).exists(), result, f"DEM path does not exist ({DEM})")
         if DEM_seg_par is not None and not Path(DEM_seg_par).exists():
             Path(DEM_seg_par).touch()
         if DEM_seg is not None:
@@ -2709,7 +2712,7 @@ class PyGammaTestProxy(object):
         if ls_map is not None:
             Path(ls_map).touch()
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.gc_GPRI_map(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("DIFF", "gc_GPRI_map", supplied_args, result[0]))
         self._on_error("gc_GPRI_map", supplied_args, result[0])
@@ -2725,15 +2728,15 @@ class PyGammaTestProxy(object):
             self.call_count["dop_mlcc"] = 1
 
         if SAR_par is not None:
-            result = self._validate(Path(SAR_par).exists(), result)
+            result = self._validate("dop_mlcc", Path(SAR_par).exists(), result, f"SAR_par path does not exist ({SAR_par})")
         if PROC_par is not None:
-            result = self._validate(Path(PROC_par).exists(), result)
+            result = self._validate("dop_mlcc", Path(PROC_par).exists(), result, f"PROC_par path does not exist ({PROC_par})")
         if signal_data is not None:
-            result = self._validate(Path(signal_data).exists(), result)
+            result = self._validate("dop_mlcc", Path(signal_data).exists(), result, f"signal_data path does not exist ({signal_data})")
         if plot_data is not None:
             Path(plot_data).touch()
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.dop_mlcc(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("MSP", "dop_mlcc", supplied_args, result[0]))
         self._on_error("dop_mlcc", supplied_args, result[0])
@@ -2749,11 +2752,11 @@ class PyGammaTestProxy(object):
             self.call_count["ERS_proc_ASF_2000"] = 1
 
         if CEOS_SAR_leader is not None:
-            result = self._validate(Path(CEOS_SAR_leader).exists(), result)
+            result = self._validate("ERS_proc_ASF_2000", Path(CEOS_SAR_leader).exists(), result, f"CEOS_SAR_leader path does not exist ({CEOS_SAR_leader})")
         if PROC_par is not None:
             Path(PROC_par).touch()
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.ERS_proc_ASF_2000(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("MSP", "ERS_proc_ASF_2000", supplied_args, result[0]))
         self._on_error("ERS_proc_ASF_2000", supplied_args, result[0])
@@ -2769,11 +2772,11 @@ class PyGammaTestProxy(object):
             self.call_count["ERS_proc_ASF"] = 1
 
         if CEOS_SAR_leader is not None:
-            result = self._validate(Path(CEOS_SAR_leader).exists(), result)
+            result = self._validate("ERS_proc_ASF", Path(CEOS_SAR_leader).exists(), result, f"CEOS_SAR_leader path does not exist ({CEOS_SAR_leader})")
         if PROC_par is not None:
             Path(PROC_par).touch()
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.ERS_proc_ASF(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("MSP", "ERS_proc_ASF", supplied_args, result[0]))
         self._on_error("ERS_proc_ASF", supplied_args, result[0])
@@ -2789,15 +2792,15 @@ class PyGammaTestProxy(object):
             self.call_count["doppler_2d"] = 1
 
         if SAR_par is not None:
-            result = self._validate(Path(SAR_par).exists(), result)
+            result = self._validate("doppler_2d", Path(SAR_par).exists(), result, f"SAR_par path does not exist ({SAR_par})")
         if PROC_par is not None:
-            result = self._validate(Path(PROC_par).exists(), result)
+            result = self._validate("doppler_2d", Path(PROC_par).exists(), result, f"PROC_par path does not exist ({PROC_par})")
         if signal_data is not None:
-            result = self._validate(Path(signal_data).exists(), result)
+            result = self._validate("doppler_2d", Path(signal_data).exists(), result, f"signal_data path does not exist ({signal_data})")
         if dop2d is not None:
             Path(dop2d).touch()
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.doppler_2d(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("MSP", "doppler_2d", supplied_args, result[0]))
         self._on_error("doppler_2d", supplied_args, result[0])
@@ -2813,11 +2816,11 @@ class PyGammaTestProxy(object):
             self.call_count["ERS_proc_ESA"] = 1
 
         if CEOS_SAR_leader is not None:
-            result = self._validate(Path(CEOS_SAR_leader).exists(), result)
+            result = self._validate("ERS_proc_ESA", Path(CEOS_SAR_leader).exists(), result, f"CEOS_SAR_leader path does not exist ({CEOS_SAR_leader})")
         if PROC_par is not None:
             Path(PROC_par).touch()
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.ERS_proc_ESA(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("MSP", "ERS_proc_ESA", supplied_args, result[0]))
         self._on_error("ERS_proc_ESA", supplied_args, result[0])
@@ -2833,19 +2836,19 @@ class PyGammaTestProxy(object):
             self.call_count["az_proc"] = 1
 
         if SAR_par is not None:
-            result = self._validate(Path(SAR_par).exists(), result)
+            result = self._validate("az_proc", Path(SAR_par).exists(), result, f"SAR_par path does not exist ({SAR_par})")
         if PROC_par is not None:
-            result = self._validate(Path(PROC_par).exists(), result)
+            result = self._validate("az_proc", Path(PROC_par).exists(), result, f"PROC_par path does not exist ({PROC_par})")
         if rc_data is not None:
-            result = self._validate(Path(rc_data).exists(), result)
+            result = self._validate("az_proc", Path(rc_data).exists(), result, f"rc_data path does not exist ({rc_data})")
         if SLC is not None:
             Path(SLC).touch()
         valid_values = [0, 1]
-        result = self._validate(SLC_format in valid_values, result)
+        result = self._validate("az_proc", SLC_format in valid_values, result, f"SLC_format is not a valid value (expects: {[0, 1]})")
         valid_values = [0, 1]
-        result = self._validate(SLC_type in valid_values, result)
+        result = self._validate("az_proc", SLC_type in valid_values, result, f"SLC_type is not a valid value (expects: {[0, 1]})")
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.az_proc(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("MSP", "az_proc", supplied_args, result[0]))
         self._on_error("az_proc", supplied_args, result[0])
@@ -2867,7 +2870,7 @@ class PyGammaTestProxy(object):
         if dop is not None:
             Path(dop).touch()
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.dop_interf(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("MSP", "dop_interf", supplied_args, result[0]))
         self._on_error("dop_interf", supplied_args, result[0])
@@ -2883,7 +2886,7 @@ class PyGammaTestProxy(object):
             self.call_count["CS_proc"] = 1
 
         if HDF5 is not None:
-            result = self._validate(Path(HDF5).exists(), result)
+            result = self._validate("CS_proc", Path(HDF5).exists(), result, f"HDF5 path does not exist ({HDF5})")
         if SAR_par is not None:
             Path(SAR_par).touch()
         if PROC_par is not None:
@@ -2891,7 +2894,7 @@ class PyGammaTestProxy(object):
         if raw_out is not None:
             Path(raw_out).touch()
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.CS_proc(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("MSP", "CS_proc", supplied_args, result[0]))
         self._on_error("CS_proc", supplied_args, result[0])
@@ -2907,17 +2910,17 @@ class PyGammaTestProxy(object):
             self.call_count["azsp_SLC"] = 1
 
         if SAR_par is not None:
-            result = self._validate(Path(SAR_par).exists(), result)
+            result = self._validate("azsp_SLC", Path(SAR_par).exists(), result, f"SAR_par path does not exist ({SAR_par})")
         if PROC_par is not None:
-            result = self._validate(Path(PROC_par).exists(), result)
+            result = self._validate("azsp_SLC", Path(PROC_par).exists(), result, f"PROC_par path does not exist ({PROC_par})")
         if SAR_data is not None:
-            result = self._validate(Path(SAR_data).exists(), result)
+            result = self._validate("azsp_SLC", Path(SAR_data).exists(), result, f"SAR_data path does not exist ({SAR_data})")
         valid_values = [0, 1]
-        result = self._validate(data_format in valid_values, result)
+        result = self._validate("azsp_SLC", data_format in valid_values, result, f"data_format is not a valid value (expects: {[0, 1]})")
         valid_values = [0, 1]
-        result = self._validate(pltflg in valid_values, result)
+        result = self._validate("azsp_SLC", pltflg in valid_values, result, f"pltflg is not a valid value (expects: {[0, 1]})")
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.azsp_SLC(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("MSP", "azsp_SLC", supplied_args, result[0]))
         self._on_error("azsp_SLC", supplied_args, result[0])
@@ -2933,17 +2936,17 @@ class PyGammaTestProxy(object):
             self.call_count["pre_rc_JERS"] = 1
 
         if SAR_par is not None:
-            result = self._validate(Path(SAR_par).exists(), result)
+            result = self._validate("pre_rc_JERS", Path(SAR_par).exists(), result, f"SAR_par path does not exist ({SAR_par})")
         if PROC_par is not None:
-            result = self._validate(Path(PROC_par).exists(), result)
+            result = self._validate("pre_rc_JERS", Path(PROC_par).exists(), result, f"PROC_par path does not exist ({PROC_par})")
         if rspec is not None:
-            result = self._validate(Path(rspec).exists(), result)
+            result = self._validate("pre_rc_JERS", Path(rspec).exists(), result, f"rspec path does not exist ({rspec})")
         if signal_data is not None:
-            result = self._validate(Path(signal_data).exists(), result)
+            result = self._validate("pre_rc_JERS", Path(signal_data).exists(), result, f"signal_data path does not exist ({signal_data})")
         if rc_data is not None:
             Path(rc_data).touch()
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.pre_rc_JERS(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("MSP", "pre_rc_JERS", supplied_args, result[0]))
         self._on_error("pre_rc_JERS", supplied_args, result[0])
@@ -2959,11 +2962,11 @@ class PyGammaTestProxy(object):
             self.call_count["ERS_proc_NASDA"] = 1
 
         if CEOS_SAR_leader is not None:
-            result = self._validate(Path(CEOS_SAR_leader).exists(), result)
+            result = self._validate("ERS_proc_NASDA", Path(CEOS_SAR_leader).exists(), result, f"CEOS_SAR_leader path does not exist ({CEOS_SAR_leader})")
         if PROC_par is not None:
             Path(PROC_par).touch()
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.ERS_proc_NASDA(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("MSP", "ERS_proc_NASDA", supplied_args, result[0]))
         self._on_error("ERS_proc_NASDA", supplied_args, result[0])
@@ -2979,11 +2982,11 @@ class PyGammaTestProxy(object):
             self.call_count["ERS_proc_ARG"] = 1
 
         if CEOS_SAR_leader is not None:
-            result = self._validate(Path(CEOS_SAR_leader).exists(), result)
+            result = self._validate("ERS_proc_ARG", Path(CEOS_SAR_leader).exists(), result, f"CEOS_SAR_leader path does not exist ({CEOS_SAR_leader})")
         if PROC_par is not None:
             Path(PROC_par).touch()
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.ERS_proc_ARG(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("MSP", "ERS_proc_ARG", supplied_args, result[0]))
         self._on_error("ERS_proc_ARG", supplied_args, result[0])
@@ -2999,21 +3002,21 @@ class PyGammaTestProxy(object):
             self.call_count["PALSAR_proc"] = 1
 
         if CEOS_SAR_leader is not None:
-            result = self._validate(Path(CEOS_SAR_leader).exists(), result)
+            result = self._validate("PALSAR_proc", Path(CEOS_SAR_leader).exists(), result, f"CEOS_SAR_leader path does not exist ({CEOS_SAR_leader})")
         if SAR_par is not None:
             Path(SAR_par).touch()
         if PROC_par is not None:
             Path(PROC_par).touch()
         if CEOS_raw_data is not None:
-            result = self._validate(Path(CEOS_raw_data).exists(), result)
+            result = self._validate("PALSAR_proc", Path(CEOS_raw_data).exists(), result, f"CEOS_raw_data path does not exist ({CEOS_raw_data})")
         if raw_out is not None:
             Path(raw_out).touch()
         valid_values = [0, 1]
-        result = self._validate(TX_POL in valid_values, result)
+        result = self._validate("PALSAR_proc", TX_POL in valid_values, result, f"TX_POL is not a valid value (expects: {[0, 1]})")
         valid_values = [0, 1]
-        result = self._validate(RX_POL in valid_values, result)
+        result = self._validate("PALSAR_proc", RX_POL in valid_values, result, f"RX_POL is not a valid value (expects: {[0, 1]})")
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.PALSAR_proc(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("MSP", "PALSAR_proc", supplied_args, result[0]))
         self._on_error("PALSAR_proc", supplied_args, result[0])
@@ -3029,17 +3032,17 @@ class PyGammaTestProxy(object):
             self.call_count["rspec_real"] = 1
 
         if SAR_par is not None:
-            result = self._validate(Path(SAR_par).exists(), result)
+            result = self._validate("rspec_real", Path(SAR_par).exists(), result, f"SAR_par path does not exist ({SAR_par})")
         if PROC_par is not None:
-            result = self._validate(Path(PROC_par).exists(), result)
+            result = self._validate("rspec_real", Path(PROC_par).exists(), result, f"PROC_par path does not exist ({PROC_par})")
         if signal_data is not None:
-            result = self._validate(Path(signal_data).exists(), result)
+            result = self._validate("rspec_real", Path(signal_data).exists(), result, f"signal_data path does not exist ({signal_data})")
         if range_spec is not None:
             Path(range_spec).touch()
         valid_values = [0, 1]
-        result = self._validate(pltflg in valid_values, result)
+        result = self._validate("rspec_real", pltflg in valid_values, result, f"pltflg is not a valid value (expects: {[0, 1]})")
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.rspec_real(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("MSP", "rspec_real", supplied_args, result[0]))
         self._on_error("rspec_real", supplied_args, result[0])
@@ -3055,17 +3058,17 @@ class PyGammaTestProxy(object):
             self.call_count["rspec_IQ"] = 1
 
         if SAR_par is not None:
-            result = self._validate(Path(SAR_par).exists(), result)
+            result = self._validate("rspec_IQ", Path(SAR_par).exists(), result, f"SAR_par path does not exist ({SAR_par})")
         if PROC_par is not None:
-            result = self._validate(Path(PROC_par).exists(), result)
+            result = self._validate("rspec_IQ", Path(PROC_par).exists(), result, f"PROC_par path does not exist ({PROC_par})")
         if signal_data is not None:
-            result = self._validate(Path(signal_data).exists(), result)
+            result = self._validate("rspec_IQ", Path(signal_data).exists(), result, f"signal_data path does not exist ({signal_data})")
         if range_spec is not None:
             Path(range_spec).touch()
         valid_values = [0, 1]
-        result = self._validate(pltflg in valid_values, result)
+        result = self._validate("rspec_IQ", pltflg in valid_values, result, f"pltflg is not a valid value (expects: {[0, 1]})")
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.rspec_IQ(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("MSP", "rspec_IQ", supplied_args, result[0]))
         self._on_error("rspec_IQ", supplied_args, result[0])
@@ -3081,23 +3084,23 @@ class PyGammaTestProxy(object):
             self.call_count["af"] = 1
 
         if SAR_par is not None:
-            result = self._validate(Path(SAR_par).exists(), result)
+            result = self._validate("af", Path(SAR_par).exists(), result, f"SAR_par path does not exist ({SAR_par})")
         if PROC_par is not None:
-            result = self._validate(Path(PROC_par).exists(), result)
+            result = self._validate("af", Path(PROC_par).exists(), result, f"PROC_par path does not exist ({PROC_par})")
         if SLC is not None:
-            result = self._validate(Path(SLC).exists(), result)
+            result = self._validate("af", Path(SLC).exists(), result, f"SLC path does not exist ({SLC})")
         valid_values = [0, 1]
-        result = self._validate(update_flg in valid_values, result)
+        result = self._validate("af", update_flg in valid_values, result, f"update_flg is not a valid value (expects: {[0, 1]})")
         valid_values = [0, 1]
-        result = self._validate(a1_flg in valid_values, result)
+        result = self._validate("af", a1_flg in valid_values, result, f"a1_flg is not a valid value (expects: {[0, 1]})")
         valid_values = [0, 1]
-        result = self._validate(b0_flg in valid_values, result)
+        result = self._validate("af", b0_flg in valid_values, result, f"b0_flg is not a valid value (expects: {[0, 1]})")
         if offsets is not None:
             Path(offsets).touch()
         valid_values = [0, 1]
-        result = self._validate(dac_flg in valid_values, result)
+        result = self._validate("af", dac_flg in valid_values, result, f"dac_flg is not a valid value (expects: {[0, 1]})")
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.af(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("MSP", "af", supplied_args, result[0]))
         self._on_error("af", supplied_args, result[0])
@@ -3113,15 +3116,15 @@ class PyGammaTestProxy(object):
             self.call_count["hist_IQ"] = 1
 
         if SAR_par is not None:
-            result = self._validate(Path(SAR_par).exists(), result)
+            result = self._validate("hist_IQ", Path(SAR_par).exists(), result, f"SAR_par path does not exist ({SAR_par})")
         if PROC_par is not None:
-            result = self._validate(Path(PROC_par).exists(), result)
+            result = self._validate("hist_IQ", Path(PROC_par).exists(), result, f"PROC_par path does not exist ({PROC_par})")
         if signal_data is not None:
-            result = self._validate(Path(signal_data).exists(), result)
+            result = self._validate("hist_IQ", Path(signal_data).exists(), result, f"signal_data path does not exist ({signal_data})")
         if historgram is not None:
             Path(historgram).touch()
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.hist_IQ(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("MSP", "hist_IQ", supplied_args, result[0]))
         self._on_error("hist_IQ", supplied_args, result[0])
@@ -3137,17 +3140,17 @@ class PyGammaTestProxy(object):
             self.call_count["PALSAR_burst_sync"] = 1
 
         if SAR_par1 is not None:
-            result = self._validate(Path(SAR_par1).exists(), result)
+            result = self._validate("PALSAR_burst_sync", Path(SAR_par1).exists(), result, f"SAR_par1 path does not exist ({SAR_par1})")
         if PROC_par1 is not None:
-            result = self._validate(Path(PROC_par1).exists(), result)
+            result = self._validate("PALSAR_burst_sync", Path(PROC_par1).exists(), result, f"PROC_par1 path does not exist ({PROC_par1})")
         if raw1 is not None:
-            result = self._validate(Path(raw1).exists(), result)
+            result = self._validate("PALSAR_burst_sync", Path(raw1).exists(), result, f"raw1 path does not exist ({raw1})")
         if SAR_par2 is not None:
-            result = self._validate(Path(SAR_par2).exists(), result)
+            result = self._validate("PALSAR_burst_sync", Path(SAR_par2).exists(), result, f"SAR_par2 path does not exist ({SAR_par2})")
         if PROC_par2 is not None:
-            result = self._validate(Path(PROC_par2).exists(), result)
+            result = self._validate("PALSAR_burst_sync", Path(PROC_par2).exists(), result, f"PROC_par2 path does not exist ({PROC_par2})")
         if raw2 is not None:
-            result = self._validate(Path(raw2).exists(), result)
+            result = self._validate("PALSAR_burst_sync", Path(raw2).exists(), result, f"raw2 path does not exist ({raw2})")
         if PROC_par1_out is not None:
             Path(PROC_par1_out).touch()
         if raw1_out is not None:
@@ -3157,7 +3160,7 @@ class PyGammaTestProxy(object):
         if raw2_out is not None:
             Path(raw2_out).touch()
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.PALSAR_burst_sync(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("MSP", "PALSAR_burst_sync", supplied_args, result[0]))
         self._on_error("PALSAR_burst_sync", supplied_args, result[0])
@@ -3173,13 +3176,13 @@ class PyGammaTestProxy(object):
             self.call_count["swap_IQ"] = 1
 
         if SAR_par is not None:
-            result = self._validate(Path(SAR_par).exists(), result)
+            result = self._validate("swap_IQ", Path(SAR_par).exists(), result, f"SAR_par path does not exist ({SAR_par})")
         if raw_IQ is not None:
-            result = self._validate(Path(raw_IQ).exists(), result)
+            result = self._validate("swap_IQ", Path(raw_IQ).exists(), result, f"raw_IQ path does not exist ({raw_IQ})")
         if raw_IQ_swap is not None:
             Path(raw_IQ_swap).touch()
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.swap_IQ(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("MSP", "swap_IQ", supplied_args, result[0]))
         self._on_error("swap_IQ", supplied_args, result[0])
@@ -3195,17 +3198,17 @@ class PyGammaTestProxy(object):
             self.call_count["dop_ambig"] = 1
 
         if SAR_par is not None:
-            result = self._validate(Path(SAR_par).exists(), result)
+            result = self._validate("dop_ambig", Path(SAR_par).exists(), result, f"SAR_par path does not exist ({SAR_par})")
         if PROC_par is not None:
-            result = self._validate(Path(PROC_par).exists(), result)
+            result = self._validate("dop_ambig", Path(PROC_par).exists(), result, f"PROC_par path does not exist ({PROC_par})")
         if signal_data is not None:
-            result = self._validate(Path(signal_data).exists(), result)
+            result = self._validate("dop_ambig", Path(signal_data).exists(), result, f"signal_data path does not exist ({signal_data})")
         valid_values = [1, 2]
-        result = self._validate(algorithm in valid_values, result)
+        result = self._validate("dop_ambig", algorithm in valid_values, result, f"algorithm is not a valid value (expects: {[1, 2]})")
         if output_plot is not None:
             Path(output_plot).touch()
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.dop_ambig(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("MSP", "dop_ambig", supplied_args, result[0]))
         self._on_error("dop_ambig", supplied_args, result[0])
@@ -3221,9 +3224,9 @@ class PyGammaTestProxy(object):
             self.call_count["PRC_proc"] = 1
 
         if PROC_par is not None:
-            result = self._validate(Path(PROC_par).exists(), result)
+            result = self._validate("PRC_proc", Path(PROC_par).exists(), result, f"PROC_par path does not exist ({PROC_par})")
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.PRC_proc(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("MSP", "PRC_proc", supplied_args, result[0]))
         self._on_error("PRC_proc", supplied_args, result[0])
@@ -3239,15 +3242,15 @@ class PyGammaTestProxy(object):
             self.call_count["rc_fmcw"] = 1
 
         if SAR_par is not None:
-            result = self._validate(Path(SAR_par).exists(), result)
+            result = self._validate("rc_fmcw", Path(SAR_par).exists(), result, f"SAR_par path does not exist ({SAR_par})")
         if PROC_par is not None:
-            result = self._validate(Path(PROC_par).exists(), result)
+            result = self._validate("rc_fmcw", Path(PROC_par).exists(), result, f"PROC_par path does not exist ({PROC_par})")
         if signal_data is not None:
-            result = self._validate(Path(signal_data).exists(), result)
+            result = self._validate("rc_fmcw", Path(signal_data).exists(), result, f"signal_data path does not exist ({signal_data})")
         if rc_data is not None:
             Path(rc_data).touch()
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.rc_fmcw(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("MSP", "rc_fmcw", supplied_args, result[0]))
         self._on_error("rc_fmcw", supplied_args, result[0])
@@ -3263,13 +3266,13 @@ class PyGammaTestProxy(object):
             self.call_count["RSAT_lks"] = 1
 
         if SLC_PROC_par is not None:
-            result = self._validate(Path(SLC_PROC_par).exists(), result)
+            result = self._validate("RSAT_lks", Path(SLC_PROC_par).exists(), result, f"SLC_PROC_par path does not exist ({SLC_PROC_par})")
         if MLI_PROC_par is not None:
             Path(MLI_PROC_par).touch()
         if SLC_image is not None:
-            result = self._validate(Path(SLC_image).exists(), result)
+            result = self._validate("RSAT_lks", Path(SLC_image).exists(), result, f"SLC_image path does not exist ({SLC_image})")
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.RSAT_lks(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("MSP", "RSAT_lks", supplied_args, result[0]))
         self._on_error("RSAT_lks", supplied_args, result[0])
@@ -3285,7 +3288,7 @@ class PyGammaTestProxy(object):
             self.call_count["extract_psd"] = 1
 
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.extract_psd(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("MSP", "extract_psd", supplied_args, result[0]))
         self._on_error("extract_psd", supplied_args, result[0])
@@ -3301,15 +3304,15 @@ class PyGammaTestProxy(object):
             self.call_count["doppler_real"] = 1
 
         if SAR_par is not None:
-            result = self._validate(Path(SAR_par).exists(), result)
+            result = self._validate("doppler_real", Path(SAR_par).exists(), result, f"SAR_par path does not exist ({SAR_par})")
         if PROC_par is not None:
-            result = self._validate(Path(PROC_par).exists(), result)
+            result = self._validate("doppler_real", Path(PROC_par).exists(), result, f"PROC_par path does not exist ({PROC_par})")
         if signal_data is not None:
-            result = self._validate(Path(signal_data).exists(), result)
+            result = self._validate("doppler_real", Path(signal_data).exists(), result, f"signal_data path does not exist ({signal_data})")
         if doppler is not None:
             Path(doppler).touch()
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.doppler_real(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("MSP", "doppler_real", supplied_args, result[0]))
         self._on_error("doppler_real", supplied_args, result[0])
@@ -3325,17 +3328,17 @@ class PyGammaTestProxy(object):
             self.call_count["pre_rc"] = 1
 
         if SAR_par is not None:
-            result = self._validate(Path(SAR_par).exists(), result)
+            result = self._validate("pre_rc", Path(SAR_par).exists(), result, f"SAR_par path does not exist ({SAR_par})")
         if PROC_par is not None:
-            result = self._validate(Path(PROC_par).exists(), result)
+            result = self._validate("pre_rc", Path(PROC_par).exists(), result, f"PROC_par path does not exist ({PROC_par})")
         if signal_data is not None:
-            result = self._validate(Path(signal_data).exists(), result)
+            result = self._validate("pre_rc", Path(signal_data).exists(), result, f"signal_data path does not exist ({signal_data})")
         if rc_data is not None:
             Path(rc_data).touch()
         valid_values = [0, 1]
-        result = self._validate(RFI_filt in valid_values, result)
+        result = self._validate("pre_rc", RFI_filt in valid_values, result, f"RFI_filt is not a valid value (expects: {[0, 1]})")
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.pre_rc(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("MSP", "pre_rc", supplied_args, result[0]))
         self._on_error("pre_rc", supplied_args, result[0])
@@ -3351,23 +3354,23 @@ class PyGammaTestProxy(object):
             self.call_count["PALSAR_proc_WB"] = 1
 
         if CEOS_SAR_leader is not None:
-            result = self._validate(Path(CEOS_SAR_leader).exists(), result)
+            result = self._validate("PALSAR_proc_WB", Path(CEOS_SAR_leader).exists(), result, f"CEOS_SAR_leader path does not exist ({CEOS_SAR_leader})")
         if SAR_par is not None:
             Path(SAR_par).touch()
         if PROC_par is not None:
             Path(PROC_par).touch()
         if CEOS_raw_data is not None:
-            result = self._validate(Path(CEOS_raw_data).exists(), result)
+            result = self._validate("PALSAR_proc_WB", Path(CEOS_raw_data).exists(), result, f"CEOS_raw_data path does not exist ({CEOS_raw_data})")
         if beam is not None:
-            result = self._validate(Path(beam).exists(), result)
+            result = self._validate("PALSAR_proc_WB", Path(beam).exists(), result, f"beam path does not exist ({beam})")
         if raw_out is not None:
             Path(raw_out).touch()
         if prf is not None:
-            result = self._validate(Path(prf).exists(), result)
+            result = self._validate("PALSAR_proc_WB", Path(prf).exists(), result, f"prf path does not exist ({prf})")
         if wflg is not None:
-            result = self._validate(Path(wflg).exists(), result)
+            result = self._validate("PALSAR_proc_WB", Path(wflg).exists(), result, f"wflg path does not exist ({wflg})")
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.PALSAR_proc_WB(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("MSP", "PALSAR_proc_WB", supplied_args, result[0]))
         self._on_error("PALSAR_proc_WB", supplied_args, result[0])
@@ -3385,9 +3388,9 @@ class PyGammaTestProxy(object):
         if PROC_par is not None and not Path(PROC_par).exists():
             Path(PROC_par).touch()
         if ORRM is not None:
-            result = self._validate(Path(ORRM).exists(), result)
+            result = self._validate("ORRM_proc", Path(ORRM).exists(), result, f"ORRM path does not exist ({ORRM})")
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.ORRM_proc(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("MSP", "ORRM_proc", supplied_args, result[0]))
         self._on_error("ORRM_proc", supplied_args, result[0])
@@ -3403,11 +3406,11 @@ class PyGammaTestProxy(object):
             self.call_count["ERS_proc_UK"] = 1
 
         if CEOS_SAR_leader is not None:
-            result = self._validate(Path(CEOS_SAR_leader).exists(), result)
+            result = self._validate("ERS_proc_UK", Path(CEOS_SAR_leader).exists(), result, f"CEOS_SAR_leader path does not exist ({CEOS_SAR_leader})")
         if PROC_par is not None:
             Path(PROC_par).touch()
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.ERS_proc_UK(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("MSP", "ERS_proc_UK", supplied_args, result[0]))
         self._on_error("ERS_proc_UK", supplied_args, result[0])
@@ -3423,17 +3426,17 @@ class PyGammaTestProxy(object):
             self.call_count["RSAT_raw"] = 1
 
         if CEOS_leader is not None:
-            result = self._validate(Path(CEOS_leader).exists(), result)
+            result = self._validate("RSAT_raw", Path(CEOS_leader).exists(), result, f"CEOS_leader path does not exist ({CEOS_leader})")
         if SAR_par is not None:
             Path(SAR_par).touch()
         if PROC_par is not None:
             Path(PROC_par).touch()
         if raw_data_files is not None:
-            result = self._validate(Path(raw_data_files).exists(), result)
+            result = self._validate("RSAT_raw", Path(raw_data_files).exists(), result, f"raw_data_files path does not exist ({raw_data_files})")
         if raw_out is not None:
             Path(raw_out).touch()
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.RSAT_raw(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("MSP", "RSAT_raw", supplied_args, result[0]))
         self._on_error("RSAT_raw", supplied_args, result[0])
@@ -3449,7 +3452,7 @@ class PyGammaTestProxy(object):
             self.call_count["ERS_ENVISAT_proc"] = 1
 
         if L0 is not None:
-            result = self._validate(Path(L0).exists(), result)
+            result = self._validate("ERS_ENVISAT_proc", Path(L0).exists(), result, f"L0 path does not exist ({L0})")
         if SAR_par is not None and not Path(SAR_par).exists():
             Path(SAR_par).touch()
         if PROC_par is not None:
@@ -3457,9 +3460,9 @@ class PyGammaTestProxy(object):
         if raw is not None:
             Path(raw).touch()
         valid_values = [0, 1]
-        result = self._validate(swst_flg in valid_values, result)
+        result = self._validate("ERS_ENVISAT_proc", swst_flg in valid_values, result, f"swst_flg is not a valid value (expects: {[0, 1]})")
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.ERS_ENVISAT_proc(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("MSP", "ERS_ENVISAT_proc", supplied_args, result[0]))
         self._on_error("ERS_ENVISAT_proc", supplied_args, result[0])
@@ -3475,17 +3478,17 @@ class PyGammaTestProxy(object):
             self.call_count["multi_SLC"] = 1
 
         if SLC_PROC_par is not None:
-            result = self._validate(Path(SLC_PROC_par).exists(), result)
+            result = self._validate("multi_SLC", Path(SLC_PROC_par).exists(), result, f"SLC_PROC_par path does not exist ({SLC_PROC_par})")
         if MLI_PROC_par is not None:
             Path(MLI_PROC_par).touch()
         if SLC is not None:
-            result = self._validate(Path(SLC).exists(), result)
+            result = self._validate("multi_SLC", Path(SLC).exists(), result, f"SLC path does not exist ({SLC})")
         if MLI is not None:
             Path(MLI).touch()
         valid_values = [0, 1]
-        result = self._validate(slc_format in valid_values, result)
+        result = self._validate("multi_SLC", slc_format in valid_values, result, f"slc_format is not a valid value (expects: {[0, 1]})")
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.multi_SLC(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("MSP", "multi_SLC", supplied_args, result[0]))
         self._on_error("multi_SLC", supplied_args, result[0])
@@ -3501,13 +3504,13 @@ class PyGammaTestProxy(object):
             self.call_count["JERS_acs"] = 1
 
         if USER_HEADER is not None:
-            result = self._validate(Path(USER_HEADER).exists(), result)
+            result = self._validate("JERS_acs", Path(USER_HEADER).exists(), result, f"USER_HEADER path does not exist ({USER_HEADER})")
         if SEG_DESCR is not None:
-            result = self._validate(Path(SEG_DESCR).exists(), result)
+            result = self._validate("JERS_acs", Path(SEG_DESCR).exists(), result, f"SEG_DESCR path does not exist ({SEG_DESCR})")
         if ORBIT_DATA is not None:
-            result = self._validate(Path(ORBIT_DATA).exists(), result)
+            result = self._validate("JERS_acs", Path(ORBIT_DATA).exists(), result, f"ORBIT_DATA path does not exist ({ORBIT_DATA})")
         if SENSOR_DATA is not None:
-            result = self._validate(Path(SENSOR_DATA).exists(), result)
+            result = self._validate("JERS_acs", Path(SENSOR_DATA).exists(), result, f"SENSOR_DATA path does not exist ({SENSOR_DATA})")
         if track is not None:
             Path(track).touch()
         if SAR_par is not None:
@@ -3517,7 +3520,7 @@ class PyGammaTestProxy(object):
         if raw_out is not None:
             Path(raw_out).touch()
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.JERS_acs(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("MSP", "JERS_acs", supplied_args, result[0]))
         self._on_error("JERS_acs", supplied_args, result[0])
@@ -3535,9 +3538,9 @@ class PyGammaTestProxy(object):
         if PROC_par is not None and not Path(PROC_par).exists():
             Path(PROC_par).touch()
         if DOR is not None:
-            result = self._validate(Path(DOR).exists(), result)
+            result = self._validate("DORIS_proc", Path(DOR).exists(), result, f"DOR path does not exist ({DOR})")
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.DORIS_proc(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("MSP", "DORIS_proc", supplied_args, result[0]))
         self._on_error("DORIS_proc", supplied_args, result[0])
@@ -3553,9 +3556,9 @@ class PyGammaTestProxy(object):
             self.call_count["ASAR_AP_proc"] = 1
 
         if L0 is not None:
-            result = self._validate(Path(L0).exists(), result)
+            result = self._validate("ASAR_AP_proc", Path(L0).exists(), result, f"L0 path does not exist ({L0})")
         if INS is not None:
-            result = self._validate(Path(INS).exists(), result)
+            result = self._validate("ASAR_AP_proc", Path(INS).exists(), result, f"INS path does not exist ({INS})")
         if SAR_par1 is not None:
             Path(SAR_par1).touch()
         if SAR_par2 is not None:
@@ -3569,11 +3572,11 @@ class PyGammaTestProxy(object):
         if raw2 is not None:
             Path(raw2).touch()
         if ant_gain1 is not None:
-            result = self._validate(Path(ant_gain1).exists(), result)
+            result = self._validate("ASAR_AP_proc", Path(ant_gain1).exists(), result, f"ant_gain1 path does not exist ({ant_gain1})")
         if ant_gain2 is not None:
-            result = self._validate(Path(ant_gain2).exists(), result)
+            result = self._validate("ASAR_AP_proc", Path(ant_gain2).exists(), result, f"ant_gain2 path does not exist ({ant_gain2})")
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.ASAR_AP_proc(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("MSP", "ASAR_AP_proc", supplied_args, result[0]))
         self._on_error("ASAR_AP_proc", supplied_args, result[0])
@@ -3589,11 +3592,11 @@ class PyGammaTestProxy(object):
             self.call_count["JERS_proc_ASF"] = 1
 
         if CEOS_SAR_leader is not None:
-            result = self._validate(Path(CEOS_SAR_leader).exists(), result)
+            result = self._validate("JERS_proc_ASF", Path(CEOS_SAR_leader).exists(), result, f"CEOS_SAR_leader path does not exist ({CEOS_SAR_leader})")
         if PROC_par is not None:
             Path(PROC_par).touch()
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.JERS_proc_ASF(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("MSP", "JERS_proc_ASF", supplied_args, result[0]))
         self._on_error("JERS_proc_ASF", supplied_args, result[0])
@@ -3609,17 +3612,17 @@ class PyGammaTestProxy(object):
             self.call_count["rc_real"] = 1
 
         if SAR_par is not None:
-            result = self._validate(Path(SAR_par).exists(), result)
+            result = self._validate("rc_real", Path(SAR_par).exists(), result, f"SAR_par path does not exist ({SAR_par})")
         if PROC_par is not None:
-            result = self._validate(Path(PROC_par).exists(), result)
+            result = self._validate("rc_real", Path(PROC_par).exists(), result, f"PROC_par path does not exist ({PROC_par})")
         if signal_data is not None:
-            result = self._validate(Path(signal_data).exists(), result)
+            result = self._validate("rc_real", Path(signal_data).exists(), result, f"signal_data path does not exist ({signal_data})")
         if rc_data is not None:
             Path(rc_data).touch()
         if r_chirp is not None:
-            result = self._validate(Path(r_chirp).exists(), result)
+            result = self._validate("rc_real", Path(r_chirp).exists(), result, f"r_chirp path does not exist ({r_chirp})")
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.rc_real(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("MSP", "rc_real", supplied_args, result[0]))
         self._on_error("rc_real", supplied_args, result[0])
@@ -3635,11 +3638,11 @@ class PyGammaTestProxy(object):
             self.call_count["ERS_proc_CRISP"] = 1
 
         if CEOS_SAR_leader is not None:
-            result = self._validate(Path(CEOS_SAR_leader).exists(), result)
+            result = self._validate("ERS_proc_CRISP", Path(CEOS_SAR_leader).exists(), result, f"CEOS_SAR_leader path does not exist ({CEOS_SAR_leader})")
         if PROC_par is not None:
             Path(PROC_par).touch()
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.ERS_proc_CRISP(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("MSP", "ERS_proc_CRISP", supplied_args, result[0]))
         self._on_error("ERS_proc_CRISP", supplied_args, result[0])
@@ -3655,15 +3658,15 @@ class PyGammaTestProxy(object):
             self.call_count["prefilt"] = 1
 
         if SAR_par is not None:
-            result = self._validate(Path(SAR_par).exists(), result)
+            result = self._validate("prefilt", Path(SAR_par).exists(), result, f"SAR_par path does not exist ({SAR_par})")
         if PROC_par is not None:
-            result = self._validate(Path(PROC_par).exists(), result)
+            result = self._validate("prefilt", Path(PROC_par).exists(), result, f"PROC_par path does not exist ({PROC_par})")
         if rc_data is not None:
-            result = self._validate(Path(rc_data).exists(), result)
+            result = self._validate("prefilt", Path(rc_data).exists(), result, f"rc_data path does not exist ({rc_data})")
         if prefilt_out is not None:
             Path(prefilt_out).touch()
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.prefilt(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("MSP", "prefilt", supplied_args, result[0]))
         self._on_error("prefilt", supplied_args, result[0])
@@ -3679,19 +3682,19 @@ class PyGammaTestProxy(object):
             self.call_count["doppler"] = 1
 
         if SAR_par is not None:
-            result = self._validate(Path(SAR_par).exists(), result)
+            result = self._validate("doppler", Path(SAR_par).exists(), result, f"SAR_par path does not exist ({SAR_par})")
         if PROC_par is not None:
-            result = self._validate(Path(PROC_par).exists(), result)
+            result = self._validate("doppler", Path(PROC_par).exists(), result, f"PROC_par path does not exist ({PROC_par})")
         if signal_data is not None:
-            result = self._validate(Path(signal_data).exists(), result)
+            result = self._validate("doppler", Path(signal_data).exists(), result, f"signal_data path does not exist ({signal_data})")
         if doppler is not None:
             Path(doppler).touch()
         valid_values = [0, 1, 2]
-        result = self._validate(ambig_flag in valid_values, result)
+        result = self._validate("doppler", ambig_flag in valid_values, result, f"ambig_flag is not a valid value (expects: {[0, 1, 2]})")
         valid_values = [0, 1]
-        result = self._validate(pltflg in valid_values, result)
+        result = self._validate("doppler", pltflg in valid_values, result, f"pltflg is not a valid value (expects: {[0, 1]})")
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.doppler(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("MSP", "doppler", supplied_args, result[0]))
         self._on_error("doppler", supplied_args, result[0])
@@ -3707,9 +3710,9 @@ class PyGammaTestProxy(object):
             self.call_count["DELFT_proc2"] = 1
 
         if PROC_par is not None:
-            result = self._validate(Path(PROC_par).exists(), result)
+            result = self._validate("DELFT_proc2", Path(PROC_par).exists(), result, f"PROC_par path does not exist ({PROC_par})")
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.DELFT_proc2(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("MSP", "DELFT_proc2", supplied_args, result[0]))
         self._on_error("DELFT_proc2", supplied_args, result[0])
@@ -3725,11 +3728,11 @@ class PyGammaTestProxy(object):
             self.call_count["copy"] = 1
 
         if infile is not None:
-            result = self._validate(Path(infile).exists(), result)
+            result = self._validate("copy", Path(infile).exists(), result, f"infile path does not exist ({infile})")
         if outfile is not None:
             Path(outfile).touch()
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.copy(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("MSP", "copy", supplied_args, result[0]))
         self._on_error("copy", supplied_args, result[0])
@@ -3745,11 +3748,11 @@ class PyGammaTestProxy(object):
             self.call_count["ERS_proc_ESRIN_ACS"] = 1
 
         if CEOS_SAR_leader is not None:
-            result = self._validate(Path(CEOS_SAR_leader).exists(), result)
+            result = self._validate("ERS_proc_ESRIN_ACS", Path(CEOS_SAR_leader).exists(), result, f"CEOS_SAR_leader path does not exist ({CEOS_SAR_leader})")
         if PROC_par is not None:
             Path(PROC_par).touch()
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.ERS_proc_ESRIN_ACS(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("MSP", "ERS_proc_ESRIN_ACS", supplied_args, result[0]))
         self._on_error("ERS_proc_ESRIN_ACS", supplied_args, result[0])
@@ -3765,13 +3768,13 @@ class PyGammaTestProxy(object):
             self.call_count["ERS_proc_ASF_91"] = 1
 
         if CEOS_SAR_leader is not None:
-            result = self._validate(Path(CEOS_SAR_leader).exists(), result)
+            result = self._validate("ERS_proc_ASF_91", Path(CEOS_SAR_leader).exists(), result, f"CEOS_SAR_leader path does not exist ({CEOS_SAR_leader})")
         if CEOS_trailer is not None:
-            result = self._validate(Path(CEOS_trailer).exists(), result)
+            result = self._validate("ERS_proc_ASF_91", Path(CEOS_trailer).exists(), result, f"CEOS_trailer path does not exist ({CEOS_trailer})")
         if PROC_par is not None:
             Path(PROC_par).touch()
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.ERS_proc_ASF_91(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("MSP", "ERS_proc_ASF_91", supplied_args, result[0]))
         self._on_error("ERS_proc_ASF_91", supplied_args, result[0])
@@ -3787,9 +3790,9 @@ class PyGammaTestProxy(object):
             self.call_count["ORB_prop"] = 1
 
         if PROC_par is not None:
-            result = self._validate(Path(PROC_par).exists(), result)
+            result = self._validate("ORB_prop", Path(PROC_par).exists(), result, f"PROC_par path does not exist ({PROC_par})")
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.ORB_prop(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("MSP", "ORB_prop", supplied_args, result[0]))
         self._on_error("ORB_prop", supplied_args, result[0])
@@ -3805,13 +3808,13 @@ class PyGammaTestProxy(object):
             self.call_count["ERS_fix"] = 1
 
         if SAR_par is not None:
-            result = self._validate(Path(SAR_par).exists(), result)
+            result = self._validate("ERS_fix", Path(SAR_par).exists(), result, f"SAR_par path does not exist ({SAR_par})")
         if PROC_par is not None:
-            result = self._validate(Path(PROC_par).exists(), result)
+            result = self._validate("ERS_fix", Path(PROC_par).exists(), result, f"PROC_par path does not exist ({PROC_par})")
         if output_file is not None:
             Path(output_file).touch()
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.ERS_fix(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("MSP", "ERS_fix", supplied_args, result[0]))
         self._on_error("ERS_fix", supplied_args, result[0])
@@ -3827,11 +3830,11 @@ class PyGammaTestProxy(object):
             self.call_count["ERS_proc_CCRS"] = 1
 
         if CEOS_SAR_leader is not None:
-            result = self._validate(Path(CEOS_SAR_leader).exists(), result)
+            result = self._validate("ERS_proc_CCRS", Path(CEOS_SAR_leader).exists(), result, f"CEOS_SAR_leader path does not exist ({CEOS_SAR_leader})")
         if PROC_par is not None:
             Path(PROC_par).touch()
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.ERS_proc_CCRS(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("MSP", "ERS_proc_CCRS", supplied_args, result[0]))
         self._on_error("ERS_proc_CCRS", supplied_args, result[0])
@@ -3847,13 +3850,13 @@ class PyGammaTestProxy(object):
             self.call_count["ptarg"] = 1
 
         if SLC is not None:
-            result = self._validate(Path(SLC).exists(), result)
+            result = self._validate("ptarg", Path(SLC).exists(), result, f"SLC path does not exist ({SLC})")
         if width is not None:
-            result = self._validate(Path(width).exists(), result)
+            result = self._validate("ptarg", Path(width).exists(), result, f"width path does not exist ({width})")
         if r_samp is not None:
-            result = self._validate(Path(r_samp).exists(), result)
+            result = self._validate("ptarg", Path(r_samp).exists(), result, f"r_samp path does not exist ({r_samp})")
         if az_samp is not None:
-            result = self._validate(Path(az_samp).exists(), result)
+            result = self._validate("ptarg", Path(az_samp).exists(), result, f"az_samp path does not exist ({az_samp})")
         if ptr_image is not None:
             Path(ptr_image).touch()
         if r_plot is not None:
@@ -3861,11 +3864,11 @@ class PyGammaTestProxy(object):
         if az_plot is not None:
             Path(az_plot).touch()
         valid_values = [0, 1]
-        result = self._validate(data_format in valid_values, result)
+        result = self._validate("ptarg", data_format in valid_values, result, f"data_format is not a valid value (expects: {[0, 1]})")
         valid_values = [0, 1, 2]
-        result = self._validate(pltflg in valid_values, result)
+        result = self._validate("ptarg", pltflg in valid_values, result, f"pltflg is not a valid value (expects: {[0, 1, 2]})")
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.ptarg(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("MSP", "ptarg", supplied_args, result[0]))
         self._on_error("ptarg", supplied_args, result[0])
@@ -3881,17 +3884,17 @@ class PyGammaTestProxy(object):
             self.call_count["multi_GRD_SLC"] = 1
 
         if SLC_PROC_par is not None:
-            result = self._validate(Path(SLC_PROC_par).exists(), result)
+            result = self._validate("multi_GRD_SLC", Path(SLC_PROC_par).exists(), result, f"SLC_PROC_par path does not exist ({SLC_PROC_par})")
         if GRD_PROC_par is not None:
             Path(GRD_PROC_par).touch()
         if SLC_image is not None:
-            result = self._validate(Path(SLC_image).exists(), result)
+            result = self._validate("multi_GRD_SLC", Path(SLC_image).exists(), result, f"SLC_image path does not exist ({SLC_image})")
         if GRD_image is not None:
             Path(GRD_image).touch()
         valid_values = [0, 1]
-        result = self._validate(interp_mode in valid_values, result)
+        result = self._validate("multi_GRD_SLC", interp_mode in valid_values, result, f"interp_mode is not a valid value (expects: {[0, 1]})")
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.multi_GRD_SLC(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("MSP", "multi_GRD_SLC", supplied_args, result[0]))
         self._on_error("multi_GRD_SLC", supplied_args, result[0])
@@ -3909,7 +3912,7 @@ class PyGammaTestProxy(object):
         if SAR_par is not None and not Path(SAR_par).exists():
             Path(SAR_par).touch()
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.create_sar_par(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("MSP", "create_sar_par", supplied_args, result[0]))
         self._on_error("create_sar_par", supplied_args, result[0])
@@ -3925,15 +3928,15 @@ class PyGammaTestProxy(object):
             self.call_count["rspec_JERS"] = 1
 
         if SAR_par is not None:
-            result = self._validate(Path(SAR_par).exists(), result)
+            result = self._validate("rspec_JERS", Path(SAR_par).exists(), result, f"SAR_par path does not exist ({SAR_par})")
         if PROC_par is not None:
-            result = self._validate(Path(PROC_par).exists(), result)
+            result = self._validate("rspec_JERS", Path(PROC_par).exists(), result, f"PROC_par path does not exist ({PROC_par})")
         if signal_data is not None:
-            result = self._validate(Path(signal_data).exists(), result)
+            result = self._validate("rspec_JERS", Path(signal_data).exists(), result, f"signal_data path does not exist ({signal_data})")
         if range_spec is not None:
             Path(range_spec).touch()
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.rspec_JERS(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("MSP", "rspec_JERS", supplied_args, result[0]))
         self._on_error("rspec_JERS", supplied_args, result[0])
@@ -3949,17 +3952,17 @@ class PyGammaTestProxy(object):
             self.call_count["azsp_IQ"] = 1
 
         if SAR_par is not None:
-            result = self._validate(Path(SAR_par).exists(), result)
+            result = self._validate("azsp_IQ", Path(SAR_par).exists(), result, f"SAR_par path does not exist ({SAR_par})")
         if PROC_par is not None:
-            result = self._validate(Path(PROC_par).exists(), result)
+            result = self._validate("azsp_IQ", Path(PROC_par).exists(), result, f"PROC_par path does not exist ({PROC_par})")
         if signal_data is not None:
-            result = self._validate(Path(signal_data).exists(), result)
+            result = self._validate("azsp_IQ", Path(signal_data).exists(), result, f"signal_data path does not exist ({signal_data})")
         if spectrum is not None:
             Path(spectrum).touch()
         valid_values = [0, 1]
-        result = self._validate(pltflg in valid_values, result)
+        result = self._validate("azsp_IQ", pltflg in valid_values, result, f"pltflg is not a valid value (expects: {[0, 1]})")
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.azsp_IQ(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("MSP", "azsp_IQ", supplied_args, result[0]))
         self._on_error("azsp_IQ", supplied_args, result[0])
@@ -3975,13 +3978,13 @@ class PyGammaTestProxy(object):
             self.call_count["ERS_proc_ACRES"] = 1
 
         if CEOS_SAR_leader is not None:
-            result = self._validate(Path(CEOS_SAR_leader).exists(), result)
+            result = self._validate("ERS_proc_ACRES", Path(CEOS_SAR_leader).exists(), result, f"CEOS_SAR_leader path does not exist ({CEOS_SAR_leader})")
         if PROC_par is not None:
             Path(PROC_par).touch()
         valid_values = [0, 1]
-        result = self._validate(type in valid_values, result)
+        result = self._validate("ERS_proc_ACRES", type in valid_values, result, f"type is not a valid value (expects: {[0, 1]})")
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.ERS_proc_ACRES(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("MSP", "ERS_proc_ACRES", supplied_args, result[0]))
         self._on_error("ERS_proc_ACRES", supplied_args, result[0])
@@ -3997,15 +4000,15 @@ class PyGammaTestProxy(object):
             self.call_count["pre_rc_RSAT"] = 1
 
         if SAR_par is not None:
-            result = self._validate(Path(SAR_par).exists(), result)
+            result = self._validate("pre_rc_RSAT", Path(SAR_par).exists(), result, f"SAR_par path does not exist ({SAR_par})")
         if PROC_par is not None:
-            result = self._validate(Path(PROC_par).exists(), result)
+            result = self._validate("pre_rc_RSAT", Path(PROC_par).exists(), result, f"PROC_par path does not exist ({PROC_par})")
         if signal_data is not None:
-            result = self._validate(Path(signal_data).exists(), result)
+            result = self._validate("pre_rc_RSAT", Path(signal_data).exists(), result, f"signal_data path does not exist ({signal_data})")
         if rc_data is not None:
             Path(rc_data).touch()
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.pre_rc_RSAT(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("MSP", "pre_rc_RSAT", supplied_args, result[0]))
         self._on_error("pre_rc_RSAT", supplied_args, result[0])
@@ -4021,17 +4024,17 @@ class PyGammaTestProxy(object):
             self.call_count["autof"] = 1
 
         if SAR_par is not None:
-            result = self._validate(Path(SAR_par).exists(), result)
+            result = self._validate("autof", Path(SAR_par).exists(), result, f"SAR_par path does not exist ({SAR_par})")
         if PROC_par is not None:
-            result = self._validate(Path(PROC_par).exists(), result)
+            result = self._validate("autof", Path(PROC_par).exists(), result, f"PROC_par path does not exist ({PROC_par})")
         if rc_data is not None:
-            result = self._validate(Path(rc_data).exists(), result)
+            result = self._validate("autof", Path(rc_data).exists(), result, f"rc_data path does not exist ({rc_data})")
         if autofocus is not None:
             Path(autofocus).touch()
         valid_values = [0, 1]
-        result = self._validate(dop_ambig in valid_values, result)
+        result = self._validate("autof", dop_ambig in valid_values, result, f"dop_ambig is not a valid value (expects: {[0, 1]})")
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.autof(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("MSP", "autof", supplied_args, result[0]))
         self._on_error("autof", supplied_args, result[0])
@@ -4047,7 +4050,7 @@ class PyGammaTestProxy(object):
             self.call_count["cat_raw"] = 1
 
         if RAW_list is not None:
-            result = self._validate(Path(RAW_list).exists(), result)
+            result = self._validate("cat_raw", Path(RAW_list).exists(), result, f"RAW_list path does not exist ({RAW_list})")
         if SAR_par is not None:
             Path(SAR_par).touch()
         if PROC_par is not None:
@@ -4055,9 +4058,9 @@ class PyGammaTestProxy(object):
         if RAW_out is not None:
             Path(RAW_out).touch()
         valid_values = [0, 1]
-        result = self._validate(fill in valid_values, result)
+        result = self._validate("cat_raw", fill in valid_values, result, f"fill is not a valid value (expects: {[0, 1]})")
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.cat_raw(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("MSP", "cat_raw", supplied_args, result[0]))
         self._on_error("cat_raw", supplied_args, result[0])
@@ -4073,11 +4076,11 @@ class PyGammaTestProxy(object):
             self.call_count["ERS_proc_ASI"] = 1
 
         if CEOS_SAR_leader is not None:
-            result = self._validate(Path(CEOS_SAR_leader).exists(), result)
+            result = self._validate("ERS_proc_ASI", Path(CEOS_SAR_leader).exists(), result, f"CEOS_SAR_leader path does not exist ({CEOS_SAR_leader})")
         if PROC_par is not None:
             Path(PROC_par).touch()
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.ERS_proc_ASI(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("MSP", "ERS_proc_ASI", supplied_args, result[0]))
         self._on_error("ERS_proc_ASI", supplied_args, result[0])
@@ -4093,11 +4096,11 @@ class PyGammaTestProxy(object):
             self.call_count["JERS_proc"] = 1
 
         if CEOS_SAR_ldr is not None:
-            result = self._validate(Path(CEOS_SAR_ldr).exists(), result)
+            result = self._validate("JERS_proc", Path(CEOS_SAR_ldr).exists(), result, f"CEOS_SAR_ldr path does not exist ({CEOS_SAR_ldr})")
         if PROC_par is not None:
             Path(PROC_par).touch()
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.JERS_proc(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("MSP", "JERS_proc", supplied_args, result[0]))
         self._on_error("JERS_proc", supplied_args, result[0])
@@ -4113,11 +4116,11 @@ class PyGammaTestProxy(object):
             self.call_count["create_proc_par"] = 1
 
         if SAR_par is not None:
-            result = self._validate(Path(SAR_par).exists(), result)
+            result = self._validate("create_proc_par", Path(SAR_par).exists(), result, f"SAR_par path does not exist ({SAR_par})")
         if PROC_par is not None and not Path(PROC_par).exists():
             Path(PROC_par).touch()
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.create_proc_par(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("MSP", "create_proc_par", supplied_args, result[0]))
         self._on_error("create_proc_par", supplied_args, result[0])
@@ -4133,13 +4136,13 @@ class PyGammaTestProxy(object):
             self.call_count["SIRC_proc"] = 1
 
         if CEOS_SAR_leader is not None:
-            result = self._validate(Path(CEOS_SAR_leader).exists(), result)
+            result = self._validate("SIRC_proc", Path(CEOS_SAR_leader).exists(), result, f"CEOS_SAR_leader path does not exist ({CEOS_SAR_leader})")
         if SAR_par is not None:
             Path(SAR_par).touch()
         if PROC_par is not None:
             Path(PROC_par).touch()
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.SIRC_proc(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("MSP", "SIRC_proc", supplied_args, result[0]))
         self._on_error("SIRC_proc", supplied_args, result[0])
@@ -4155,9 +4158,9 @@ class PyGammaTestProxy(object):
             self.call_count["ASAR_IM_proc"] = 1
 
         if L0 is not None:
-            result = self._validate(Path(L0).exists(), result)
+            result = self._validate("ASAR_IM_proc", Path(L0).exists(), result, f"L0 path does not exist ({L0})")
         if INS is not None:
-            result = self._validate(Path(INS).exists(), result)
+            result = self._validate("ASAR_IM_proc", Path(INS).exists(), result, f"INS path does not exist ({INS})")
         if SAR_par is not None:
             Path(SAR_par).touch()
         if PROC_par is not None:
@@ -4165,9 +4168,9 @@ class PyGammaTestProxy(object):
         if raw is not None:
             Path(raw).touch()
         if ant_gain is not None:
-            result = self._validate(Path(ant_gain).exists(), result)
+            result = self._validate("ASAR_IM_proc", Path(ant_gain).exists(), result, f"ant_gain path does not exist ({ant_gain})")
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.ASAR_IM_proc(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("MSP", "ASAR_IM_proc", supplied_args, result[0]))
         self._on_error("ASAR_IM_proc", supplied_args, result[0])
@@ -4183,11 +4186,11 @@ class PyGammaTestProxy(object):
             self.call_count["dishgt"] = 1
 
         if hgt is not None:
-            result = self._validate(Path(hgt).exists(), result)
+            result = self._validate("dishgt", Path(hgt).exists(), result, f"hgt path does not exist ({hgt})")
         if pwr is not None:
-            result = self._validate(Path(pwr).exists(), result)
+            result = self._validate("dishgt", Path(pwr).exists(), result, f"pwr path does not exist ({pwr})")
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.dishgt(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("DISP", "dishgt", supplied_args, result[0]))
         self._on_error("dishgt", supplied_args, result[0])
@@ -4203,15 +4206,15 @@ class PyGammaTestProxy(object):
             self.call_count["rasdt_pwr"] = 1
 
         if data is not None:
-            result = self._validate(Path(data).exists(), result)
+            result = self._validate("rasdt_pwr", Path(data).exists(), result, f"data path does not exist ({data})")
         if pwr is not None:
-            result = self._validate(Path(pwr).exists(), result)
+            result = self._validate("rasdt_pwr", Path(pwr).exists(), result, f"pwr path does not exist ({pwr})")
         if rasf is not None:
             Path(rasf).touch()
         if cc is not None:
-            result = self._validate(Path(cc).exists(), result)
+            result = self._validate("rasdt_pwr", Path(cc).exists(), result, f"cc path does not exist ({cc})")
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.rasdt_pwr(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("DISP", "rasdt_pwr", supplied_args, result[0]))
         self._on_error("rasdt_pwr", supplied_args, result[0])
@@ -4227,15 +4230,15 @@ class PyGammaTestProxy(object):
             self.call_count["rasdt_cmap"] = 1
 
         if data is not None:
-            result = self._validate(Path(data).exists(), result)
+            result = self._validate("rasdt_cmap", Path(data).exists(), result, f"data path does not exist ({data})")
         if pwr is not None:
-            result = self._validate(Path(pwr).exists(), result)
+            result = self._validate("rasdt_cmap", Path(pwr).exists(), result, f"pwr path does not exist ({pwr})")
         valid_values = [0, 1]
-        result = self._validate(mflg in valid_values, result)
+        result = self._validate("rasdt_cmap", mflg in valid_values, result, f"mflg is not a valid value (expects: {[0, 1]})")
         if rasf is not None:
             Path(rasf).touch()
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.rasdt_cmap(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("DISP", "rasdt_cmap", supplied_args, result[0]))
         self._on_error("rasdt_cmap", supplied_args, result[0])
@@ -4251,11 +4254,11 @@ class PyGammaTestProxy(object):
             self.call_count["dis2hgt"] = 1
 
         if hgt1 is not None:
-            result = self._validate(Path(hgt1).exists(), result)
+            result = self._validate("dis2hgt", Path(hgt1).exists(), result, f"hgt1 path does not exist ({hgt1})")
         if hgt2 is not None:
-            result = self._validate(Path(hgt2).exists(), result)
+            result = self._validate("dis2hgt", Path(hgt2).exists(), result, f"hgt2 path does not exist ({hgt2})")
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.dis2hgt(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("DISP", "dis2hgt", supplied_args, result[0]))
         self._on_error("dis2hgt", supplied_args, result[0])
@@ -4271,11 +4274,11 @@ class PyGammaTestProxy(object):
             self.call_count["gcp_ras"] = 1
 
         if ras is not None:
-            result = self._validate(Path(ras).exists(), result)
+            result = self._validate("gcp_ras", Path(ras).exists(), result, f"ras path does not exist ({ras})")
         if GCP is not None:
             Path(GCP).touch()
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.gcp_ras(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("DISP", "gcp_ras", supplied_args, result[0]))
         self._on_error("gcp_ras", supplied_args, result[0])
@@ -4291,17 +4294,17 @@ class PyGammaTestProxy(object):
             self.call_count["cpx_math"] = 1
 
         if d1 is not None:
-            result = self._validate(Path(d1).exists(), result)
+            result = self._validate("cpx_math", Path(d1).exists(), result, f"d1 path does not exist ({d1})")
         if d2 is not None:
-            result = self._validate(Path(d2).exists(), result)
+            result = self._validate("cpx_math", Path(d2).exists(), result, f"d2 path does not exist ({d2})")
         if d_out is not None:
             Path(d_out).touch()
         valid_values = [0, 1, 2, 3]
-        result = self._validate(mode in valid_values, result)
+        result = self._validate("cpx_math", mode in valid_values, result, f"mode is not a valid value (expects: {[0, 1, 2, 3]})")
         valid_values = [0, 1]
-        result = self._validate(zflg in valid_values, result)
+        result = self._validate("cpx_math", zflg in valid_values, result, f"zflg is not a valid value (expects: {[0, 1]})")
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.cpx_math(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("DISP", "cpx_math", supplied_args, result[0]))
         self._on_error("cpx_math", supplied_args, result[0])
@@ -4317,9 +4320,9 @@ class PyGammaTestProxy(object):
             self.call_count["disflag"] = 1
 
         if flag is not None:
-            result = self._validate(Path(flag).exists(), result)
+            result = self._validate("disflag", Path(flag).exists(), result, f"flag path does not exist ({flag})")
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.disflag(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("DISP", "disflag", supplied_args, result[0]))
         self._on_error("disflag", supplied_args, result[0])
@@ -4335,13 +4338,13 @@ class PyGammaTestProxy(object):
             self.call_count["set_value"] = 1
 
         if PAR_in is not None:
-            result = self._validate(Path(PAR_in).exists(), result)
+            result = self._validate("set_value", Path(PAR_in).exists(), result, f"PAR_in path does not exist ({PAR_in})")
         if PAR_out is not None:
             Path(PAR_out).touch()
         valid_values = [0, 1]
-        result = self._validate(new_key in valid_values, result)
+        result = self._validate("set_value", new_key in valid_values, result, f"new_key is not a valid value (expects: {[0, 1]})")
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.set_value(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("DISP", "set_value", supplied_args, result[0]))
         self._on_error("set_value", supplied_args, result[0])
@@ -4357,13 +4360,13 @@ class PyGammaTestProxy(object):
             self.call_count["cpx_to_real"] = 1
 
         if cpx is not None:
-            result = self._validate(Path(cpx).exists(), result)
+            result = self._validate("cpx_to_real", Path(cpx).exists(), result, f"cpx path does not exist ({cpx})")
         if real is not None:
             Path(real).touch()
         valid_values = [0, 1, 2, 3, 4]
-        result = self._validate(type in valid_values, result)
+        result = self._validate("cpx_to_real", type in valid_values, result, f"type is not a valid value (expects: {[0, 1, 2, 3, 4]})")
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.cpx_to_real(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("DISP", "cpx_to_real", supplied_args, result[0]))
         self._on_error("cpx_to_real", supplied_args, result[0])
@@ -4379,13 +4382,13 @@ class PyGammaTestProxy(object):
             self.call_count["rascc"] = 1
 
         if cc is not None:
-            result = self._validate(Path(cc).exists(), result)
+            result = self._validate("rascc", Path(cc).exists(), result, f"cc path does not exist ({cc})")
         if pwr is not None:
-            result = self._validate(Path(pwr).exists(), result)
+            result = self._validate("rascc", Path(pwr).exists(), result, f"pwr path does not exist ({pwr})")
         if rasf is not None:
             Path(rasf).touch()
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.rascc(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("DISP", "rascc", supplied_args, result[0]))
         self._on_error("rascc", supplied_args, result[0])
@@ -4401,9 +4404,9 @@ class PyGammaTestProxy(object):
             self.call_count["disgbyte"] = 1
 
         if image is not None:
-            result = self._validate(Path(image).exists(), result)
+            result = self._validate("disgbyte", Path(image).exists(), result, f"image path does not exist ({image})")
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.disgbyte(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("DISP", "disgbyte", supplied_args, result[0]))
         self._on_error("disgbyte", supplied_args, result[0])
@@ -4419,9 +4422,9 @@ class PyGammaTestProxy(object):
             self.call_count["dis_dB"] = 1
 
         if pwr is not None:
-            result = self._validate(Path(pwr).exists(), result)
+            result = self._validate("dis_dB", Path(pwr).exists(), result, f"pwr path does not exist ({pwr})")
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.dis_dB(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("DISP", "dis_dB", supplied_args, result[0]))
         self._on_error("dis_dB", supplied_args, result[0])
@@ -4437,11 +4440,11 @@ class PyGammaTestProxy(object):
             self.call_count["discc"] = 1
 
         if cc is not None:
-            result = self._validate(Path(cc).exists(), result)
+            result = self._validate("discc", Path(cc).exists(), result, f"cc path does not exist ({cc})")
         if pwr is not None:
-            result = self._validate(Path(pwr).exists(), result)
+            result = self._validate("discc", Path(pwr).exists(), result, f"pwr path does not exist ({pwr})")
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.discc(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("DISP", "discc", supplied_args, result[0]))
         self._on_error("discc", supplied_args, result[0])
@@ -4457,13 +4460,13 @@ class PyGammaTestProxy(object):
             self.call_count["svg_map"] = 1
 
         if image is not None:
-            result = self._validate(Path(image).exists(), result)
+            result = self._validate("svg_map", Path(image).exists(), result, f"image path does not exist ({image})")
         if dem_par is not None:
-            result = self._validate(Path(dem_par).exists(), result)
+            result = self._validate("svg_map", Path(dem_par).exists(), result, f"dem_par path does not exist ({dem_par})")
         if svg is not None:
             Path(svg).touch()
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.svg_map(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("DISP", "svg_map", supplied_args, result[0]))
         self._on_error("svg_map", supplied_args, result[0])
@@ -4479,11 +4482,11 @@ class PyGammaTestProxy(object):
             self.call_count["gbyte2float"] = 1
 
         if infile is not None:
-            result = self._validate(Path(infile).exists(), result)
+            result = self._validate("gbyte2float", Path(infile).exists(), result, f"infile path does not exist ({infile})")
         if outfile is not None:
             Path(outfile).touch()
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.gbyte2float(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("DISP", "gbyte2float", supplied_args, result[0]))
         self._on_error("gbyte2float", supplied_args, result[0])
@@ -4499,13 +4502,13 @@ class PyGammaTestProxy(object):
             self.call_count["real_to_cpx"] = 1
 
         if data1 is not None:
-            result = self._validate(Path(data1).exists(), result)
+            result = self._validate("real_to_cpx", Path(data1).exists(), result, f"data1 path does not exist ({data1})")
         if data2 is not None:
-            result = self._validate(Path(data2).exists(), result)
+            result = self._validate("real_to_cpx", Path(data2).exists(), result, f"data2 path does not exist ({data2})")
         if cpx is not None:
             Path(cpx).touch()
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.real_to_cpx(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("DISP", "real_to_cpx", supplied_args, result[0]))
         self._on_error("real_to_cpx", supplied_args, result[0])
@@ -4521,15 +4524,15 @@ class PyGammaTestProxy(object):
             self.call_count["rasmph_pwr"] = 1
 
         if cpx is not None:
-            result = self._validate(Path(cpx).exists(), result)
+            result = self._validate("rasmph_pwr", Path(cpx).exists(), result, f"cpx path does not exist ({cpx})")
         if pwr is not None:
-            result = self._validate(Path(pwr).exists(), result)
+            result = self._validate("rasmph_pwr", Path(pwr).exists(), result, f"pwr path does not exist ({pwr})")
         if rasf is not None:
             Path(rasf).touch()
         if cc is not None:
-            result = self._validate(Path(cc).exists(), result)
+            result = self._validate("rasmph_pwr", Path(cc).exists(), result, f"cc path does not exist ({cc})")
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.rasmph_pwr(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("DISP", "rasmph_pwr", supplied_args, result[0]))
         self._on_error("rasmph_pwr", supplied_args, result[0])
@@ -4545,15 +4548,15 @@ class PyGammaTestProxy(object):
             self.call_count["data2geotiff"] = 1
 
         if DEM_par is not None:
-            result = self._validate(Path(DEM_par).exists(), result)
+            result = self._validate("data2geotiff", Path(DEM_par).exists(), result, f"DEM_par path does not exist ({DEM_par})")
         if data is not None:
-            result = self._validate(Path(data).exists(), result)
+            result = self._validate("data2geotiff", Path(data).exists(), result, f"data path does not exist ({data})")
         valid_values = [0, 1, 2, 3, 4, 5]
-        result = self._validate(type in valid_values, result)
+        result = self._validate("data2geotiff", type in valid_values, result, f"type is not a valid value (expects: {[0, 1, 2, 3, 4, 5]})")
         if GeoTIFF is not None:
             Path(GeoTIFF).touch()
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.data2geotiff(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("DISP", "data2geotiff", supplied_args, result[0]))
         self._on_error("data2geotiff", supplied_args, result[0])
@@ -4569,9 +4572,9 @@ class PyGammaTestProxy(object):
             self.call_count["disras"] = 1
 
         if ras is not None:
-            result = self._validate(Path(ras).exists(), result)
+            result = self._validate("disras", Path(ras).exists(), result, f"ras path does not exist ({ras})")
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.disras(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("DISP", "disras", supplied_args, result[0]))
         self._on_error("disras", supplied_args, result[0])
@@ -4587,11 +4590,11 @@ class PyGammaTestProxy(object):
             self.call_count["disrmg"] = 1
 
         if unw is not None:
-            result = self._validate(Path(unw).exists(), result)
+            result = self._validate("disrmg", Path(unw).exists(), result, f"unw path does not exist ({unw})")
         if pwr is not None:
-            result = self._validate(Path(pwr).exists(), result)
+            result = self._validate("disrmg", Path(pwr).exists(), result, f"pwr path does not exist ({pwr})")
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.disrmg(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("DISP", "disrmg", supplied_args, result[0]))
         self._on_error("disrmg", supplied_args, result[0])
@@ -4607,11 +4610,11 @@ class PyGammaTestProxy(object):
             self.call_count["dis2rmg"] = 1
 
         if unw1 is not None:
-            result = self._validate(Path(unw1).exists(), result)
+            result = self._validate("dis2rmg", Path(unw1).exists(), result, f"unw1 path does not exist ({unw1})")
         if unw2 is not None:
-            result = self._validate(Path(unw2).exists(), result)
+            result = self._validate("dis2rmg", Path(unw2).exists(), result, f"unw2 path does not exist ({unw2})")
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.dis2rmg(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("DISP", "dis2rmg", supplied_args, result[0]))
         self._on_error("dis2rmg", supplied_args, result[0])
@@ -4627,11 +4630,11 @@ class PyGammaTestProxy(object):
             self.call_count["dis2ras"] = 1
 
         if ras1 is not None:
-            result = self._validate(Path(ras1).exists(), result)
+            result = self._validate("dis2ras", Path(ras1).exists(), result, f"ras1 path does not exist ({ras1})")
         if ras2 is not None:
-            result = self._validate(Path(ras2).exists(), result)
+            result = self._validate("dis2ras", Path(ras2).exists(), result, f"ras2 path does not exist ({ras2})")
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.dis2ras(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("DISP", "dis2ras", supplied_args, result[0]))
         self._on_error("dis2ras", supplied_args, result[0])
@@ -4647,11 +4650,11 @@ class PyGammaTestProxy(object):
             self.call_count["dismph_pwr"] = 1
 
         if cpx is not None:
-            result = self._validate(Path(cpx).exists(), result)
+            result = self._validate("dismph_pwr", Path(cpx).exists(), result, f"cpx path does not exist ({cpx})")
         if pwr is not None:
-            result = self._validate(Path(pwr).exists(), result)
+            result = self._validate("dismph_pwr", Path(pwr).exists(), result, f"pwr path does not exist ({pwr})")
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.dismph_pwr(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("DISP", "dismph_pwr", supplied_args, result[0]))
         self._on_error("dismph_pwr", supplied_args, result[0])
@@ -4667,15 +4670,15 @@ class PyGammaTestProxy(object):
             self.call_count["vec_math"] = 1
 
         if d1 is not None:
-            result = self._validate(Path(d1).exists(), result)
+            result = self._validate("vec_math", Path(d1).exists(), result, f"d1 path does not exist ({d1})")
         if d2 is not None:
-            result = self._validate(Path(d2).exists(), result)
+            result = self._validate("vec_math", Path(d2).exists(), result, f"d2 path does not exist ({d2})")
         if d_out is not None:
             Path(d_out).touch()
         valid_values = [0, 1, 2, 3, 4, 5, 6]
-        result = self._validate(mode in valid_values, result)
+        result = self._validate("vec_math", mode in valid_values, result, f"mode is not a valid value (expects: {[0, 1, 2, 3, 4, 5, 6]})")
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.vec_math(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("DISP", "vec_math", supplied_args, result[0]))
         self._on_error("vec_math", supplied_args, result[0])
@@ -4691,11 +4694,11 @@ class PyGammaTestProxy(object):
             self.call_count["dismph_fft"] = 1
 
         if cpx is not None:
-            result = self._validate(Path(cpx).exists(), result)
+            result = self._validate("dismph_fft", Path(cpx).exists(), result, f"cpx path does not exist ({cpx})")
         valid_values = [0, 1]
-        result = self._validate(data_type in valid_values, result)
+        result = self._validate("dismph_fft", data_type in valid_values, result, f"data_type is not a valid value (expects: {[0, 1]})")
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.dismph_fft(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("DISP", "dismph_fft", supplied_args, result[0]))
         self._on_error("dismph_fft", supplied_args, result[0])
@@ -4711,13 +4714,13 @@ class PyGammaTestProxy(object):
             self.call_count["svg_arrow"] = 1
 
         if dv_norm is not None:
-            result = self._validate(Path(dv_norm).exists(), result)
+            result = self._validate("svg_arrow", Path(dv_norm).exists(), result, f"dv_norm path does not exist ({dv_norm})")
         if dv_phi is not None:
-            result = self._validate(Path(dv_phi).exists(), result)
+            result = self._validate("svg_arrow", Path(dv_phi).exists(), result, f"dv_phi path does not exist ({dv_phi})")
         if svg is not None:
             Path(svg).touch()
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.svg_arrow(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("DISP", "svg_arrow", supplied_args, result[0]))
         self._on_error("svg_arrow", supplied_args, result[0])
@@ -4733,15 +4736,15 @@ class PyGammaTestProxy(object):
             self.call_count["ras3pwr"] = 1
 
         if d1 is not None:
-            result = self._validate(Path(d1).exists(), result)
+            result = self._validate("ras3pwr", Path(d1).exists(), result, f"d1 path does not exist ({d1})")
         if d2 is not None:
-            result = self._validate(Path(d2).exists(), result)
+            result = self._validate("ras3pwr", Path(d2).exists(), result, f"d2 path does not exist ({d2})")
         if d3 is not None:
-            result = self._validate(Path(d3).exists(), result)
+            result = self._validate("ras3pwr", Path(d3).exists(), result, f"d3 path does not exist ({d3})")
         if rasf is not None:
             Path(rasf).touch()
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.ras3pwr(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("DISP", "ras3pwr", supplied_args, result[0]))
         self._on_error("ras3pwr", supplied_args, result[0])
@@ -4757,11 +4760,11 @@ class PyGammaTestProxy(object):
             self.call_count["disdt_pwr"] = 1
 
         if data is not None:
-            result = self._validate(Path(data).exists(), result)
+            result = self._validate("disdt_pwr", Path(data).exists(), result, f"data path does not exist ({data})")
         if pwr is not None:
-            result = self._validate(Path(pwr).exists(), result)
+            result = self._validate("disdt_pwr", Path(pwr).exists(), result, f"pwr path does not exist ({pwr})")
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.disdt_pwr(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("DISP", "disdt_pwr", supplied_args, result[0]))
         self._on_error("disdt_pwr", supplied_args, result[0])
@@ -4777,15 +4780,15 @@ class PyGammaTestProxy(object):
             self.call_count["real_to_vec"] = 1
 
         if cmp1 is not None:
-            result = self._validate(Path(cmp1).exists(), result)
+            result = self._validate("real_to_vec", Path(cmp1).exists(), result, f"cmp1 path does not exist ({cmp1})")
         if cmp2 is not None:
-            result = self._validate(Path(cmp2).exists(), result)
+            result = self._validate("real_to_vec", Path(cmp2).exists(), result, f"cmp2 path does not exist ({cmp2})")
         if cmp3 is not None:
-            result = self._validate(Path(cmp3).exists(), result)
+            result = self._validate("real_to_vec", Path(cmp3).exists(), result, f"cmp3 path does not exist ({cmp3})")
         if vec is not None:
             Path(vec).touch()
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.real_to_vec(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("DISP", "real_to_vec", supplied_args, result[0]))
         self._on_error("real_to_vec", supplied_args, result[0])
@@ -4801,11 +4804,11 @@ class PyGammaTestProxy(object):
             self.call_count["float2short"] = 1
 
         if infile is not None:
-            result = self._validate(Path(infile).exists(), result)
+            result = self._validate("float2short", Path(infile).exists(), result, f"infile path does not exist ({infile})")
         if outfile is not None:
             Path(outfile).touch()
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.float2short(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("DISP", "float2short", supplied_args, result[0]))
         self._on_error("float2short", supplied_args, result[0])
@@ -4821,11 +4824,11 @@ class PyGammaTestProxy(object):
             self.call_count["disdt_pwr24"] = 1
 
         if data is not None:
-            result = self._validate(Path(data).exists(), result)
+            result = self._validate("disdt_pwr24", Path(data).exists(), result, f"data path does not exist ({data})")
         if pwr is not None:
-            result = self._validate(Path(pwr).exists(), result)
+            result = self._validate("disdt_pwr24", Path(pwr).exists(), result, f"pwr path does not exist ({pwr})")
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.disdt_pwr24(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("DISP", "disdt_pwr24", supplied_args, result[0]))
         self._on_error("disdt_pwr24", supplied_args, result[0])
@@ -4841,13 +4844,13 @@ class PyGammaTestProxy(object):
             self.call_count["rashgt_shd"] = 1
 
         if hgt is not None:
-            result = self._validate(Path(hgt).exists(), result)
+            result = self._validate("rashgt_shd", Path(hgt).exists(), result, f"hgt path does not exist ({hgt})")
         if data is not None:
-            result = self._validate(Path(data).exists(), result)
+            result = self._validate("rashgt_shd", Path(data).exists(), result, f"data path does not exist ({data})")
         if rasf is not None:
             Path(rasf).touch()
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.rashgt_shd(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("DISP", "rashgt_shd", supplied_args, result[0]))
         self._on_error("rashgt_shd", supplied_args, result[0])
@@ -4863,13 +4866,13 @@ class PyGammaTestProxy(object):
             self.call_count["ras2ras"] = 1
 
         if ras_in is not None:
-            result = self._validate(Path(ras_in).exists(), result)
+            result = self._validate("ras2ras", Path(ras_in).exists(), result, f"ras_in path does not exist ({ras_in})")
         if ras_out is not None:
             Path(ras_out).touch()
         valid_values = [0, 1]
-        result = self._validate(force24 in valid_values, result)
+        result = self._validate("ras2ras", force24 in valid_values, result, f"force24 is not a valid value (expects: {[0, 1]})")
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.ras2ras(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("DISP", "ras2ras", supplied_args, result[0]))
         self._on_error("ras2ras", supplied_args, result[0])
@@ -4885,17 +4888,17 @@ class PyGammaTestProxy(object):
             self.call_count["ras24_float"] = 1
 
         if f1 is not None:
-            result = self._validate(Path(f1).exists(), result)
+            result = self._validate("ras24_float", Path(f1).exists(), result, f"f1 path does not exist ({f1})")
         if f2 is not None:
-            result = self._validate(Path(f2).exists(), result)
+            result = self._validate("ras24_float", Path(f2).exists(), result, f"f2 path does not exist ({f2})")
         if f3 is not None:
-            result = self._validate(Path(f3).exists(), result)
+            result = self._validate("ras24_float", Path(f3).exists(), result, f"f3 path does not exist ({f3})")
         if rasf is not None:
             Path(rasf).touch()
         valid_values = [0, 1, 2]
-        result = self._validate(color_model in valid_values, result)
+        result = self._validate("ras24_float", color_model in valid_values, result, f"color_model is not a valid value (expects: {[0, 1, 2]})")
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.ras24_float(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("DISP", "ras24_float", supplied_args, result[0]))
         self._on_error("ras24_float", supplied_args, result[0])
@@ -4911,11 +4914,11 @@ class PyGammaTestProxy(object):
             self.call_count["double2float"] = 1
 
         if infile is not None:
-            result = self._validate(Path(infile).exists(), result)
+            result = self._validate("double2float", Path(infile).exists(), result, f"infile path does not exist ({infile})")
         if outfile is not None:
             Path(outfile).touch()
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.double2float(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("DISP", "double2float", supplied_args, result[0]))
         self._on_error("double2float", supplied_args, result[0])
@@ -4931,7 +4934,7 @@ class PyGammaTestProxy(object):
             self.call_count["float2uchar"] = 1
 
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.float2uchar(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("DISP", "float2uchar", supplied_args, result[0]))
         self._on_error("float2uchar", supplied_args, result[0])
@@ -4947,17 +4950,17 @@ class PyGammaTestProxy(object):
             self.call_count["float_math"] = 1
 
         if d1 is not None:
-            result = self._validate(Path(d1).exists(), result)
+            result = self._validate("float_math", Path(d1).exists(), result, f"d1 path does not exist ({d1})")
         if d2 is not None:
-            result = self._validate(Path(d2).exists(), result)
+            result = self._validate("float_math", Path(d2).exists(), result, f"d2 path does not exist ({d2})")
         if d_out is not None:
             Path(d_out).touch()
         valid_values = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
-        result = self._validate(mode in valid_values, result)
+        result = self._validate("float_math", mode in valid_values, result, f"mode is not a valid value (expects: {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]})")
         valid_values = [0, 1]
-        result = self._validate(zflg in valid_values, result)
+        result = self._validate("float_math", zflg in valid_values, result, f"zflg is not a valid value (expects: {[0, 1]})")
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.float_math(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("DISP", "float_math", supplied_args, result[0]))
         self._on_error("float_math", supplied_args, result[0])
@@ -4973,13 +4976,13 @@ class PyGammaTestProxy(object):
             self.call_count["cpd"] = 1
 
         if din is not None:
-            result = self._validate(Path(din).exists(), result)
+            result = self._validate("cpd", Path(din).exists(), result, f"din path does not exist ({din})")
         if dout is not None:
             Path(dout).touch()
         valid_values = [0, 1, 2]
-        result = self._validate(dtype in valid_values, result)
+        result = self._validate("cpd", dtype in valid_values, result, f"dtype is not a valid value (expects: {[0, 1, 2]})")
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.cpd(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("DISP", "cpd", supplied_args, result[0]))
         self._on_error("cpd", supplied_args, result[0])
@@ -4995,11 +4998,11 @@ class PyGammaTestProxy(object):
             self.call_count["disras_dem_par"] = 1
 
         if ras is not None:
-            result = self._validate(Path(ras).exists(), result)
+            result = self._validate("disras_dem_par", Path(ras).exists(), result, f"ras path does not exist ({ras})")
         if DEM_par is not None:
-            result = self._validate(Path(DEM_par).exists(), result)
+            result = self._validate("disras_dem_par", Path(DEM_par).exists(), result, f"DEM_par path does not exist ({DEM_par})")
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.disras_dem_par(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("DISP", "disras_dem_par", supplied_args, result[0]))
         self._on_error("disras_dem_par", supplied_args, result[0])
@@ -5015,11 +5018,11 @@ class PyGammaTestProxy(object):
             self.call_count["dismph"] = 1
 
         if cpx is not None:
-            result = self._validate(Path(cpx).exists(), result)
+            result = self._validate("dismph", Path(cpx).exists(), result, f"cpx path does not exist ({cpx})")
         valid_values = [0, 1]
-        result = self._validate(dtype in valid_values, result)
+        result = self._validate("dismph", dtype in valid_values, result, f"dtype is not a valid value (expects: {[0, 1]})")
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.dismph(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("DISP", "dismph", supplied_args, result[0]))
         self._on_error("dismph", supplied_args, result[0])
@@ -5035,15 +5038,15 @@ class PyGammaTestProxy(object):
             self.call_count["rasshd"] = 1
 
         if DEM is not None:
-            result = self._validate(Path(DEM).exists(), result)
+            result = self._validate("rasshd", Path(DEM).exists(), result, f"DEM path does not exist ({DEM})")
         if rasf is not None:
             Path(rasf).touch()
         valid_values = [0, 1]
-        result = self._validate(dtype in valid_values, result)
+        result = self._validate("rasshd", dtype in valid_values, result, f"dtype is not a valid value (expects: {[0, 1]})")
         valid_values = [0, 1]
-        result = self._validate(zero_flag in valid_values, result)
+        result = self._validate("rasshd", zero_flag in valid_values, result, f"zero_flag is not a valid value (expects: {[0, 1]})")
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.rasshd(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("DISP", "rasshd", supplied_args, result[0]))
         self._on_error("rasshd", supplied_args, result[0])
@@ -5059,13 +5062,13 @@ class PyGammaTestProxy(object):
             self.call_count["dis2mph"] = 1
 
         if cpx1 is not None:
-            result = self._validate(Path(cpx1).exists(), result)
+            result = self._validate("dis2mph", Path(cpx1).exists(), result, f"cpx1 path does not exist ({cpx1})")
         if cpx2 is not None:
-            result = self._validate(Path(cpx2).exists(), result)
+            result = self._validate("dis2mph", Path(cpx2).exists(), result, f"cpx2 path does not exist ({cpx2})")
         valid_values = [0, 1]
-        result = self._validate(dtype in valid_values, result)
+        result = self._validate("dis2mph", dtype in valid_values, result, f"dtype is not a valid value (expects: {[0, 1]})")
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.dis2mph(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("DISP", "dis2mph", supplied_args, result[0]))
         self._on_error("dis2mph", supplied_args, result[0])
@@ -5081,13 +5084,13 @@ class PyGammaTestProxy(object):
             self.call_count["dis2SLC"] = 1
 
         if SLC1 is not None:
-            result = self._validate(Path(SLC1).exists(), result)
+            result = self._validate("dis2SLC", Path(SLC1).exists(), result, f"SLC1 path does not exist ({SLC1})")
         if SLC2 is not None:
-            result = self._validate(Path(SLC2).exists(), result)
+            result = self._validate("dis2SLC", Path(SLC2).exists(), result, f"SLC2 path does not exist ({SLC2})")
         valid_values = [0, 1]
-        result = self._validate(data_type in valid_values, result)
+        result = self._validate("dis2SLC", data_type in valid_values, result, f"data_type is not a valid value (expects: {[0, 1]})")
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.dis2SLC(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("DISP", "dis2SLC", supplied_args, result[0]))
         self._on_error("dis2SLC", supplied_args, result[0])
@@ -5103,13 +5106,13 @@ class PyGammaTestProxy(object):
             self.call_count["raspwr"] = 1
 
         if pwr is not None:
-            result = self._validate(Path(pwr).exists(), result)
+            result = self._validate("raspwr", Path(pwr).exists(), result, f"pwr path does not exist ({pwr})")
         if rasf is not None:
             Path(rasf).touch()
         valid_values = [0, 1, 2]
-        result = self._validate(data_type in valid_values, result)
+        result = self._validate("raspwr", data_type in valid_values, result, f"data_type is not a valid value (expects: {[0, 1, 2]})")
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.raspwr(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("DISP", "raspwr", supplied_args, result[0]))
         self._on_error("raspwr", supplied_args, result[0])
@@ -5125,11 +5128,11 @@ class PyGammaTestProxy(object):
             self.call_count["disSLC"] = 1
 
         if SLC is not None:
-            result = self._validate(Path(SLC).exists(), result)
+            result = self._validate("disSLC", Path(SLC).exists(), result, f"SLC path does not exist ({SLC})")
         valid_values = [0, 1]
-        result = self._validate(data_type in valid_values, result)
+        result = self._validate("disSLC", data_type in valid_values, result, f"data_type is not a valid value (expects: {[0, 1]})")
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.disSLC(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("DISP", "disSLC", supplied_args, result[0]))
         self._on_error("disSLC", supplied_args, result[0])
@@ -5145,13 +5148,13 @@ class PyGammaTestProxy(object):
             self.call_count["ras8_colormap"] = 1
 
         valid_values = [0, 1, 2, 3]
-        result = self._validate(model in valid_values, result)
+        result = self._validate("ras8_colormap", model in valid_values, result, f"model is not a valid value (expects: {[0, 1, 2, 3]})")
         if cm is not None:
             Path(cm).touch()
         if cm_ras is not None:
             Path(cm_ras).touch()
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.ras8_colormap(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("DISP", "ras8_colormap", supplied_args, result[0]))
         self._on_error("ras8_colormap", supplied_args, result[0])
@@ -5167,11 +5170,11 @@ class PyGammaTestProxy(object):
             self.call_count["cp_data"] = 1
 
         if infile is not None:
-            result = self._validate(Path(infile).exists(), result)
+            result = self._validate("cp_data", Path(infile).exists(), result, f"infile path does not exist ({infile})")
         if outfile is not None:
             Path(outfile).touch()
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.cp_data(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("DISP", "cp_data", supplied_args, result[0]))
         self._on_error("cp_data", supplied_args, result[0])
@@ -5187,15 +5190,15 @@ class PyGammaTestProxy(object):
             self.call_count["ras_cpt"] = 1
 
         if data is not None:
-            result = self._validate(Path(data).exists(), result)
+            result = self._validate("ras_cpt", Path(data).exists(), result, f"data path does not exist ({data})")
         if cpt is not None:
-            result = self._validate(Path(cpt).exists(), result)
+            result = self._validate("ras_cpt", Path(cpt).exists(), result, f"cpt path does not exist ({cpt})")
         valid_values = [0, 1, 2]
-        result = self._validate(color_model in valid_values, result)
+        result = self._validate("ras_cpt", color_model in valid_values, result, f"color_model is not a valid value (expects: {[0, 1, 2]})")
         if rasf is not None:
             Path(rasf).touch()
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.ras_cpt(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("DISP", "ras_cpt", supplied_args, result[0]))
         self._on_error("ras_cpt", supplied_args, result[0])
@@ -5211,7 +5214,7 @@ class PyGammaTestProxy(object):
             self.call_count["uchar2float"] = 1
 
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.uchar2float(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("DISP", "uchar2float", supplied_args, result[0]))
         self._on_error("uchar2float", supplied_args, result[0])
@@ -5227,13 +5230,13 @@ class PyGammaTestProxy(object):
             self.call_count["rasdt_pwr24"] = 1
 
         if data is not None:
-            result = self._validate(Path(data).exists(), result)
+            result = self._validate("rasdt_pwr24", Path(data).exists(), result, f"data path does not exist ({data})")
         if pwr is not None:
-            result = self._validate(Path(pwr).exists(), result)
+            result = self._validate("rasdt_pwr24", Path(pwr).exists(), result, f"pwr path does not exist ({pwr})")
         if rasf is not None:
             Path(rasf).touch()
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.rasdt_pwr24(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("DISP", "rasdt_pwr24", supplied_args, result[0]))
         self._on_error("rasdt_pwr24", supplied_args, result[0])
@@ -5249,11 +5252,11 @@ class PyGammaTestProxy(object):
             self.call_count["float2gbyte"] = 1
 
         if infile is not None:
-            result = self._validate(Path(infile).exists(), result)
+            result = self._validate("float2gbyte", Path(infile).exists(), result, f"infile path does not exist ({infile})")
         if outfile is not None:
             Path(outfile).touch()
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.float2gbyte(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("DISP", "float2gbyte", supplied_args, result[0]))
         self._on_error("float2gbyte", supplied_args, result[0])
@@ -5269,9 +5272,9 @@ class PyGammaTestProxy(object):
             self.call_count["disbyte"] = 1
 
         if image is not None:
-            result = self._validate(Path(image).exists(), result)
+            result = self._validate("disbyte", Path(image).exists(), result, f"image path does not exist ({image})")
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.disbyte(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("DISP", "disbyte", supplied_args, result[0]))
         self._on_error("disbyte", supplied_args, result[0])
@@ -5287,15 +5290,15 @@ class PyGammaTestProxy(object):
             self.call_count["rasrmg"] = 1
 
         if unw is not None:
-            result = self._validate(Path(unw).exists(), result)
+            result = self._validate("rasrmg", Path(unw).exists(), result, f"unw path does not exist ({unw})")
         if pwr is not None:
-            result = self._validate(Path(pwr).exists(), result)
+            result = self._validate("rasrmg", Path(pwr).exists(), result, f"pwr path does not exist ({pwr})")
         if rasf is not None:
             Path(rasf).touch()
         if cc is not None:
-            result = self._validate(Path(cc).exists(), result)
+            result = self._validate("rasrmg", Path(cc).exists(), result, f"cc path does not exist ({cc})")
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.rasrmg(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("DISP", "rasrmg", supplied_args, result[0]))
         self._on_error("rasrmg", supplied_args, result[0])
@@ -5311,23 +5314,23 @@ class PyGammaTestProxy(object):
             self.call_count["kml_plan"] = 1
 
         if MLI_par is not None:
-            result = self._validate(Path(MLI_par).exists(), result)
+            result = self._validate("kml_plan", Path(MLI_par).exists(), result, f"MLI_par path does not exist ({MLI_par})")
         if DEM_par is not None:
-            result = self._validate(Path(DEM_par).exists(), result)
+            result = self._validate("kml_plan", Path(DEM_par).exists(), result, f"DEM_par path does not exist ({DEM_par})")
         if lookup_table is not None:
-            result = self._validate(Path(lookup_table).exists(), result)
+            result = self._validate("kml_plan", Path(lookup_table).exists(), result, f"lookup_table path does not exist ({lookup_table})")
         if kml is not None:
             Path(kml).touch()
         if geoid is not None:
-            result = self._validate(Path(geoid).exists(), result)
+            result = self._validate("kml_plan", Path(geoid).exists(), result, f"geoid path does not exist ({geoid})")
         if geoid_par is not None:
-            result = self._validate(Path(geoid_par).exists(), result)
+            result = self._validate("kml_plan", Path(geoid_par).exists(), result, f"geoid_par path does not exist ({geoid_par})")
         valid_values = [0, 1, 2]
-        result = self._validate(flight_path in valid_values, result)
+        result = self._validate("kml_plan", flight_path in valid_values, result, f"flight_path is not a valid value (expects: {[0, 1, 2]})")
         if pt_list is not None:
-            result = self._validate(Path(pt_list).exists(), result)
+            result = self._validate("kml_plan", Path(pt_list).exists(), result, f"pt_list path does not exist ({pt_list})")
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.kml_plan(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("DISP", "kml_plan", supplied_args, result[0]))
         self._on_error("kml_plan", supplied_args, result[0])
@@ -5343,13 +5346,13 @@ class PyGammaTestProxy(object):
             self.call_count["kml_map"] = 1
 
         if image is not None:
-            result = self._validate(Path(image).exists(), result)
+            result = self._validate("kml_map", Path(image).exists(), result, f"image path does not exist ({image})")
         if dem_par is not None:
-            result = self._validate(Path(dem_par).exists(), result)
+            result = self._validate("kml_map", Path(dem_par).exists(), result, f"dem_par path does not exist ({dem_par})")
         if kml is not None:
             Path(kml).touch()
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.kml_map(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("DISP", "kml_map", supplied_args, result[0]))
         self._on_error("kml_map", supplied_args, result[0])
@@ -5365,11 +5368,11 @@ class PyGammaTestProxy(object):
             self.call_count["dismph_pk"] = 1
 
         if cpx is not None:
-            result = self._validate(Path(cpx).exists(), result)
+            result = self._validate("dismph_pk", Path(cpx).exists(), result, f"cpx path does not exist ({cpx})")
         valid_values = [0, 1]
-        result = self._validate(data_type in valid_values, result)
+        result = self._validate("dismph_pk", data_type in valid_values, result, f"data_type is not a valid value (expects: {[0, 1]})")
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.dismph_pk(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("DISP", "dismph_pk", supplied_args, result[0]))
         self._on_error("dismph_pk", supplied_args, result[0])
@@ -5385,15 +5388,15 @@ class PyGammaTestProxy(object):
             self.call_count["ras_dB"] = 1
 
         if pwr is not None:
-            result = self._validate(Path(pwr).exists(), result)
+            result = self._validate("ras_dB", Path(pwr).exists(), result, f"pwr path does not exist ({pwr})")
         if rasf is not None:
             Path(rasf).touch()
         valid_values = [0, 1]
-        result = self._validate(abs_flag in valid_values, result)
+        result = self._validate("ras_dB", abs_flag in valid_values, result, f"abs_flag is not a valid value (expects: {[0, 1]})")
         valid_values = [1, 2, 3]
-        result = self._validate(channel in valid_values, result)
+        result = self._validate("ras_dB", channel in valid_values, result, f"channel is not a valid value (expects: {[1, 2, 3]})")
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.ras_dB(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("DISP", "ras_dB", supplied_args, result[0]))
         self._on_error("ras_dB", supplied_args, result[0])
@@ -5409,15 +5412,15 @@ class PyGammaTestProxy(object):
             self.call_count["thres_data"] = 1
 
         if data_in is not None:
-            result = self._validate(Path(data_in).exists(), result)
+            result = self._validate("thres_data", Path(data_in).exists(), result, f"data_in path does not exist ({data_in})")
         if data_out is not None:
             Path(data_out).touch()
         if t_data is not None:
-            result = self._validate(Path(t_data).exists(), result)
+            result = self._validate("thres_data", Path(t_data).exists(), result, f"t_data path does not exist ({t_data})")
         valid_values = [0, 1, 2]
-        result = self._validate(dtype in valid_values, result)
+        result = self._validate("thres_data", dtype in valid_values, result, f"dtype is not a valid value (expects: {[0, 1, 2]})")
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.thres_data(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("DISP", "thres_data", supplied_args, result[0]))
         self._on_error("thres_data", supplied_args, result[0])
@@ -5433,13 +5436,13 @@ class PyGammaTestProxy(object):
             self.call_count["distree"] = 1
 
         if flag is not None:
-            result = self._validate(Path(flag).exists(), result)
+            result = self._validate("distree", Path(flag).exists(), result, f"flag path does not exist ({flag})")
         if unw is not None:
-            result = self._validate(Path(unw).exists(), result)
+            result = self._validate("distree", Path(unw).exists(), result, f"unw path does not exist ({unw})")
         if cpx is not None:
-            result = self._validate(Path(cpx).exists(), result)
+            result = self._validate("distree", Path(cpx).exists(), result, f"cpx path does not exist ({cpx})")
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.distree(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("DISP", "distree", supplied_args, result[0]))
         self._on_error("distree", supplied_args, result[0])
@@ -5455,9 +5458,9 @@ class PyGammaTestProxy(object):
             self.call_count["dis_linear"] = 1
 
         if pwr is not None:
-            result = self._validate(Path(pwr).exists(), result)
+            result = self._validate("dis_linear", Path(pwr).exists(), result, f"pwr path does not exist ({pwr})")
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.dis_linear(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("DISP", "dis_linear", supplied_args, result[0]))
         self._on_error("dis_linear", supplied_args, result[0])
@@ -5473,11 +5476,11 @@ class PyGammaTestProxy(object):
             self.call_count["disdem_par"] = 1
 
         if DEM is not None:
-            result = self._validate(Path(DEM).exists(), result)
+            result = self._validate("disdem_par", Path(DEM).exists(), result, f"DEM path does not exist ({DEM})")
         if DEM_par is not None:
-            result = self._validate(Path(DEM_par).exists(), result)
+            result = self._validate("disdem_par", Path(DEM_par).exists(), result, f"DEM_par path does not exist ({DEM_par})")
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.disdem_par(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("DISP", "disdem_par", supplied_args, result[0]))
         self._on_error("disdem_par", supplied_args, result[0])
@@ -5493,13 +5496,13 @@ class PyGammaTestProxy(object):
             self.call_count["gcp_2ras"] = 1
 
         if ras1 is not None:
-            result = self._validate(Path(ras1).exists(), result)
+            result = self._validate("gcp_2ras", Path(ras1).exists(), result, f"ras1 path does not exist ({ras1})")
         if ras2 is not None:
-            result = self._validate(Path(ras2).exists(), result)
+            result = self._validate("gcp_2ras", Path(ras2).exists(), result, f"ras2 path does not exist ({ras2})")
         if gcp is not None:
             Path(gcp).touch()
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.gcp_2ras(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("DISP", "gcp_2ras", supplied_args, result[0]))
         self._on_error("gcp_2ras", supplied_args, result[0])
@@ -5515,13 +5518,13 @@ class PyGammaTestProxy(object):
             self.call_count["rashgt"] = 1
 
         if hgt is not None:
-            result = self._validate(Path(hgt).exists(), result)
+            result = self._validate("rashgt", Path(hgt).exists(), result, f"hgt path does not exist ({hgt})")
         if pwr is not None:
-            result = self._validate(Path(pwr).exists(), result)
+            result = self._validate("rashgt", Path(pwr).exists(), result, f"pwr path does not exist ({pwr})")
         if rasf is not None:
             Path(rasf).touch()
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.rashgt(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("DISP", "rashgt", supplied_args, result[0]))
         self._on_error("rashgt", supplied_args, result[0])
@@ -5537,13 +5540,13 @@ class PyGammaTestProxy(object):
             self.call_count["ras_linear"] = 1
 
         if pwr is not None:
-            result = self._validate(Path(pwr).exists(), result)
+            result = self._validate("ras_linear", Path(pwr).exists(), result, f"pwr path does not exist ({pwr})")
         if rasf is not None:
             Path(rasf).touch()
         valid_values = [1, 2, 3]
-        result = self._validate(channel in valid_values, result)
+        result = self._validate("ras_linear", channel in valid_values, result, f"channel is not a valid value (expects: {[1, 2, 3]})")
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.ras_linear(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("DISP", "ras_linear", supplied_args, result[0]))
         self._on_error("ras_linear", supplied_args, result[0])
@@ -5559,11 +5562,11 @@ class PyGammaTestProxy(object):
             self.call_count["tree_edit"] = 1
 
         if flag is not None:
-            result = self._validate(Path(flag).exists(), result)
+            result = self._validate("tree_edit", Path(flag).exists(), result, f"flag path does not exist ({flag})")
         if ras is not None:
-            result = self._validate(Path(ras).exists(), result)
+            result = self._validate("tree_edit", Path(ras).exists(), result, f"ras path does not exist ({ras})")
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.tree_edit(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("DISP", "tree_edit", supplied_args, result[0]))
         self._on_error("tree_edit", supplied_args, result[0])
@@ -5579,13 +5582,13 @@ class PyGammaTestProxy(object):
             self.call_count["fill"] = 1
 
         if d1 is not None:
-            result = self._validate(Path(d1).exists(), result)
+            result = self._validate("fill", Path(d1).exists(), result, f"d1 path does not exist ({d1})")
         if d2 is not None:
-            result = self._validate(Path(d2).exists(), result)
+            result = self._validate("fill", Path(d2).exists(), result, f"d2 path does not exist ({d2})")
         if dout is not None:
             Path(dout).touch()
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.fill(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("DISP", "fill", supplied_args, result[0]))
         self._on_error("fill", supplied_args, result[0])
@@ -5601,13 +5604,13 @@ class PyGammaTestProxy(object):
             self.call_count["dis2pwr"] = 1
 
         if pwr1 is not None:
-            result = self._validate(Path(pwr1).exists(), result)
+            result = self._validate("dis2pwr", Path(pwr1).exists(), result, f"pwr1 path does not exist ({pwr1})")
         if pwr2 is not None:
-            result = self._validate(Path(pwr2).exists(), result)
+            result = self._validate("dis2pwr", Path(pwr2).exists(), result, f"pwr2 path does not exist ({pwr2})")
         valid_values = [0, 1]
-        result = self._validate(dtype in valid_values, result)
+        result = self._validate("dis2pwr", dtype in valid_values, result, f"dtype is not a valid value (expects: {[0, 1]})")
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.dis2pwr(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("DISP", "dis2pwr", supplied_args, result[0]))
         self._on_error("dis2pwr", supplied_args, result[0])
@@ -5623,11 +5626,11 @@ class PyGammaTestProxy(object):
             self.call_count["dispwr"] = 1
 
         if pwr is not None:
-            result = self._validate(Path(pwr).exists(), result)
+            result = self._validate("dispwr", Path(pwr).exists(), result, f"pwr path does not exist ({pwr})")
         valid_values = [0, 1]
-        result = self._validate(data_type in valid_values, result)
+        result = self._validate("dispwr", data_type in valid_values, result, f"data_type is not a valid value (expects: {[0, 1]})")
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.dispwr(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("DISP", "dispwr", supplied_args, result[0]))
         self._on_error("dispwr", supplied_args, result[0])
@@ -5643,13 +5646,13 @@ class PyGammaTestProxy(object):
             self.call_count["rasSLC"] = 1
 
         if SLC is not None:
-            result = self._validate(Path(SLC).exists(), result)
+            result = self._validate("rasSLC", Path(SLC).exists(), result, f"SLC path does not exist ({SLC})")
         valid_values = [0, 1]
-        result = self._validate(data_type in valid_values, result)
+        result = self._validate("rasSLC", data_type in valid_values, result, f"data_type is not a valid value (expects: {[0, 1]})")
         if rasf is not None:
             Path(rasf).touch()
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.rasSLC(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("DISP", "rasSLC", supplied_args, result[0]))
         self._on_error("rasSLC", supplied_args, result[0])
@@ -5665,13 +5668,13 @@ class PyGammaTestProxy(object):
             self.call_count["rasmph_pwr24"] = 1
 
         if cpx is not None:
-            result = self._validate(Path(cpx).exists(), result)
+            result = self._validate("rasmph_pwr24", Path(cpx).exists(), result, f"cpx path does not exist ({cpx})")
         if pwr is not None:
-            result = self._validate(Path(pwr).exists(), result)
+            result = self._validate("rasmph_pwr24", Path(pwr).exists(), result, f"pwr path does not exist ({pwr})")
         if rasf is not None:
             Path(rasf).touch()
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.rasmph_pwr24(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("DISP", "rasmph_pwr24", supplied_args, result[0]))
         self._on_error("rasmph_pwr24", supplied_args, result[0])
@@ -5687,9 +5690,9 @@ class PyGammaTestProxy(object):
             self.call_count["dismph_ub"] = 1
 
         if cpx is not None:
-            result = self._validate(Path(cpx).exists(), result)
+            result = self._validate("dismph_ub", Path(cpx).exists(), result, f"cpx path does not exist ({cpx})")
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.dismph_ub(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("DISP", "dismph_ub", supplied_args, result[0]))
         self._on_error("dismph_ub", supplied_args, result[0])
@@ -5705,11 +5708,11 @@ class PyGammaTestProxy(object):
             self.call_count["short2float"] = 1
 
         if infile is not None:
-            result = self._validate(Path(infile).exists(), result)
+            result = self._validate("short2float", Path(infile).exists(), result, f"infile path does not exist ({infile})")
         if outfile is not None:
             Path(outfile).touch()
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.short2float(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("DISP", "short2float", supplied_args, result[0]))
         self._on_error("short2float", supplied_args, result[0])
@@ -5727,9 +5730,9 @@ class PyGammaTestProxy(object):
         if rasf is not None:
             Path(rasf).touch()
         valid_values = [0, 1, 2, 3]
-        result = self._validate(color_model in valid_values, result)
+        result = self._validate("ras8_color_scale", color_model in valid_values, result, f"color_model is not a valid value (expects: {[0, 1, 2, 3]})")
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.ras8_color_scale(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("DISP", "ras8_color_scale", supplied_args, result[0]))
         self._on_error("ras8_color_scale", supplied_args, result[0])
@@ -5745,13 +5748,13 @@ class PyGammaTestProxy(object):
             self.call_count["rasmph"] = 1
 
         if cpx is not None:
-            result = self._validate(Path(cpx).exists(), result)
+            result = self._validate("rasmph", Path(cpx).exists(), result, f"cpx path does not exist ({cpx})")
         if rasf is not None:
             Path(rasf).touch()
         valid_values = [0, 1]
-        result = self._validate(data_type in valid_values, result)
+        result = self._validate("rasmph", data_type in valid_values, result, f"data_type is not a valid value (expects: {[0, 1]})")
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.rasmph(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("DISP", "rasmph", supplied_args, result[0]))
         self._on_error("rasmph", supplied_args, result[0])
@@ -5767,7 +5770,7 @@ class PyGammaTestProxy(object):
             self.call_count["get_value"] = 1
 
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.get_value(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("DISP", "get_value", supplied_args, result[0]))
         self._on_error("get_value", supplied_args, result[0])
@@ -5783,11 +5786,11 @@ class PyGammaTestProxy(object):
             self.call_count["polyras"] = 1
 
         if ras is not None:
-            result = self._validate(Path(ras).exists(), result)
+            result = self._validate("polyras", Path(ras).exists(), result, f"ras path does not exist ({ras})")
         if poly_file is not None:
             Path(poly_file).touch()
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.polyras(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("DISP", "polyras", supplied_args, result[0]))
         self._on_error("polyras", supplied_args, result[0])
@@ -5803,13 +5806,13 @@ class PyGammaTestProxy(object):
             self.call_count["rastree"] = 1
 
         if flag is not None:
-            result = self._validate(Path(flag).exists(), result)
+            result = self._validate("rastree", Path(flag).exists(), result, f"flag path does not exist ({flag})")
         if unw is not None:
-            result = self._validate(Path(unw).exists(), result)
+            result = self._validate("rastree", Path(unw).exists(), result, f"unw path does not exist ({unw})")
         if rasf is not None:
             Path(rasf).touch()
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.rastree(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("DISP", "rastree", supplied_args, result[0]))
         self._on_error("rastree", supplied_args, result[0])
@@ -5825,11 +5828,11 @@ class PyGammaTestProxy(object):
             self.call_count["disshd"] = 1
 
         if DEM is not None:
-            result = self._validate(Path(DEM).exists(), result)
+            result = self._validate("disshd", Path(DEM).exists(), result, f"DEM path does not exist ({DEM})")
         valid_values = [0, 1]
-        result = self._validate(data_type in valid_values, result)
+        result = self._validate("disshd", data_type in valid_values, result, f"data_type is not a valid value (expects: {[0, 1]})")
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.disshd(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("DISP", "disshd", supplied_args, result[0]))
         self._on_error("disshd", supplied_args, result[0])
@@ -5845,11 +5848,11 @@ class PyGammaTestProxy(object):
             self.call_count["dis2gbyte"] = 1
 
         if image1 is not None:
-            result = self._validate(Path(image1).exists(), result)
+            result = self._validate("dis2gbyte", Path(image1).exists(), result, f"image1 path does not exist ({image1})")
         if image2 is not None:
-            result = self._validate(Path(image2).exists(), result)
+            result = self._validate("dis2gbyte", Path(image2).exists(), result, f"image2 path does not exist ({image2})")
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.dis2gbyte(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("DISP", "dis2gbyte", supplied_args, result[0]))
         self._on_error("dis2gbyte", supplied_args, result[0])
@@ -5865,15 +5868,15 @@ class PyGammaTestProxy(object):
             self.call_count["ras8_float"] = 1
 
         if f1 is not None:
-            result = self._validate(Path(f1).exists(), result)
+            result = self._validate("ras8_float", Path(f1).exists(), result, f"f1 path does not exist ({f1})")
         if f2 is not None:
-            result = self._validate(Path(f2).exists(), result)
+            result = self._validate("ras8_float", Path(f2).exists(), result, f"f2 path does not exist ({f2})")
         if rasf is not None:
             Path(rasf).touch()
         valid_values = [0, 1, 2, 3, 4]
-        result = self._validate(color_model in valid_values, result)
+        result = self._validate("ras8_float", color_model in valid_values, result, f"color_model is not a valid value (expects: {[0, 1, 2, 3, 4]})")
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.ras8_float(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("DISP", "ras8_float", supplied_args, result[0]))
         self._on_error("ras8_float", supplied_args, result[0])
@@ -5889,11 +5892,11 @@ class PyGammaTestProxy(object):
             self.call_count["flip"] = 1
 
         if infile is not None:
-            result = self._validate(Path(infile).exists(), result)
+            result = self._validate("flip", Path(infile).exists(), result, f"infile path does not exist ({infile})")
         if outfile is not None:
             Path(outfile).touch()
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.flip(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("DISP", "flip", supplied_args, result[0]))
         self._on_error("flip", supplied_args, result[0])
@@ -5911,9 +5914,9 @@ class PyGammaTestProxy(object):
         if output is not None:
             Path(output).touch()
         valid_values = [0, 1, 2, 3, 4, 5]
-        result = self._validate(dtype in valid_values, result)
+        result = self._validate("create_array", dtype in valid_values, result, f"dtype is not a valid value (expects: {[0, 1, 2, 3, 4, 5]})")
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.create_array(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("DISP", "create_array", supplied_args, result[0]))
         self._on_error("create_array", supplied_args, result[0])
@@ -5929,11 +5932,11 @@ class PyGammaTestProxy(object):
             self.call_count["ascii2float"] = 1
 
         if data_in is not None:
-            result = self._validate(Path(data_in).exists(), result)
+            result = self._validate("ascii2float", Path(data_in).exists(), result, f"data_in path does not exist ({data_in})")
         if data_out is not None:
             Path(data_out).touch()
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.ascii2float(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("DISP", "ascii2float", supplied_args, result[0]))
         self._on_error("ascii2float", supplied_args, result[0])
@@ -5949,13 +5952,13 @@ class PyGammaTestProxy(object):
             self.call_count["data2tiff"] = 1
 
         if data is not None:
-            result = self._validate(Path(data).exists(), result)
+            result = self._validate("data2tiff", Path(data).exists(), result, f"data path does not exist ({data})")
         valid_values = [0, 1, 2, 3, 4, 5]
-        result = self._validate(type in valid_values, result)
+        result = self._validate("data2tiff", type in valid_values, result, f"type is not a valid value (expects: {[0, 1, 2, 3, 4, 5]})")
         if TIFF is not None:
             Path(TIFF).touch()
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.data2tiff(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("DISP", "data2tiff", supplied_args, result[0]))
         self._on_error("data2tiff", supplied_args, result[0])
@@ -5971,15 +5974,15 @@ class PyGammaTestProxy(object):
             self.call_count["mapshd"] = 1
 
         if DEM is not None:
-            result = self._validate(Path(DEM).exists(), result)
+            result = self._validate("mapshd", Path(DEM).exists(), result, f"DEM path does not exist ({DEM})")
         if shade is not None:
             Path(shade).touch()
         valid_values = [0, 1]
-        result = self._validate(dtype in valid_values, result)
+        result = self._validate("mapshd", dtype in valid_values, result, f"dtype is not a valid value (expects: {[0, 1]})")
         valid_values = [0, 1]
-        result = self._validate(zero_flag in valid_values, result)
+        result = self._validate("mapshd", zero_flag in valid_values, result, f"zero_flag is not a valid value (expects: {[0, 1]})")
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.mapshd(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("DISP", "mapshd", supplied_args, result[0]))
         self._on_error("mapshd", supplied_args, result[0])
@@ -5995,13 +5998,13 @@ class PyGammaTestProxy(object):
             self.call_count["kml_pt"] = 1
 
         if table is not None:
-            result = self._validate(Path(table).exists(), result)
+            result = self._validate("kml_pt", Path(table).exists(), result, f"table path does not exist ({table})")
         if kml is not None:
             Path(kml).touch()
         valid_values = [0, 1, 2]
-        result = self._validate(color_model in valid_values, result)
+        result = self._validate("kml_pt", color_model in valid_values, result, f"color_model is not a valid value (expects: {[0, 1, 2]})")
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.kml_pt(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("DISP", "kml_pt", supplied_args, result[0]))
         self._on_error("kml_pt", supplied_args, result[0])
@@ -6017,13 +6020,13 @@ class PyGammaTestProxy(object):
             self.call_count["vec_to_real"] = 1
 
         if vec is not None:
-            result = self._validate(Path(vec).exists(), result)
+            result = self._validate("vec_to_real", Path(vec).exists(), result, f"vec path does not exist ({vec})")
         valid_values = [1, 2, 3]
-        result = self._validate(index in valid_values, result)
+        result = self._validate("vec_to_real", index in valid_values, result, f"index is not a valid value (expects: {[1, 2, 3]})")
         if cmp is not None:
             Path(cmp).touch()
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.vec_to_real(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("DISP", "vec_to_real", supplied_args, result[0]))
         self._on_error("vec_to_real", supplied_args, result[0])
@@ -6039,11 +6042,11 @@ class PyGammaTestProxy(object):
             self.call_count["dismph_pwr24"] = 1
 
         if cpx is not None:
-            result = self._validate(Path(cpx).exists(), result)
+            result = self._validate("dismph_pwr24", Path(cpx).exists(), result, f"cpx path does not exist ({cpx})")
         if pwr is not None:
-            result = self._validate(Path(pwr).exists(), result)
+            result = self._validate("dismph_pwr24", Path(pwr).exists(), result, f"pwr path does not exist ({pwr})")
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.dismph_pwr24(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("DISP", "dismph_pwr24", supplied_args, result[0]))
         self._on_error("dismph_pwr24", supplied_args, result[0])
@@ -6059,13 +6062,13 @@ class PyGammaTestProxy(object):
             self.call_count["swap_bytes"] = 1
 
         if infile is not None:
-            result = self._validate(Path(infile).exists(), result)
+            result = self._validate("swap_bytes", Path(infile).exists(), result, f"infile path does not exist ({infile})")
         if outfile is not None:
             Path(outfile).touch()
         valid_values = [2, 4, 8]
-        result = self._validate(swap_type in valid_values, result)
+        result = self._validate("swap_bytes", swap_type in valid_values, result, f"swap_type is not a valid value (expects: {[2, 4, 8]})")
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.swap_bytes(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("DISP", "swap_bytes", supplied_args, result[0]))
         self._on_error("swap_bytes", supplied_args, result[0])
@@ -6081,11 +6084,11 @@ class PyGammaTestProxy(object):
             self.call_count["float2double"] = 1
 
         if infile is not None:
-            result = self._validate(Path(infile).exists(), result)
+            result = self._validate("float2double", Path(infile).exists(), result, f"infile path does not exist ({infile})")
         if outfile is not None:
             Path(outfile).touch()
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.float2double(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("DISP", "float2double", supplied_args, result[0]))
         self._on_error("float2double", supplied_args, result[0])
@@ -6101,11 +6104,11 @@ class PyGammaTestProxy(object):
             self.call_count["dis2byte"] = 1
 
         if image1 is not None:
-            result = self._validate(Path(image1).exists(), result)
+            result = self._validate("dis2byte", Path(image1).exists(), result, f"image1 path does not exist ({image1})")
         if image2 is not None:
-            result = self._validate(Path(image2).exists(), result)
+            result = self._validate("dis2byte", Path(image2).exists(), result, f"image2 path does not exist ({image2})")
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.dis2byte(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("DISP", "dis2byte", supplied_args, result[0]))
         self._on_error("dis2byte", supplied_args, result[0])
@@ -6121,17 +6124,17 @@ class PyGammaTestProxy(object):
             self.call_count["svg_poly"] = 1
 
         if image is not None:
-            result = self._validate(Path(image).exists(), result)
+            result = self._validate("svg_poly", Path(image).exists(), result, f"image path does not exist ({image})")
         if dem_par is not None:
-            result = self._validate(Path(dem_par).exists(), result)
+            result = self._validate("svg_poly", Path(dem_par).exists(), result, f"dem_par path does not exist ({dem_par})")
         if poly is not None:
-            result = self._validate(Path(poly).exists(), result)
+            result = self._validate("svg_poly", Path(poly).exists(), result, f"poly path does not exist ({poly})")
         if svg is not None:
             Path(svg).touch()
         valid_values = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
-        result = self._validate(thick in valid_values, result)
+        result = self._validate("svg_poly", thick in valid_values, result, f"thick is not a valid value (expects: {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]})")
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.svg_poly(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("DISP", "svg_poly", supplied_args, result[0]))
         self._on_error("svg_poly", supplied_args, result[0])
@@ -6147,11 +6150,11 @@ class PyGammaTestProxy(object):
             self.call_count["rasbyte"] = 1
 
         if raw is not None:
-            result = self._validate(Path(raw).exists(), result)
+            result = self._validate("rasbyte", Path(raw).exists(), result, f"raw path does not exist ({raw})")
         if rasf is not None:
             Path(rasf).touch()
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.rasbyte(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("DISP", "rasbyte", supplied_args, result[0]))
         self._on_error("rasbyte", supplied_args, result[0])
@@ -6169,11 +6172,11 @@ class PyGammaTestProxy(object):
         if rasf is not None:
             Path(rasf).touch()
         if cpt is not None:
-            result = self._validate(Path(cpt).exists(), result)
+            result = self._validate("ras_cpt_scale", Path(cpt).exists(), result, f"cpt path does not exist ({cpt})")
         valid_values = [0, 1, 2]
-        result = self._validate(color_model in valid_values, result)
+        result = self._validate("ras_cpt_scale", color_model in valid_values, result, f"color_model is not a valid value (expects: {[0, 1, 2]})")
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.ras_cpt_scale(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("DISP", "ras_cpt_scale", supplied_args, result[0]))
         self._on_error("ras_cpt_scale", supplied_args, result[0])
@@ -6189,11 +6192,11 @@ class PyGammaTestProxy(object):
             self.call_count["dis2cc"] = 1
 
         if cc1 is not None:
-            result = self._validate(Path(cc1).exists(), result)
+            result = self._validate("dis2cc", Path(cc1).exists(), result, f"cc1 path does not exist ({cc1})")
         if cc2 is not None:
-            result = self._validate(Path(cc2).exists(), result)
+            result = self._validate("dis2cc", Path(cc2).exists(), result, f"cc2 path does not exist ({cc2})")
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.dis2cc(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("DISP", "dis2cc", supplied_args, result[0]))
         self._on_error("dis2cc", supplied_args, result[0])
@@ -6209,11 +6212,11 @@ class PyGammaTestProxy(object):
             self.call_count["float2ascii"] = 1
 
         if din is not None:
-            result = self._validate(Path(din).exists(), result)
+            result = self._validate("float2ascii", Path(din).exists(), result, f"din path does not exist ({din})")
         if data_out is not None:
             Path(data_out).touch()
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.float2ascii(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("DISP", "float2ascii", supplied_args, result[0]))
         self._on_error("float2ascii", supplied_args, result[0])
@@ -6229,17 +6232,17 @@ class PyGammaTestProxy(object):
             self.call_count["replace_values"] = 1
 
         if f_in is not None:
-            result = self._validate(Path(f_in).exists(), result)
+            result = self._validate("replace_values", Path(f_in).exists(), result, f"f_in path does not exist ({f_in})")
         if f_out is not None:
             Path(f_out).touch()
         valid_values = [0, 1, 2]
-        result = self._validate(rpl_flg in valid_values, result)
+        result = self._validate("replace_values", rpl_flg in valid_values, result, f"rpl_flg is not a valid value (expects: {[0, 1, 2]})")
         valid_values = [2, 4]
-        result = self._validate(dtype in valid_values, result)
+        result = self._validate("replace_values", dtype in valid_values, result, f"dtype is not a valid value (expects: {[2, 4]})")
         valid_values = [0, 1]
-        result = self._validate(zflg in valid_values, result)
+        result = self._validate("replace_values", zflg in valid_values, result, f"zflg is not a valid value (expects: {[0, 1]})")
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.replace_values(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("DISP", "replace_values", supplied_args, result[0]))
         self._on_error("replace_values", supplied_args, result[0])
@@ -6255,17 +6258,17 @@ class PyGammaTestProxy(object):
             self.call_count["sbi_offset"] = 1
 
         if sbi_unw is not None:
-            result = self._validate(Path(sbi_unw).exists(), result)
+            result = self._validate("sbi_offset", Path(sbi_unw).exists(), result, f"sbi_unw path does not exist ({sbi_unw})")
         if SLCf_par is not None:
-            result = self._validate(Path(SLCf_par).exists(), result)
+            result = self._validate("sbi_offset", Path(SLCf_par).exists(), result, f"SLCf_par path does not exist ({SLCf_par})")
         if SLCb_par is not None:
-            result = self._validate(Path(SLCb_par).exists(), result)
+            result = self._validate("sbi_offset", Path(SLCb_par).exists(), result, f"SLCb_par path does not exist ({SLCb_par})")
         if OFF_par is not None:
-            result = self._validate(Path(OFF_par).exists(), result)
+            result = self._validate("sbi_offset", Path(OFF_par).exists(), result, f"OFF_par path does not exist ({OFF_par})")
         if az_offset is not None:
             Path(az_offset).touch()
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.sbi_offset(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("ISP", "sbi_offset", supplied_args, result[0]))
         self._on_error("sbi_offset", supplied_args, result[0])
@@ -6281,15 +6284,15 @@ class PyGammaTestProxy(object):
             self.call_count["par_ASF_RSAT_SS"] = 1
 
         if CEOS_leader is not None:
-            result = self._validate(Path(CEOS_leader).exists(), result)
+            result = self._validate("par_ASF_RSAT_SS", Path(CEOS_leader).exists(), result, f"CEOS_leader path does not exist ({CEOS_leader})")
         if CEOS_data is not None:
-            result = self._validate(Path(CEOS_data).exists(), result)
+            result = self._validate("par_ASF_RSAT_SS", Path(CEOS_data).exists(), result, f"CEOS_data path does not exist ({CEOS_data})")
         if GRD_par is not None:
             Path(GRD_par).touch()
         if GRD is not None:
             Path(GRD).touch()
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.par_ASF_RSAT_SS(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("ISP", "par_ASF_RSAT_SS", supplied_args, result[0]))
         self._on_error("par_ASF_RSAT_SS", supplied_args, result[0])
@@ -6307,11 +6310,11 @@ class PyGammaTestProxy(object):
         if SLC_par is not None:
             Path(SLC_par).touch()
         if CEOS_data is not None:
-            result = self._validate(Path(CEOS_data).exists(), result)
+            result = self._validate("par_ASF_SLC", Path(CEOS_data).exists(), result, f"CEOS_data path does not exist ({CEOS_data})")
         if SLC is not None:
             Path(SLC).touch()
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.par_ASF_SLC(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("ISP", "par_ASF_SLC", supplied_args, result[0]))
         self._on_error("par_ASF_SLC", supplied_args, result[0])
@@ -6327,11 +6330,11 @@ class PyGammaTestProxy(object):
             self.call_count["par_KS_SLC"] = 1
 
         if HDF5 is not None:
-            result = self._validate(Path(HDF5).exists(), result)
+            result = self._validate("par_KS_SLC", Path(HDF5).exists(), result, f"HDF5 path does not exist ({HDF5})")
         if trunk is not None:
             Path(trunk).touch()
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.par_KS_SLC(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("ISP", "par_KS_SLC", supplied_args, result[0]))
         self._on_error("par_KS_SLC", supplied_args, result[0])
@@ -6347,19 +6350,19 @@ class PyGammaTestProxy(object):
             self.call_count["ScanSAR_full_aperture_SLC"] = 1
 
         if SLC1_tab is not None:
-            result = self._validate(Path(SLC1_tab).exists(), result)
+            result = self._validate("ScanSAR_full_aperture_SLC", Path(SLC1_tab).exists(), result, f"SLC1_tab path does not exist ({SLC1_tab})")
         if SLC2_tab is not None and not Path(SLC2_tab).exists():
             Path(SLC2_tab).touch()
         if SLCR_tab is not None:
-            result = self._validate(Path(SLCR_tab).exists(), result)
+            result = self._validate("ScanSAR_full_aperture_SLC", Path(SLCR_tab).exists(), result, f"SLCR_tab path does not exist ({SLCR_tab})")
         valid_values = [0, 1]
-        result = self._validate(vmode in valid_values, result)
+        result = self._validate("ScanSAR_full_aperture_SLC", vmode in valid_values, result, f"vmode is not a valid value (expects: {[0, 1]})")
         valid_values = [0, 1]
-        result = self._validate(wflg in valid_values, result)
+        result = self._validate("ScanSAR_full_aperture_SLC", wflg in valid_values, result, f"wflg is not a valid value (expects: {[0, 1]})")
         valid_values = [0, 1]
-        result = self._validate(imode in valid_values, result)
+        result = self._validate("ScanSAR_full_aperture_SLC", imode in valid_values, result, f"imode is not a valid value (expects: {[0, 1]})")
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.ScanSAR_full_aperture_SLC(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("ISP", "ScanSAR_full_aperture_SLC", supplied_args, result[0]))
         self._on_error("ScanSAR_full_aperture_SLC", supplied_args, result[0])
@@ -6375,21 +6378,21 @@ class PyGammaTestProxy(object):
             self.call_count["init_offset"] = 1
 
         if SLC_1 is not None:
-            result = self._validate(Path(SLC_1).exists(), result)
+            result = self._validate("init_offset", Path(SLC_1).exists(), result, f"SLC_1 path does not exist ({SLC_1})")
         if SLC_2 is not None:
-            result = self._validate(Path(SLC_2).exists(), result)
+            result = self._validate("init_offset", Path(SLC_2).exists(), result, f"SLC_2 path does not exist ({SLC_2})")
         if SLC1_par is not None:
-            result = self._validate(Path(SLC1_par).exists(), result)
+            result = self._validate("init_offset", Path(SLC1_par).exists(), result, f"SLC1_par path does not exist ({SLC1_par})")
         if SLC2_par is not None:
-            result = self._validate(Path(SLC2_par).exists(), result)
+            result = self._validate("init_offset", Path(SLC2_par).exists(), result, f"SLC2_par path does not exist ({SLC2_par})")
         if OFF_par is not None:
-            result = self._validate(Path(OFF_par).exists(), result)
+            result = self._validate("init_offset", Path(OFF_par).exists(), result, f"OFF_par path does not exist ({OFF_par})")
         valid_values = [0, 1]
-        result = self._validate(cflag in valid_values, result)
+        result = self._validate("init_offset", cflag in valid_values, result, f"cflag is not a valid value (expects: {[0, 1]})")
         valid_values = [0, 1]
-        result = self._validate(deramp in valid_values, result)
+        result = self._validate("init_offset", deramp in valid_values, result, f"deramp is not a valid value (expects: {[0, 1]})")
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.init_offset(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("ISP", "init_offset", supplied_args, result[0]))
         self._on_error("init_offset", supplied_args, result[0])
@@ -6405,15 +6408,15 @@ class PyGammaTestProxy(object):
             self.call_count["bridge"] = 1
 
         if int is not None:
-            result = self._validate(Path(int).exists(), result)
+            result = self._validate("bridge", Path(int).exists(), result, f"int path does not exist ({int})")
         if flag is not None:
-            result = self._validate(Path(flag).exists(), result)
+            result = self._validate("bridge", Path(flag).exists(), result, f"flag path does not exist ({flag})")
         if unw is not None and not Path(unw).exists():
             Path(unw).touch()
         if bridge is not None:
-            result = self._validate(Path(bridge).exists(), result)
+            result = self._validate("bridge", Path(bridge).exists(), result, f"bridge path does not exist ({bridge})")
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.bridge(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("ISP", "bridge", supplied_args, result[0]))
         self._on_error("bridge", supplied_args, result[0])
@@ -6431,7 +6434,7 @@ class PyGammaTestProxy(object):
         if SLC_par is not None:
             Path(SLC_par).touch()
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.par_ERSDAC_PALSAR(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("ISP", "par_ERSDAC_PALSAR", supplied_args, result[0]))
         self._on_error("par_ERSDAC_PALSAR", supplied_args, result[0])
@@ -6447,19 +6450,19 @@ class PyGammaTestProxy(object):
             self.call_count["SR_to_GRD"] = 1
 
         if MLI_par is not None:
-            result = self._validate(Path(MLI_par).exists(), result)
+            result = self._validate("SR_to_GRD", Path(MLI_par).exists(), result, f"MLI_par path does not exist ({MLI_par})")
         if OFF_par is not None:
-            result = self._validate(Path(OFF_par).exists(), result)
+            result = self._validate("SR_to_GRD", Path(OFF_par).exists(), result, f"OFF_par path does not exist ({OFF_par})")
         if GRD_par is not None and not Path(GRD_par).exists():
             Path(GRD_par).touch()
         if in_file is not None:
-            result = self._validate(Path(in_file).exists(), result)
+            result = self._validate("SR_to_GRD", Path(in_file).exists(), result, f"in_file path does not exist ({in_file})")
         if out_file is not None:
             Path(out_file).touch()
         valid_values = [0, 1, 2]
-        result = self._validate(interp_mode in valid_values, result)
+        result = self._validate("SR_to_GRD", interp_mode in valid_values, result, f"interp_mode is not a valid value (expects: {[0, 1, 2]})")
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.SR_to_GRD(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("ISP", "SR_to_GRD", supplied_args, result[0]))
         self._on_error("SR_to_GRD", supplied_args, result[0])
@@ -6475,11 +6478,11 @@ class PyGammaTestProxy(object):
             self.call_count["par_ACS_ERS"] = 1
 
         if CEOS_SAR_leader is not None:
-            result = self._validate(Path(CEOS_SAR_leader).exists(), result)
+            result = self._validate("par_ACS_ERS", Path(CEOS_SAR_leader).exists(), result, f"CEOS_SAR_leader path does not exist ({CEOS_SAR_leader})")
         if SLC_par is not None:
             Path(SLC_par).touch()
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.par_ACS_ERS(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("ISP", "par_ACS_ERS", supplied_args, result[0]))
         self._on_error("par_ACS_ERS", supplied_args, result[0])
@@ -6495,19 +6498,19 @@ class PyGammaTestProxy(object):
             self.call_count["offset_fit"] = 1
 
         if offs is not None:
-            result = self._validate(Path(offs).exists(), result)
+            result = self._validate("offset_fit", Path(offs).exists(), result, f"offs path does not exist ({offs})")
         if ccp is not None:
-            result = self._validate(Path(ccp).exists(), result)
+            result = self._validate("offset_fit", Path(ccp).exists(), result, f"ccp path does not exist ({ccp})")
         if OFF_par is not None:
-            result = self._validate(Path(OFF_par).exists(), result)
+            result = self._validate("offset_fit", Path(OFF_par).exists(), result, f"OFF_par path does not exist ({OFF_par})")
         if coffs is not None:
             Path(coffs).touch()
         if coffsets is not None:
             Path(coffsets).touch()
         valid_values = [0, 1]
-        result = self._validate(interact_flag in valid_values, result)
+        result = self._validate("offset_fit", interact_flag in valid_values, result, f"interact_flag is not a valid value (expects: {[0, 1]})")
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.offset_fit(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("ISP", "offset_fit", supplied_args, result[0]))
         self._on_error("offset_fit", supplied_args, result[0])
@@ -6523,15 +6526,15 @@ class PyGammaTestProxy(object):
             self.call_count["radcal_PRI"] = 1
 
         if PRI is not None:
-            result = self._validate(Path(PRI).exists(), result)
+            result = self._validate("radcal_PRI", Path(PRI).exists(), result, f"PRI path does not exist ({PRI})")
         if PRI_PAR is not None:
-            result = self._validate(Path(PRI_PAR).exists(), result)
+            result = self._validate("radcal_PRI", Path(PRI_PAR).exists(), result, f"PRI_PAR path does not exist ({PRI_PAR})")
         if GRD is not None:
             Path(GRD).touch()
         if GRD_PAR is not None:
             Path(GRD_PAR).touch()
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.radcal_PRI(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("ISP", "radcal_PRI", supplied_args, result[0]))
         self._on_error("radcal_PRI", supplied_args, result[0])
@@ -6547,15 +6550,15 @@ class PyGammaTestProxy(object):
             self.call_count["gcp_phase"] = 1
 
         if unw is not None:
-            result = self._validate(Path(unw).exists(), result)
+            result = self._validate("gcp_phase", Path(unw).exists(), result, f"unw path does not exist ({unw})")
         if OFF_par is not None:
-            result = self._validate(Path(OFF_par).exists(), result)
+            result = self._validate("gcp_phase", Path(OFF_par).exists(), result, f"OFF_par path does not exist ({OFF_par})")
         if gcp is not None:
-            result = self._validate(Path(gcp).exists(), result)
+            result = self._validate("gcp_phase", Path(gcp).exists(), result, f"gcp path does not exist ({gcp})")
         if gcp_ph is not None:
             Path(gcp_ph).touch()
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.gcp_phase(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("ISP", "gcp_phase", supplied_args, result[0]))
         self._on_error("gcp_phase", supplied_args, result[0])
@@ -6571,15 +6574,15 @@ class PyGammaTestProxy(object):
             self.call_count["par_MSP"] = 1
 
         if SAR_par is not None:
-            result = self._validate(Path(SAR_par).exists(), result)
+            result = self._validate("par_MSP", Path(SAR_par).exists(), result, f"SAR_par path does not exist ({SAR_par})")
         if PROC_par is not None:
-            result = self._validate(Path(PROC_par).exists(), result)
+            result = self._validate("par_MSP", Path(PROC_par).exists(), result, f"PROC_par path does not exist ({PROC_par})")
         if SLC_MLI_par is not None:
             Path(SLC_MLI_par).touch()
         valid_values = [0, 1, 2]
-        result = self._validate(image_format in valid_values, result)
+        result = self._validate("par_MSP", image_format in valid_values, result, f"image_format is not a valid value (expects: {[0, 1, 2]})")
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.par_MSP(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("ISP", "par_MSP", supplied_args, result[0]))
         self._on_error("par_MSP", supplied_args, result[0])
@@ -6595,37 +6598,37 @@ class PyGammaTestProxy(object):
             self.call_count["offset_pwr_tracking2"] = 1
 
         if SLC1 is not None:
-            result = self._validate(Path(SLC1).exists(), result)
+            result = self._validate("offset_pwr_tracking2", Path(SLC1).exists(), result, f"SLC1 path does not exist ({SLC1})")
         if SLC2 is not None:
-            result = self._validate(Path(SLC2).exists(), result)
+            result = self._validate("offset_pwr_tracking2", Path(SLC2).exists(), result, f"SLC2 path does not exist ({SLC2})")
         if SLC1_par is not None:
-            result = self._validate(Path(SLC1_par).exists(), result)
+            result = self._validate("offset_pwr_tracking2", Path(SLC1_par).exists(), result, f"SLC1_par path does not exist ({SLC1_par})")
         if SLC2_par is not None:
-            result = self._validate(Path(SLC2_par).exists(), result)
+            result = self._validate("offset_pwr_tracking2", Path(SLC2_par).exists(), result, f"SLC2_par path does not exist ({SLC2_par})")
         if OFF_par is not None:
-            result = self._validate(Path(OFF_par).exists(), result)
+            result = self._validate("offset_pwr_tracking2", Path(OFF_par).exists(), result, f"OFF_par path does not exist ({OFF_par})")
         if offs is not None:
             Path(offs).touch()
         if ccp is not None:
             Path(ccp).touch()
         if OFF_par2 is not None:
-            result = self._validate(Path(OFF_par2).exists(), result)
+            result = self._validate("offset_pwr_tracking2", Path(OFF_par2).exists(), result, f"OFF_par2 path does not exist ({OFF_par2})")
         if offs2 is not None:
-            result = self._validate(Path(offs2).exists(), result)
+            result = self._validate("offset_pwr_tracking2", Path(offs2).exists(), result, f"offs2 path does not exist ({offs2})")
         if offsets is not None:
             Path(offsets).touch()
         valid_values = [0, 1]
-        result = self._validate(deramp in valid_values, result)
+        result = self._validate("offset_pwr_tracking2", deramp in valid_values, result, f"deramp is not a valid value (expects: {[0, 1]})")
         valid_values = [0, 1]
-        result = self._validate(int_filt in valid_values, result)
+        result = self._validate("offset_pwr_tracking2", int_filt in valid_values, result, f"int_filt is not a valid value (expects: {[0, 1]})")
         valid_values = [0, 1]
-        result = self._validate(pflag in valid_values, result)
+        result = self._validate("offset_pwr_tracking2", pflag in valid_values, result, f"pflag is not a valid value (expects: {[0, 1]})")
         valid_values = [0, 1, 2, 3]
-        result = self._validate(pltflg in valid_values, result)
+        result = self._validate("offset_pwr_tracking2", pltflg in valid_values, result, f"pltflg is not a valid value (expects: {[0, 1, 2, 3]})")
         if ccs is not None:
             Path(ccs).touch()
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.offset_pwr_tracking2(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("ISP", "offset_pwr_tracking2", supplied_args, result[0]))
         self._on_error("offset_pwr_tracking2", supplied_args, result[0])
@@ -6641,23 +6644,23 @@ class PyGammaTestProxy(object):
             self.call_count["offset_tracking"] = 1
 
         if offs is not None:
-            result = self._validate(Path(offs).exists(), result)
+            result = self._validate("offset_tracking", Path(offs).exists(), result, f"offs path does not exist ({offs})")
         if ccp is not None:
-            result = self._validate(Path(ccp).exists(), result)
+            result = self._validate("offset_tracking", Path(ccp).exists(), result, f"ccp path does not exist ({ccp})")
         if SLC_par is not None:
-            result = self._validate(Path(SLC_par).exists(), result)
+            result = self._validate("offset_tracking", Path(SLC_par).exists(), result, f"SLC_par path does not exist ({SLC_par})")
         if OFF_par is not None:
-            result = self._validate(Path(OFF_par).exists(), result)
+            result = self._validate("offset_tracking", Path(OFF_par).exists(), result, f"OFF_par path does not exist ({OFF_par})")
         if disp_map is not None:
             Path(disp_map).touch()
         if disp_val is not None:
             Path(disp_val).touch()
         valid_values = [0, 1, 2]
-        result = self._validate(mode in valid_values, result)
+        result = self._validate("offset_tracking", mode in valid_values, result, f"mode is not a valid value (expects: {[0, 1, 2]})")
         valid_values = [0, 1]
-        result = self._validate(poly_flag in valid_values, result)
+        result = self._validate("offset_tracking", poly_flag in valid_values, result, f"poly_flag is not a valid value (expects: {[0, 1]})")
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.offset_tracking(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("ISP", "offset_tracking", supplied_args, result[0]))
         self._on_error("offset_tracking", supplied_args, result[0])
@@ -6673,15 +6676,15 @@ class PyGammaTestProxy(object):
             self.call_count["SLC_interp_ScanSAR"] = 1
 
         if SLC2_tab is not None:
-            result = self._validate(Path(SLC2_tab).exists(), result)
+            result = self._validate("SLC_interp_ScanSAR", Path(SLC2_tab).exists(), result, f"SLC2_tab path does not exist ({SLC2_tab})")
         if SLC2_par is not None:
-            result = self._validate(Path(SLC2_par).exists(), result)
+            result = self._validate("SLC_interp_ScanSAR", Path(SLC2_par).exists(), result, f"SLC2_par path does not exist ({SLC2_par})")
         if SLC1_tab is not None:
-            result = self._validate(Path(SLC1_tab).exists(), result)
+            result = self._validate("SLC_interp_ScanSAR", Path(SLC1_tab).exists(), result, f"SLC1_tab path does not exist ({SLC1_tab})")
         if SLC1_par is not None:
-            result = self._validate(Path(SLC1_par).exists(), result)
+            result = self._validate("SLC_interp_ScanSAR", Path(SLC1_par).exists(), result, f"SLC1_par path does not exist ({SLC1_par})")
         if OFF_par is not None:
-            result = self._validate(Path(OFF_par).exists(), result)
+            result = self._validate("SLC_interp_ScanSAR", Path(OFF_par).exists(), result, f"OFF_par path does not exist ({OFF_par})")
         if SLC2R_tab is not None and not Path(SLC2R_tab).exists():
             Path(SLC2R_tab).touch()
         if SLC_2R is not None:
@@ -6689,9 +6692,9 @@ class PyGammaTestProxy(object):
         if SLC2R_par is not None:
             Path(SLC2R_par).touch()
         valid_values = [0, 1]
-        result = self._validate(mode in valid_values, result)
+        result = self._validate("SLC_interp_ScanSAR", mode in valid_values, result, f"mode is not a valid value (expects: {[0, 1]})")
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.SLC_interp_ScanSAR(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("ISP", "SLC_interp_ScanSAR", supplied_args, result[0]))
         self._on_error("SLC_interp_ScanSAR", supplied_args, result[0])
@@ -6707,13 +6710,13 @@ class PyGammaTestProxy(object):
             self.call_count["error_stat"] = 1
 
         if d1 is not None:
-            result = self._validate(Path(d1).exists(), result)
+            result = self._validate("error_stat", Path(d1).exists(), result, f"d1 path does not exist ({d1})")
         if d2 is not None:
-            result = self._validate(Path(d2).exists(), result)
+            result = self._validate("error_stat", Path(d2).exists(), result, f"d2 path does not exist ({d2})")
         valid_values = [0, 1]
-        result = self._validate(dtype in valid_values, result)
+        result = self._validate("error_stat", dtype in valid_values, result, f"dtype is not a valid value (expects: {[0, 1]})")
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.error_stat(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("ISP", "error_stat", supplied_args, result[0]))
         self._on_error("error_stat", supplied_args, result[0])
@@ -6729,21 +6732,21 @@ class PyGammaTestProxy(object):
             self.call_count["res_map"] = 1
 
         if hgt is not None:
-            result = self._validate(Path(hgt).exists(), result)
+            result = self._validate("res_map", Path(hgt).exists(), result, f"hgt path does not exist ({hgt})")
         if gr is not None:
-            result = self._validate(Path(gr).exists(), result)
+            result = self._validate("res_map", Path(gr).exists(), result, f"gr path does not exist ({gr})")
         if data is not None:
-            result = self._validate(Path(data).exists(), result)
+            result = self._validate("res_map", Path(data).exists(), result, f"data path does not exist ({data})")
         if SLC_par is not None:
-            result = self._validate(Path(SLC_par).exists(), result)
+            result = self._validate("res_map", Path(SLC_par).exists(), result, f"SLC_par path does not exist ({SLC_par})")
         if OFF_par is not None:
-            result = self._validate(Path(OFF_par).exists(), result)
+            result = self._validate("res_map", Path(OFF_par).exists(), result, f"OFF_par path does not exist ({OFF_par})")
         if res_hgt is not None:
             Path(res_hgt).touch()
         if res_data is not None:
             Path(res_data).touch()
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.res_map(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("ISP", "res_map", supplied_args, result[0]))
         self._on_error("res_map", supplied_args, result[0])
@@ -6759,9 +6762,9 @@ class PyGammaTestProxy(object):
             self.call_count["RSAT2_vec"] = 1
 
         if SLC_par is not None:
-            result = self._validate(Path(SLC_par).exists(), result)
+            result = self._validate("RSAT2_vec", Path(SLC_par).exists(), result, f"SLC_par path does not exist ({SLC_par})")
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.RSAT2_vec(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("ISP", "RSAT2_vec", supplied_args, result[0]))
         self._on_error("RSAT2_vec", supplied_args, result[0])
@@ -6777,13 +6780,13 @@ class PyGammaTestProxy(object):
             self.call_count["par_S1_GRD"] = 1
 
         if GeoTIFF is not None:
-            result = self._validate(Path(GeoTIFF).exists(), result)
+            result = self._validate("par_S1_GRD", Path(GeoTIFF).exists(), result, f"GeoTIFF path does not exist ({GeoTIFF})")
         if annotation_XML is not None:
-            result = self._validate(Path(annotation_XML).exists(), result)
+            result = self._validate("par_S1_GRD", Path(annotation_XML).exists(), result, f"annotation_XML path does not exist ({annotation_XML})")
         if calibration_XML is not None:
-            result = self._validate(Path(calibration_XML).exists(), result)
+            result = self._validate("par_S1_GRD", Path(calibration_XML).exists(), result, f"calibration_XML path does not exist ({calibration_XML})")
         if noise_XML is not None:
-            result = self._validate(Path(noise_XML).exists(), result)
+            result = self._validate("par_S1_GRD", Path(noise_XML).exists(), result, f"noise_XML path does not exist ({noise_XML})")
         if MLI_par is not None:
             Path(MLI_par).touch()
         if MLI is not None:
@@ -6793,7 +6796,7 @@ class PyGammaTestProxy(object):
         if GRD is not None:
             Path(GRD).touch()
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.par_S1_GRD(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("ISP", "par_S1_GRD", supplied_args, result[0]))
         self._on_error("par_S1_GRD", supplied_args, result[0])
@@ -6809,15 +6812,15 @@ class PyGammaTestProxy(object):
             self.call_count["SLC_deramp_S1_TOPS"] = 1
 
         if SLC1_tab is not None:
-            result = self._validate(Path(SLC1_tab).exists(), result)
+            result = self._validate("SLC_deramp_S1_TOPS", Path(SLC1_tab).exists(), result, f"SLC1_tab path does not exist ({SLC1_tab})")
         if SLC2_tab is not None:
-            result = self._validate(Path(SLC2_tab).exists(), result)
+            result = self._validate("SLC_deramp_S1_TOPS", Path(SLC2_tab).exists(), result, f"SLC2_tab path does not exist ({SLC2_tab})")
         valid_values = [0, 1]
-        result = self._validate(mode in valid_values, result)
+        result = self._validate("SLC_deramp_S1_TOPS", mode in valid_values, result, f"mode is not a valid value (expects: {[0, 1]})")
         valid_values = [0, 1]
-        result = self._validate(phflg in valid_values, result)
+        result = self._validate("SLC_deramp_S1_TOPS", phflg in valid_values, result, f"phflg is not a valid value (expects: {[0, 1]})")
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.SLC_deramp_S1_TOPS(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("ISP", "SLC_deramp_S1_TOPS", supplied_args, result[0]))
         self._on_error("SLC_deramp_S1_TOPS", supplied_args, result[0])
@@ -6833,15 +6836,15 @@ class PyGammaTestProxy(object):
             self.call_count["par_RSAT_SGF"] = 1
 
         if CEOS_leader is not None:
-            result = self._validate(Path(CEOS_leader).exists(), result)
+            result = self._validate("par_RSAT_SGF", Path(CEOS_leader).exists(), result, f"CEOS_leader path does not exist ({CEOS_leader})")
         if CEOS_data is not None:
-            result = self._validate(Path(CEOS_data).exists(), result)
+            result = self._validate("par_RSAT_SGF", Path(CEOS_data).exists(), result, f"CEOS_data path does not exist ({CEOS_data})")
         if GRD_par is not None:
             Path(GRD_par).touch()
         if GRD is not None:
             Path(GRD).touch()
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.par_RSAT_SGF(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("ISP", "par_RSAT_SGF", supplied_args, result[0]))
         self._on_error("par_RSAT_SGF", supplied_args, result[0])
@@ -6857,13 +6860,13 @@ class PyGammaTestProxy(object):
             self.call_count["par_ICEYE_GRD"] = 1
 
         if GeoTIFF is not None:
-            result = self._validate(Path(GeoTIFF).exists(), result)
+            result = self._validate("par_ICEYE_GRD", Path(GeoTIFF).exists(), result, f"GeoTIFF path does not exist ({GeoTIFF})")
         if MLI_par is not None:
-            result = self._validate(Path(MLI_par).exists(), result)
+            result = self._validate("par_ICEYE_GRD", Path(MLI_par).exists(), result, f"MLI_par path does not exist ({MLI_par})")
         if GRD_par is not None:
             Path(GRD_par).touch()
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.par_ICEYE_GRD(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("ISP", "par_ICEYE_GRD", supplied_args, result[0]))
         self._on_error("par_ICEYE_GRD", supplied_args, result[0])
@@ -6879,13 +6882,13 @@ class PyGammaTestProxy(object):
             self.call_count["par_CS_SLC_TIF"] = 1
 
         if GeoTIFF is not None:
-            result = self._validate(Path(GeoTIFF).exists(), result)
+            result = self._validate("par_CS_SLC_TIF", Path(GeoTIFF).exists(), result, f"GeoTIFF path does not exist ({GeoTIFF})")
         if XML is not None:
-            result = self._validate(Path(XML).exists(), result)
+            result = self._validate("par_CS_SLC_TIF", Path(XML).exists(), result, f"XML path does not exist ({XML})")
         if trunk is not None:
             Path(trunk).touch()
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.par_CS_SLC_TIF(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("ISP", "par_CS_SLC_TIF", supplied_args, result[0]))
         self._on_error("par_CS_SLC_TIF", supplied_args, result[0])
@@ -6903,9 +6906,9 @@ class PyGammaTestProxy(object):
         if SLC_PAR is not None and not Path(SLC_PAR).exists():
             Path(SLC_PAR).touch()
         if DOR is not None:
-            result = self._validate(Path(DOR).exists(), result)
+            result = self._validate("DORIS_vec", Path(DOR).exists(), result, f"DOR path does not exist ({DOR})")
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.DORIS_vec(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("ISP", "DORIS_vec", supplied_args, result[0]))
         self._on_error("DORIS_vec", supplied_args, result[0])
@@ -6921,11 +6924,11 @@ class PyGammaTestProxy(object):
             self.call_count["bpf"] = 1
 
         if data_in is not None:
-            result = self._validate(Path(data_in).exists(), result)
+            result = self._validate("bpf", Path(data_in).exists(), result, f"data_in path does not exist ({data_in})")
         if data_out is not None:
             Path(data_out).touch()
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.bpf(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("ISP", "bpf", supplied_args, result[0]))
         self._on_error("bpf", supplied_args, result[0])
@@ -6941,9 +6944,9 @@ class PyGammaTestProxy(object):
             self.call_count["image_stat"] = 1
 
         if image is not None:
-            result = self._validate(Path(image).exists(), result)
+            result = self._validate("image_stat", Path(image).exists(), result, f"image path does not exist ({image})")
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.image_stat(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("ISP", "image_stat", supplied_args, result[0]))
         self._on_error("image_stat", supplied_args, result[0])
@@ -6959,9 +6962,9 @@ class PyGammaTestProxy(object):
             self.call_count["clear_flag"] = 1
 
         if flag is not None:
-            result = self._validate(Path(flag).exists(), result)
+            result = self._validate("clear_flag", Path(flag).exists(), result, f"flag path does not exist ({flag})")
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.clear_flag(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("ISP", "clear_flag", supplied_args, result[0]))
         self._on_error("clear_flag", supplied_args, result[0])
@@ -6977,9 +6980,9 @@ class PyGammaTestProxy(object):
             self.call_count["par_NovaSAR_GRD"] = 1
 
         if GeoTIFF is not None:
-            result = self._validate(Path(GeoTIFF).exists(), result)
+            result = self._validate("par_NovaSAR_GRD", Path(GeoTIFF).exists(), result, f"GeoTIFF path does not exist ({GeoTIFF})")
         if XML is not None:
-            result = self._validate(Path(XML).exists(), result)
+            result = self._validate("par_NovaSAR_GRD", Path(XML).exists(), result, f"XML path does not exist ({XML})")
         if MLI_par is not None:
             Path(MLI_par).touch()
         if MLI is not None:
@@ -6989,7 +6992,7 @@ class PyGammaTestProxy(object):
         if GRD is not None:
             Path(GRD).touch()
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.par_NovaSAR_GRD(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("ISP", "par_NovaSAR_GRD", supplied_args, result[0]))
         self._on_error("par_NovaSAR_GRD", supplied_args, result[0])
@@ -7005,11 +7008,11 @@ class PyGammaTestProxy(object):
             self.call_count["slant_range"] = 1
 
         if SLC_par is not None:
-            result = self._validate(Path(SLC_par).exists(), result)
+            result = self._validate("slant_range", Path(SLC_par).exists(), result, f"SLC_par path does not exist ({SLC_par})")
         if slr is not None:
             Path(slr).touch()
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.slant_range(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("ISP", "slant_range", supplied_args, result[0]))
         self._on_error("slant_range", supplied_args, result[0])
@@ -7025,19 +7028,19 @@ class PyGammaTestProxy(object):
             self.call_count["par_IECAS_SLC"] = 1
 
         if aux_data is not None:
-            result = self._validate(Path(aux_data).exists(), result)
+            result = self._validate("par_IECAS_SLC", Path(aux_data).exists(), result, f"aux_data path does not exist ({aux_data})")
         if slc_Re is not None:
-            result = self._validate(Path(slc_Re).exists(), result)
+            result = self._validate("par_IECAS_SLC", Path(slc_Re).exists(), result, f"slc_Re path does not exist ({slc_Re})")
         if slc_Im is not None:
-            result = self._validate(Path(slc_Im).exists(), result)
+            result = self._validate("par_IECAS_SLC", Path(slc_Im).exists(), result, f"slc_Im path does not exist ({slc_Im})")
         if date is not None:
-            result = self._validate(Path(date).exists(), result)
+            result = self._validate("par_IECAS_SLC", Path(date).exists(), result, f"date path does not exist ({date})")
         if SLC_par is not None:
             Path(SLC_par).touch()
         if SLC is not None:
             Path(SLC).touch()
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.par_IECAS_SLC(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("ISP", "par_IECAS_SLC", supplied_args, result[0]))
         self._on_error("par_IECAS_SLC", supplied_args, result[0])
@@ -7053,11 +7056,11 @@ class PyGammaTestProxy(object):
             self.call_count["corr_flag"] = 1
 
         if corr is not None:
-            result = self._validate(Path(corr).exists(), result)
+            result = self._validate("corr_flag", Path(corr).exists(), result, f"corr path does not exist ({corr})")
         if flag is not None and not Path(flag).exists():
             Path(flag).touch()
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.corr_flag(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("ISP", "corr_flag", supplied_args, result[0]))
         self._on_error("corr_flag", supplied_args, result[0])
@@ -7073,9 +7076,9 @@ class PyGammaTestProxy(object):
             self.call_count["ptarg_cal_MLI"] = 1
 
         if MLI_par is not None:
-            result = self._validate(Path(MLI_par).exists(), result)
+            result = self._validate("ptarg_cal_MLI", Path(MLI_par).exists(), result, f"MLI_par path does not exist ({MLI_par})")
         if MLI is not None:
-            result = self._validate(Path(MLI).exists(), result)
+            result = self._validate("ptarg_cal_MLI", Path(MLI).exists(), result, f"MLI path does not exist ({MLI})")
         if ptr_image is not None:
             Path(ptr_image).touch()
         if r_plot is not None:
@@ -7085,9 +7088,9 @@ class PyGammaTestProxy(object):
         if pcal is not None:
             Path(pcal).touch()
         valid_values = [0, 1, 2, 3]
-        result = self._validate(pltflg in valid_values, result)
+        result = self._validate("ptarg_cal_MLI", pltflg in valid_values, result, f"pltflg is not a valid value (expects: {[0, 1, 2, 3]})")
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.ptarg_cal_MLI(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("ISP", "ptarg_cal_MLI", supplied_args, result[0]))
         self._on_error("ptarg_cal_MLI", supplied_args, result[0])
@@ -7103,11 +7106,11 @@ class PyGammaTestProxy(object):
             self.call_count["ORB_filt"] = 1
 
         if SLC_par_in is not None:
-            result = self._validate(Path(SLC_par_in).exists(), result)
+            result = self._validate("ORB_filt", Path(SLC_par_in).exists(), result, f"SLC_par_in path does not exist ({SLC_par_in})")
         if SLC_par_out is not None:
             Path(SLC_par_out).touch()
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.ORB_filt(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("ISP", "ORB_filt", supplied_args, result[0]))
         self._on_error("ORB_filt", supplied_args, result[0])
@@ -7123,13 +7126,13 @@ class PyGammaTestProxy(object):
             self.call_count["offset_sub"] = 1
 
         if offs is not None:
-            result = self._validate(Path(offs).exists(), result)
+            result = self._validate("offset_sub", Path(offs).exists(), result, f"offs path does not exist ({offs})")
         if OFF_par is not None:
-            result = self._validate(Path(OFF_par).exists(), result)
+            result = self._validate("offset_sub", Path(OFF_par).exists(), result, f"OFF_par path does not exist ({OFF_par})")
         if offs_sub is not None:
             Path(offs_sub).touch()
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.offset_sub(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("ISP", "offset_sub", supplied_args, result[0]))
         self._on_error("offset_sub", supplied_args, result[0])
@@ -7145,19 +7148,19 @@ class PyGammaTestProxy(object):
             self.call_count["radcal_MLI"] = 1
 
         if MLI is not None:
-            result = self._validate(Path(MLI).exists(), result)
+            result = self._validate("radcal_MLI", Path(MLI).exists(), result, f"MLI path does not exist ({MLI})")
         if MLI_PAR is not None:
-            result = self._validate(Path(MLI_PAR).exists(), result)
+            result = self._validate("radcal_MLI", Path(MLI_PAR).exists(), result, f"MLI_PAR path does not exist ({MLI_PAR})")
         if OFF_par is not None:
-            result = self._validate(Path(OFF_par).exists(), result)
+            result = self._validate("radcal_MLI", Path(OFF_par).exists(), result, f"OFF_par path does not exist ({OFF_par})")
         if CMLI is not None:
             Path(CMLI).touch()
         if antenna is not None:
-            result = self._validate(Path(antenna).exists(), result)
+            result = self._validate("radcal_MLI", Path(antenna).exists(), result, f"antenna path does not exist ({antenna})")
         if pix_area is not None:
             Path(pix_area).touch()
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.radcal_MLI(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("ISP", "radcal_MLI", supplied_args, result[0]))
         self._on_error("radcal_MLI", supplied_args, result[0])
@@ -7175,9 +7178,9 @@ class PyGammaTestProxy(object):
         if SLC_PAR is not None and not Path(SLC_PAR).exists():
             Path(SLC_PAR).touch()
         if OPOD is not None:
-            result = self._validate(Path(OPOD).exists(), result)
+            result = self._validate("S1_OPOD_vec", Path(OPOD).exists(), result, f"OPOD path does not exist ({OPOD})")
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.S1_OPOD_vec(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("ISP", "S1_OPOD_vec", supplied_args, result[0]))
         self._on_error("S1_OPOD_vec", supplied_args, result[0])
@@ -7193,9 +7196,9 @@ class PyGammaTestProxy(object):
             self.call_count["par_RCM_GRD"] = 1
 
         if RCM_dir is not None:
-            result = self._validate(Path(RCM_dir).exists(), result)
+            result = self._validate("par_RCM_GRD", Path(RCM_dir).exists(), result, f"RCM_dir path does not exist ({RCM_dir})")
         valid_values = [0, 1, 2, 3]
-        result = self._validate(radcal in valid_values, result)
+        result = self._validate("par_RCM_GRD", radcal in valid_values, result, f"radcal is not a valid value (expects: {[0, 1, 2, 3]})")
         if MLI_par is not None:
             Path(MLI_par).touch()
         if MLI is not None:
@@ -7207,7 +7210,7 @@ class PyGammaTestProxy(object):
         if noise_pwr is not None:
             Path(noise_pwr).touch()
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.par_RCM_GRD(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("ISP", "par_RCM_GRD", supplied_args, result[0]))
         self._on_error("par_RCM_GRD", supplied_args, result[0])
@@ -7223,15 +7226,15 @@ class PyGammaTestProxy(object):
             self.call_count["offset_pwr_tracking"] = 1
 
         if SLC1 is not None:
-            result = self._validate(Path(SLC1).exists(), result)
+            result = self._validate("offset_pwr_tracking", Path(SLC1).exists(), result, f"SLC1 path does not exist ({SLC1})")
         if SLC2 is not None:
-            result = self._validate(Path(SLC2).exists(), result)
+            result = self._validate("offset_pwr_tracking", Path(SLC2).exists(), result, f"SLC2 path does not exist ({SLC2})")
         if SLC1_par is not None:
-            result = self._validate(Path(SLC1_par).exists(), result)
+            result = self._validate("offset_pwr_tracking", Path(SLC1_par).exists(), result, f"SLC1_par path does not exist ({SLC1_par})")
         if SLC2_par is not None:
-            result = self._validate(Path(SLC2_par).exists(), result)
+            result = self._validate("offset_pwr_tracking", Path(SLC2_par).exists(), result, f"SLC2_par path does not exist ({SLC2_par})")
         if OFF_par is not None:
-            result = self._validate(Path(OFF_par).exists(), result)
+            result = self._validate("offset_pwr_tracking", Path(OFF_par).exists(), result, f"OFF_par path does not exist ({OFF_par})")
         if offs is not None:
             Path(offs).touch()
         if ccp is not None:
@@ -7239,17 +7242,17 @@ class PyGammaTestProxy(object):
         if offsets is not None:
             Path(offsets).touch()
         valid_values = [0, 1]
-        result = self._validate(deramp in valid_values, result)
+        result = self._validate("offset_pwr_tracking", deramp in valid_values, result, f"deramp is not a valid value (expects: {[0, 1]})")
         valid_values = [0, 1]
-        result = self._validate(int_filt in valid_values, result)
+        result = self._validate("offset_pwr_tracking", int_filt in valid_values, result, f"int_filt is not a valid value (expects: {[0, 1]})")
         valid_values = [0, 1]
-        result = self._validate(pflag in valid_values, result)
+        result = self._validate("offset_pwr_tracking", pflag in valid_values, result, f"pflag is not a valid value (expects: {[0, 1]})")
         valid_values = [0, 1, 2, 3]
-        result = self._validate(pltflg in valid_values, result)
+        result = self._validate("offset_pwr_tracking", pltflg in valid_values, result, f"pltflg is not a valid value (expects: {[0, 1, 2, 3]})")
         if ccs is not None:
             Path(ccs).touch()
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.offset_pwr_tracking(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("ISP", "offset_pwr_tracking", supplied_args, result[0]))
         self._on_error("offset_pwr_tracking", supplied_args, result[0])
@@ -7265,15 +7268,15 @@ class PyGammaTestProxy(object):
             self.call_count["SLC_phase_shift"] = 1
 
         if SLC_1 is not None:
-            result = self._validate(Path(SLC_1).exists(), result)
+            result = self._validate("SLC_phase_shift", Path(SLC_1).exists(), result, f"SLC_1 path does not exist ({SLC_1})")
         if SLC_par1 is not None:
-            result = self._validate(Path(SLC_par1).exists(), result)
+            result = self._validate("SLC_phase_shift", Path(SLC_par1).exists(), result, f"SLC_par1 path does not exist ({SLC_par1})")
         if SLC_2 is not None:
             Path(SLC_2).touch()
         if SLC_par2 is not None:
             Path(SLC_par2).touch()
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.SLC_phase_shift(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("ISP", "SLC_phase_shift", supplied_args, result[0]))
         self._on_error("SLC_phase_shift", supplied_args, result[0])
@@ -7289,13 +7292,13 @@ class PyGammaTestProxy(object):
             self.call_count["unw_model"] = 1
 
         if interf is not None:
-            result = self._validate(Path(interf).exists(), result)
+            result = self._validate("unw_model", Path(interf).exists(), result, f"interf path does not exist ({interf})")
         if unw_model is not None:
-            result = self._validate(Path(unw_model).exists(), result)
+            result = self._validate("unw_model", Path(unw_model).exists(), result, f"unw_model path does not exist ({unw_model})")
         if unw is not None:
             Path(unw).touch()
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.unw_model(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("ISP", "unw_model", supplied_args, result[0]))
         self._on_error("unw_model", supplied_args, result[0])
@@ -7311,15 +7314,15 @@ class PyGammaTestProxy(object):
             self.call_count["par_TX_SLC"] = 1
 
         if annotation_XML is not None:
-            result = self._validate(Path(annotation_XML).exists(), result)
+            result = self._validate("par_TX_SLC", Path(annotation_XML).exists(), result, f"annotation_XML path does not exist ({annotation_XML})")
         if COSAR is not None:
-            result = self._validate(Path(COSAR).exists(), result)
+            result = self._validate("par_TX_SLC", Path(COSAR).exists(), result, f"COSAR path does not exist ({COSAR})")
         if SLC_par is not None:
             Path(SLC_par).touch()
         if SLC is not None:
             Path(SLC).touch()
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.par_TX_SLC(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("ISP", "par_TX_SLC", supplied_args, result[0]))
         self._on_error("par_TX_SLC", supplied_args, result[0])
@@ -7335,15 +7338,15 @@ class PyGammaTestProxy(object):
             self.call_count["ScanSAR_burst_MLI"] = 1
 
         if SLC_tab is not None:
-            result = self._validate(Path(SLC_tab).exists(), result)
+            result = self._validate("ScanSAR_burst_MLI", Path(SLC_tab).exists(), result, f"SLC_tab path does not exist ({SLC_tab})")
         if MLI_tab is not None:
             Path(MLI_tab).touch()
         valid_values = [0, 1]
-        result = self._validate(bflg in valid_values, result)
+        result = self._validate("ScanSAR_burst_MLI", bflg in valid_values, result, f"bflg is not a valid value (expects: {[0, 1]})")
         if SLCR_tab is not None:
-            result = self._validate(Path(SLCR_tab).exists(), result)
+            result = self._validate("ScanSAR_burst_MLI", Path(SLCR_tab).exists(), result, f"SLCR_tab path does not exist ({SLCR_tab})")
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.ScanSAR_burst_MLI(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("ISP", "ScanSAR_burst_MLI", supplied_args, result[0]))
         self._on_error("ScanSAR_burst_MLI", supplied_args, result[0])
@@ -7359,15 +7362,15 @@ class PyGammaTestProxy(object):
             self.call_count["base_copy"] = 1
 
         if SLC1_par is not None:
-            result = self._validate(Path(SLC1_par).exists(), result)
+            result = self._validate("base_copy", Path(SLC1_par).exists(), result, f"SLC1_par path does not exist ({SLC1_par})")
         if baseline_1 is not None:
-            result = self._validate(Path(baseline_1).exists(), result)
+            result = self._validate("base_copy", Path(baseline_1).exists(), result, f"baseline_1 path does not exist ({baseline_1})")
         if SLC2_par is not None:
-            result = self._validate(Path(SLC2_par).exists(), result)
+            result = self._validate("base_copy", Path(SLC2_par).exists(), result, f"SLC2_par path does not exist ({SLC2_par})")
         if baseline_2 is not None:
             Path(baseline_2).touch()
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.base_copy(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("ISP", "base_copy", supplied_args, result[0]))
         self._on_error("base_copy", supplied_args, result[0])
@@ -7383,23 +7386,23 @@ class PyGammaTestProxy(object):
             self.call_count["SLC_interp_map"] = 1
 
         if SLC_2 is not None:
-            result = self._validate(Path(SLC_2).exists(), result)
+            result = self._validate("SLC_interp_map", Path(SLC_2).exists(), result, f"SLC_2 path does not exist ({SLC_2})")
         if SLC1_par is not None:
-            result = self._validate(Path(SLC1_par).exists(), result)
+            result = self._validate("SLC_interp_map", Path(SLC1_par).exists(), result, f"SLC1_par path does not exist ({SLC1_par})")
         if SLC2_par is not None:
-            result = self._validate(Path(SLC2_par).exists(), result)
+            result = self._validate("SLC_interp_map", Path(SLC2_par).exists(), result, f"SLC2_par path does not exist ({SLC2_par})")
         if OFF_par is not None:
-            result = self._validate(Path(OFF_par).exists(), result)
+            result = self._validate("SLC_interp_map", Path(OFF_par).exists(), result, f"OFF_par path does not exist ({OFF_par})")
         if SLC_2R is not None:
             Path(SLC_2R).touch()
         if SLC2R_par is not None:
             Path(SLC2R_par).touch()
         if OFF_par2 is not None:
-            result = self._validate(Path(OFF_par2).exists(), result)
+            result = self._validate("SLC_interp_map", Path(OFF_par2).exists(), result, f"OFF_par2 path does not exist ({OFF_par2})")
         valid_values = [0, 1]
-        result = self._validate(mode in valid_values, result)
+        result = self._validate("SLC_interp_map", mode in valid_values, result, f"mode is not a valid value (expects: {[0, 1]})")
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.SLC_interp_map(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("ISP", "SLC_interp_map", supplied_args, result[0]))
         self._on_error("SLC_interp_map", supplied_args, result[0])
@@ -7415,13 +7418,13 @@ class PyGammaTestProxy(object):
             self.call_count["base_perp"] = 1
 
         if baseline is not None:
-            result = self._validate(Path(baseline).exists(), result)
+            result = self._validate("base_perp", Path(baseline).exists(), result, f"baseline path does not exist ({baseline})")
         if SLC1_par is not None:
-            result = self._validate(Path(SLC1_par).exists(), result)
+            result = self._validate("base_perp", Path(SLC1_par).exists(), result, f"SLC1_par path does not exist ({SLC1_par})")
         if OFF_par is not None:
-            result = self._validate(Path(OFF_par).exists(), result)
+            result = self._validate("base_perp", Path(OFF_par).exists(), result, f"OFF_par path does not exist ({OFF_par})")
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.base_perp(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("ISP", "base_perp", supplied_args, result[0]))
         self._on_error("base_perp", supplied_args, result[0])
@@ -7437,17 +7440,17 @@ class PyGammaTestProxy(object):
             self.call_count["SLC_adf"] = 1
 
         if SLC is not None:
-            result = self._validate(Path(SLC).exists(), result)
+            result = self._validate("SLC_adf", Path(SLC).exists(), result, f"SLC path does not exist ({SLC})")
         if ref_SLC is not None:
-            result = self._validate(Path(ref_SLC).exists(), result)
+            result = self._validate("SLC_adf", Path(ref_SLC).exists(), result, f"ref_SLC path does not exist ({ref_SLC})")
         if ref_SLC_par is not None:
-            result = self._validate(Path(ref_SLC_par).exists(), result)
+            result = self._validate("SLC_adf", Path(ref_SLC_par).exists(), result, f"ref_SLC_par path does not exist ({ref_SLC_par})")
         if SLC_filt is not None:
             Path(SLC_filt).touch()
         valid_values = [0, 1, 2, 3]
-        result = self._validate(mode in valid_values, result)
+        result = self._validate("SLC_adf", mode in valid_values, result, f"mode is not a valid value (expects: {[0, 1, 2, 3]})")
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.SLC_adf(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("ISP", "SLC_adf", supplied_args, result[0]))
         self._on_error("SLC_adf", supplied_args, result[0])
@@ -7463,15 +7466,15 @@ class PyGammaTestProxy(object):
             self.call_count["offset_SLC"] = 1
 
         if SLC_1 is not None:
-            result = self._validate(Path(SLC_1).exists(), result)
+            result = self._validate("offset_SLC", Path(SLC_1).exists(), result, f"SLC_1 path does not exist ({SLC_1})")
         if SLC_2 is not None:
-            result = self._validate(Path(SLC_2).exists(), result)
+            result = self._validate("offset_SLC", Path(SLC_2).exists(), result, f"SLC_2 path does not exist ({SLC_2})")
         if SLC1_par is not None:
-            result = self._validate(Path(SLC1_par).exists(), result)
+            result = self._validate("offset_SLC", Path(SLC1_par).exists(), result, f"SLC1_par path does not exist ({SLC1_par})")
         if SLC2_par is not None:
-            result = self._validate(Path(SLC2_par).exists(), result)
+            result = self._validate("offset_SLC", Path(SLC2_par).exists(), result, f"SLC2_par path does not exist ({SLC2_par})")
         if OFF_par is not None:
-            result = self._validate(Path(OFF_par).exists(), result)
+            result = self._validate("offset_SLC", Path(OFF_par).exists(), result, f"OFF_par path does not exist ({OFF_par})")
         if offs is not None:
             Path(offs).touch()
         if snr is not None:
@@ -7479,7 +7482,7 @@ class PyGammaTestProxy(object):
         if offsets is not None:
             Path(offsets).touch()
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.offset_SLC(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("ISP", "offset_SLC", supplied_args, result[0]))
         self._on_error("offset_SLC", supplied_args, result[0])
@@ -7495,13 +7498,13 @@ class PyGammaTestProxy(object):
             self.call_count["adf"] = 1
 
         if interf is not None:
-            result = self._validate(Path(interf).exists(), result)
+            result = self._validate("adf", Path(interf).exists(), result, f"interf path does not exist ({interf})")
         if sm is not None:
             Path(sm).touch()
         if cc is not None:
             Path(cc).touch()
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.adf(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("ISP", "adf", supplied_args, result[0]))
         self._on_error("adf", supplied_args, result[0])
@@ -7519,9 +7522,9 @@ class PyGammaTestProxy(object):
         if SLC_par is not None and not Path(SLC_par).exists():
             Path(SLC_par).touch()
         if PRC is not None:
-            result = self._validate(Path(PRC).exists(), result)
+            result = self._validate("PRC_vec", Path(PRC).exists(), result, f"PRC path does not exist ({PRC})")
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.PRC_vec(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("ISP", "PRC_vec", supplied_args, result[0]))
         self._on_error("PRC_vec", supplied_args, result[0])
@@ -7537,11 +7540,11 @@ class PyGammaTestProxy(object):
             self.call_count["adapt_filt"] = 1
 
         if int is not None:
-            result = self._validate(Path(int).exists(), result)
+            result = self._validate("adapt_filt", Path(int).exists(), result, f"int path does not exist ({int})")
         if sm is not None:
             Path(sm).touch()
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.adapt_filt(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("ISP", "adapt_filt", supplied_args, result[0]))
         self._on_error("adapt_filt", supplied_args, result[0])
@@ -7557,19 +7560,19 @@ class PyGammaTestProxy(object):
             self.call_count["par_RSAT2_SG"] = 1
 
         if product_XML is not None:
-            result = self._validate(Path(product_XML).exists(), result)
+            result = self._validate("par_RSAT2_SG", Path(product_XML).exists(), result, f"product_XML path does not exist ({product_XML})")
         if lut_XML is not None:
-            result = self._validate(Path(lut_XML).exists(), result)
+            result = self._validate("par_RSAT2_SG", Path(lut_XML).exists(), result, f"lut_XML path does not exist ({lut_XML})")
         if GeoTIFF is not None:
-            result = self._validate(Path(GeoTIFF).exists(), result)
+            result = self._validate("par_RSAT2_SG", Path(GeoTIFF).exists(), result, f"GeoTIFF path does not exist ({GeoTIFF})")
         if polarization is not None:
-            result = self._validate(Path(polarization).exists(), result)
+            result = self._validate("par_RSAT2_SG", Path(polarization).exists(), result, f"polarization path does not exist ({polarization})")
         if GRD_par is not None:
             Path(GRD_par).touch()
         if GRD is not None:
             Path(GRD).touch()
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.par_RSAT2_SG(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("ISP", "par_RSAT2_SG", supplied_args, result[0]))
         self._on_error("par_RSAT2_SG", supplied_args, result[0])
@@ -7585,13 +7588,13 @@ class PyGammaTestProxy(object):
             self.call_count["ScanSAR_burst_corners"] = 1
 
         if SLC_par is not None:
-            result = self._validate(Path(SLC_par).exists(), result)
+            result = self._validate("ScanSAR_burst_corners", Path(SLC_par).exists(), result, f"SLC_par path does not exist ({SLC_par})")
         if TOPS_par is not None:
-            result = self._validate(Path(TOPS_par).exists(), result)
+            result = self._validate("ScanSAR_burst_corners", Path(TOPS_par).exists(), result, f"TOPS_par path does not exist ({TOPS_par})")
         if KML is not None:
             Path(KML).touch()
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.ScanSAR_burst_corners(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("ISP", "ScanSAR_burst_corners", supplied_args, result[0]))
         self._on_error("ScanSAR_burst_corners", supplied_args, result[0])
@@ -7607,15 +7610,15 @@ class PyGammaTestProxy(object):
             self.call_count["par_RCM_SLC_ScanSAR"] = 1
 
         if RCM_dir is not None:
-            result = self._validate(Path(RCM_dir).exists(), result)
+            result = self._validate("par_RCM_SLC_ScanSAR", Path(RCM_dir).exists(), result, f"RCM_dir path does not exist ({RCM_dir})")
         valid_values = [0, 1, 2, 3]
-        result = self._validate(radcal in valid_values, result)
+        result = self._validate("par_RCM_SLC_ScanSAR", radcal in valid_values, result, f"radcal is not a valid value (expects: {[0, 1, 2, 3]})")
         if root_name is not None:
             Path(root_name).touch()
         if SLC_tab is not None:
             Path(SLC_tab).touch()
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.par_RCM_SLC_ScanSAR(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("ISP", "par_RCM_SLC_ScanSAR", supplied_args, result[0]))
         self._on_error("par_RCM_SLC_ScanSAR", supplied_args, result[0])
@@ -7631,13 +7634,13 @@ class PyGammaTestProxy(object):
             self.call_count["offset_add"] = 1
 
         if OFF_par1 is not None:
-            result = self._validate(Path(OFF_par1).exists(), result)
+            result = self._validate("offset_add", Path(OFF_par1).exists(), result, f"OFF_par1 path does not exist ({OFF_par1})")
         if OFF_par2 is not None:
-            result = self._validate(Path(OFF_par2).exists(), result)
+            result = self._validate("offset_add", Path(OFF_par2).exists(), result, f"OFF_par2 path does not exist ({OFF_par2})")
         if OFF_par3 is not None:
             Path(OFF_par3).touch()
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.offset_add(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("ISP", "offset_add", supplied_args, result[0]))
         self._on_error("offset_add", supplied_args, result[0])
@@ -7653,15 +7656,15 @@ class PyGammaTestProxy(object):
             self.call_count["multi_SLC_WSS"] = 1
 
         if SLC is not None:
-            result = self._validate(Path(SLC).exists(), result)
+            result = self._validate("multi_SLC_WSS", Path(SLC).exists(), result, f"SLC path does not exist ({SLC})")
         if SLC_par is not None:
-            result = self._validate(Path(SLC_par).exists(), result)
+            result = self._validate("multi_SLC_WSS", Path(SLC_par).exists(), result, f"SLC_par path does not exist ({SLC_par})")
         if MLI is not None:
             Path(MLI).touch()
         if MLI_par is not None:
             Path(MLI_par).touch()
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.multi_SLC_WSS(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("ISP", "multi_SLC_WSS", supplied_args, result[0]))
         self._on_error("multi_SLC_WSS", supplied_args, result[0])
@@ -7677,13 +7680,13 @@ class PyGammaTestProxy(object):
             self.call_count["SLC_cat_ScanSAR"] = 1
 
         if SLC_tab1 is not None:
-            result = self._validate(Path(SLC_tab1).exists(), result)
+            result = self._validate("SLC_cat_ScanSAR", Path(SLC_tab1).exists(), result, f"SLC_tab1 path does not exist ({SLC_tab1})")
         if SLC_tab2 is not None:
-            result = self._validate(Path(SLC_tab2).exists(), result)
+            result = self._validate("SLC_cat_ScanSAR", Path(SLC_tab2).exists(), result, f"SLC_tab2 path does not exist ({SLC_tab2})")
         if SLC_tab3 is not None:
-            result = self._validate(Path(SLC_tab3).exists(), result)
+            result = self._validate("SLC_cat_ScanSAR", Path(SLC_tab3).exists(), result, f"SLC_tab3 path does not exist ({SLC_tab3})")
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.SLC_cat_ScanSAR(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("ISP", "SLC_cat_ScanSAR", supplied_args, result[0]))
         self._on_error("SLC_cat_ScanSAR", supplied_args, result[0])
@@ -7699,15 +7702,15 @@ class PyGammaTestProxy(object):
             self.call_count["par_RSAT_SLC"] = 1
 
         if CEOS_leader is not None:
-            result = self._validate(Path(CEOS_leader).exists(), result)
+            result = self._validate("par_RSAT_SLC", Path(CEOS_leader).exists(), result, f"CEOS_leader path does not exist ({CEOS_leader})")
         if SLC_par is not None:
             Path(SLC_par).touch()
         if CEOS_data is not None:
-            result = self._validate(Path(CEOS_data).exists(), result)
+            result = self._validate("par_RSAT_SLC", Path(CEOS_data).exists(), result, f"CEOS_data path does not exist ({CEOS_data})")
         if SLC is not None:
             Path(SLC).touch()
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.par_RSAT_SLC(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("ISP", "par_RSAT_SLC", supplied_args, result[0]))
         self._on_error("par_RSAT_SLC", supplied_args, result[0])
@@ -7723,15 +7726,15 @@ class PyGammaTestProxy(object):
             self.call_count["base_est_fft"] = 1
 
         if interf is not None:
-            result = self._validate(Path(interf).exists(), result)
+            result = self._validate("base_est_fft", Path(interf).exists(), result, f"interf path does not exist ({interf})")
         if SLC1_par is not None:
-            result = self._validate(Path(SLC1_par).exists(), result)
+            result = self._validate("base_est_fft", Path(SLC1_par).exists(), result, f"SLC1_par path does not exist ({SLC1_par})")
         if OFF_par is not None:
-            result = self._validate(Path(OFF_par).exists(), result)
+            result = self._validate("base_est_fft", Path(OFF_par).exists(), result, f"OFF_par path does not exist ({OFF_par})")
         if baseline is not None:
             Path(baseline).touch()
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.base_est_fft(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("ISP", "base_est_fft", supplied_args, result[0]))
         self._on_error("base_est_fft", supplied_args, result[0])
@@ -7747,9 +7750,9 @@ class PyGammaTestProxy(object):
             self.call_count["par_RCM_GRC"] = 1
 
         if RCM_dir is not None:
-            result = self._validate(Path(RCM_dir).exists(), result)
+            result = self._validate("par_RCM_GRC", Path(RCM_dir).exists(), result, f"RCM_dir path does not exist ({RCM_dir})")
         valid_values = [0, 1, 2, 3]
-        result = self._validate(radcal in valid_values, result)
+        result = self._validate("par_RCM_GRC", radcal in valid_values, result, f"radcal is not a valid value (expects: {[0, 1, 2, 3]})")
         if SLC_par is not None:
             Path(SLC_par).touch()
         if SLC is not None:
@@ -7761,7 +7764,7 @@ class PyGammaTestProxy(object):
         if noise_pwr is not None:
             Path(noise_pwr).touch()
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.par_RCM_GRC(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("ISP", "par_RCM_GRC", supplied_args, result[0]))
         self._on_error("par_RCM_GRC", supplied_args, result[0])
@@ -7777,13 +7780,13 @@ class PyGammaTestProxy(object):
             self.call_count["base_orbit"] = 1
 
         if SLC1_par is not None:
-            result = self._validate(Path(SLC1_par).exists(), result)
+            result = self._validate("base_orbit", Path(SLC1_par).exists(), result, f"SLC1_par path does not exist ({SLC1_par})")
         if SLC2_par is not None:
-            result = self._validate(Path(SLC2_par).exists(), result)
+            result = self._validate("base_orbit", Path(SLC2_par).exists(), result, f"SLC2_par path does not exist ({SLC2_par})")
         if baseline is not None:
             Path(baseline).touch()
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.base_orbit(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("ISP", "base_orbit", supplied_args, result[0]))
         self._on_error("base_orbit", supplied_args, result[0])
@@ -7799,11 +7802,11 @@ class PyGammaTestProxy(object):
             self.call_count["par_KS_DGM"] = 1
 
         if HDF5 is not None:
-            result = self._validate(Path(HDF5).exists(), result)
+            result = self._validate("par_KS_DGM", Path(HDF5).exists(), result, f"HDF5 path does not exist ({HDF5})")
         if trunk is not None:
             Path(trunk).touch()
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.par_KS_DGM(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("ISP", "par_KS_DGM", supplied_args, result[0]))
         self._on_error("par_KS_DGM", supplied_args, result[0])
@@ -7821,7 +7824,7 @@ class PyGammaTestProxy(object):
         if SLC_par is not None:
             Path(SLC_par).touch()
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.par_RSI_ERS(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("ISP", "par_RSI_ERS", supplied_args, result[0]))
         self._on_error("par_RSI_ERS", supplied_args, result[0])
@@ -7837,17 +7840,17 @@ class PyGammaTestProxy(object):
             self.call_count["af_SLC"] = 1
 
         if SLC_par is not None:
-            result = self._validate(Path(SLC_par).exists(), result)
+            result = self._validate("af_SLC", Path(SLC_par).exists(), result, f"SLC_par path does not exist ({SLC_par})")
         if SLC is not None:
-            result = self._validate(Path(SLC).exists(), result)
+            result = self._validate("af_SLC", Path(SLC).exists(), result, f"SLC path does not exist ({SLC})")
         valid_values = [0, 1]
-        result = self._validate(a1_flg in valid_values, result)
+        result = self._validate("af_SLC", a1_flg in valid_values, result, f"a1_flg is not a valid value (expects: {[0, 1]})")
         valid_values = [0, 1]
-        result = self._validate(b0_flg in valid_values, result)
+        result = self._validate("af_SLC", b0_flg in valid_values, result, f"b0_flg is not a valid value (expects: {[0, 1]})")
         if offsets is not None:
             Path(offsets).touch()
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.af_SLC(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("ISP", "af_SLC", supplied_args, result[0]))
         self._on_error("af_SLC", supplied_args, result[0])
@@ -7863,15 +7866,15 @@ class PyGammaTestProxy(object):
             self.call_count["par_EORC_JERS_SLC"] = 1
 
         if CEOS_SAR_leader is not None:
-            result = self._validate(Path(CEOS_SAR_leader).exists(), result)
+            result = self._validate("par_EORC_JERS_SLC", Path(CEOS_SAR_leader).exists(), result, f"CEOS_SAR_leader path does not exist ({CEOS_SAR_leader})")
         if SLC_par is not None:
             Path(SLC_par).touch()
         if CEOS_data is not None:
-            result = self._validate(Path(CEOS_data).exists(), result)
+            result = self._validate("par_EORC_JERS_SLC", Path(CEOS_data).exists(), result, f"CEOS_data path does not exist ({CEOS_data})")
         if slc is not None:
             Path(slc).touch()
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.par_EORC_JERS_SLC(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("ISP", "par_EORC_JERS_SLC", supplied_args, result[0]))
         self._on_error("par_EORC_JERS_SLC", supplied_args, result[0])
@@ -7887,15 +7890,15 @@ class PyGammaTestProxy(object):
             self.call_count["fill_gaps"] = 1
 
         if data_in is not None:
-            result = self._validate(Path(data_in).exists(), result)
+            result = self._validate("fill_gaps", Path(data_in).exists(), result, f"data_in path does not exist ({data_in})")
         if data_out is not None:
             Path(data_out).touch()
         valid_values = [0, 1]
-        result = self._validate(dtype in valid_values, result)
+        result = self._validate("fill_gaps", dtype in valid_values, result, f"dtype is not a valid value (expects: {[0, 1]})")
         if ds_data is not None:
             Path(ds_data).touch()
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.fill_gaps(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("ISP", "fill_gaps", supplied_args, result[0]))
         self._on_error("fill_gaps", supplied_args, result[0])
@@ -7911,13 +7914,13 @@ class PyGammaTestProxy(object):
             self.call_count["rascc_mask_thinning"] = 1
 
         if ras_in is not None:
-            result = self._validate(Path(ras_in).exists(), result)
+            result = self._validate("rascc_mask_thinning", Path(ras_in).exists(), result, f"ras_in path does not exist ({ras_in})")
         if in_file is not None:
-            result = self._validate(Path(in_file).exists(), result)
+            result = self._validate("rascc_mask_thinning", Path(in_file).exists(), result, f"in_file path does not exist ({in_file})")
         if ras_out is not None:
             Path(ras_out).touch()
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.rascc_mask_thinning(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("ISP", "rascc_mask_thinning", supplied_args, result[0]))
         self._on_error("rascc_mask_thinning", supplied_args, result[0])
@@ -7933,19 +7936,19 @@ class PyGammaTestProxy(object):
             self.call_count["GRD_to_SR"] = 1
 
         if GRD_par is not None:
-            result = self._validate(Path(GRD_par).exists(), result)
+            result = self._validate("GRD_to_SR", Path(GRD_par).exists(), result, f"GRD_par path does not exist ({GRD_par})")
         if SLC_par is not None:
             Path(SLC_par).touch()
         if OFF_par is not None:
-            result = self._validate(Path(OFF_par).exists(), result)
+            result = self._validate("GRD_to_SR", Path(OFF_par).exists(), result, f"OFF_par path does not exist ({OFF_par})")
         if in_file is not None:
-            result = self._validate(Path(in_file).exists(), result)
+            result = self._validate("GRD_to_SR", Path(in_file).exists(), result, f"in_file path does not exist ({in_file})")
         if out_file is not None:
             Path(out_file).touch()
         valid_values = [0, 1, 2]
-        result = self._validate(interp_mode in valid_values, result)
+        result = self._validate("GRD_to_SR", interp_mode in valid_values, result, f"interp_mode is not a valid value (expects: {[0, 1, 2]})")
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.GRD_to_SR(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("ISP", "GRD_to_SR", supplied_args, result[0]))
         self._on_error("GRD_to_SR", supplied_args, result[0])
@@ -7961,17 +7964,17 @@ class PyGammaTestProxy(object):
             self.call_count["multi_look2"] = 1
 
         if SLC is not None:
-            result = self._validate(Path(SLC).exists(), result)
+            result = self._validate("multi_look2", Path(SLC).exists(), result, f"SLC path does not exist ({SLC})")
         if SLC_par is not None:
-            result = self._validate(Path(SLC_par).exists(), result)
+            result = self._validate("multi_look2", Path(SLC_par).exists(), result, f"SLC_par path does not exist ({SLC_par})")
         if MLI is not None:
             Path(MLI).touch()
         if MLI_par is not None:
             Path(MLI_par).touch()
         valid_values = [0, 1]
-        result = self._validate(wflg in valid_values, result)
+        result = self._validate("multi_look2", wflg in valid_values, result, f"wflg is not a valid value (expects: {[0, 1]})")
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.multi_look2(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("ISP", "multi_look2", supplied_args, result[0]))
         self._on_error("multi_look2", supplied_args, result[0])
@@ -7987,11 +7990,11 @@ class PyGammaTestProxy(object):
             self.call_count["dcomp_sirc"] = 1
 
         if infile is not None:
-            result = self._validate(Path(infile).exists(), result)
+            result = self._validate("dcomp_sirc", Path(infile).exists(), result, f"infile path does not exist ({infile})")
         if outfile is not None:
             Path(outfile).touch()
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.dcomp_sirc(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("ISP", "dcomp_sirc", supplied_args, result[0]))
         self._on_error("dcomp_sirc", supplied_args, result[0])
@@ -8007,13 +8010,13 @@ class PyGammaTestProxy(object):
             self.call_count["subtract_phase"] = 1
 
         if interf_in is not None:
-            result = self._validate(Path(interf_in).exists(), result)
+            result = self._validate("subtract_phase", Path(interf_in).exists(), result, f"interf_in path does not exist ({interf_in})")
         if phase_file is not None:
-            result = self._validate(Path(phase_file).exists(), result)
+            result = self._validate("subtract_phase", Path(phase_file).exists(), result, f"phase_file path does not exist ({phase_file})")
         if interf_out is not None:
             Path(interf_out).touch()
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.subtract_phase(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("ISP", "subtract_phase", supplied_args, result[0]))
         self._on_error("subtract_phase", supplied_args, result[0])
@@ -8029,13 +8032,13 @@ class PyGammaTestProxy(object):
             self.call_count["dcomp_sirc_quad"] = 1
 
         if infile is not None:
-            result = self._validate(Path(infile).exists(), result)
+            result = self._validate("dcomp_sirc_quad", Path(infile).exists(), result, f"infile path does not exist ({infile})")
         if outfile is not None:
             Path(outfile).touch()
         valid_values = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]
-        result = self._validate(parameter in valid_values, result)
+        result = self._validate("dcomp_sirc_quad", parameter in valid_values, result, f"parameter is not a valid value (expects: {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]})")
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.dcomp_sirc_quad(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("ISP", "dcomp_sirc_quad", supplied_args, result[0]))
         self._on_error("dcomp_sirc_quad", supplied_args, result[0])
@@ -8051,15 +8054,15 @@ class PyGammaTestProxy(object):
             self.call_count["SLC_copy_ScanSAR"] = 1
 
         if SLC1_tab is not None:
-            result = self._validate(Path(SLC1_tab).exists(), result)
+            result = self._validate("SLC_copy_ScanSAR", Path(SLC1_tab).exists(), result, f"SLC1_tab path does not exist ({SLC1_tab})")
         if SLC2_tab is not None and not Path(SLC2_tab).exists():
             Path(SLC2_tab).touch()
         if BURST_tab is not None:
-            result = self._validate(Path(BURST_tab).exists(), result)
+            result = self._validate("SLC_copy_ScanSAR", Path(BURST_tab).exists(), result, f"BURST_tab path does not exist ({BURST_tab})")
         valid_values = [0, 1]
-        result = self._validate(dtype in valid_values, result)
+        result = self._validate("SLC_copy_ScanSAR", dtype in valid_values, result, f"dtype is not a valid value (expects: {[0, 1]})")
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.SLC_copy_ScanSAR(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("ISP", "SLC_copy_ScanSAR", supplied_args, result[0]))
         self._on_error("SLC_copy_ScanSAR", supplied_args, result[0])
@@ -8075,19 +8078,19 @@ class PyGammaTestProxy(object):
             self.call_count["par_RISAT_SLC"] = 1
 
         if CEOS_leader is not None:
-            result = self._validate(Path(CEOS_leader).exists(), result)
+            result = self._validate("par_RISAT_SLC", Path(CEOS_leader).exists(), result, f"CEOS_leader path does not exist ({CEOS_leader})")
         if BAND_META is not None:
-            result = self._validate(Path(BAND_META).exists(), result)
+            result = self._validate("par_RISAT_SLC", Path(BAND_META).exists(), result, f"BAND_META path does not exist ({BAND_META})")
         if SLC_par is not None:
             Path(SLC_par).touch()
         if CEOS_image is not None:
-            result = self._validate(Path(CEOS_image).exists(), result)
+            result = self._validate("par_RISAT_SLC", Path(CEOS_image).exists(), result, f"CEOS_image path does not exist ({CEOS_image})")
         if SLC is not None:
             Path(SLC).touch()
         valid_values = [0, 1]
-        result = self._validate(cal_flg in valid_values, result)
+        result = self._validate("par_RISAT_SLC", cal_flg in valid_values, result, f"cal_flg is not a valid value (expects: {[0, 1]})")
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.par_RISAT_SLC(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("ISP", "par_RISAT_SLC", supplied_args, result[0]))
         self._on_error("par_RISAT_SLC", supplied_args, result[0])
@@ -8103,15 +8106,15 @@ class PyGammaTestProxy(object):
             self.call_count["SLC_freq_shift"] = 1
 
         if SLC is not None:
-            result = self._validate(Path(SLC).exists(), result)
+            result = self._validate("SLC_freq_shift", Path(SLC).exists(), result, f"SLC path does not exist ({SLC})")
         if SLC_par is not None:
-            result = self._validate(Path(SLC_par).exists(), result)
+            result = self._validate("SLC_freq_shift", Path(SLC_par).exists(), result, f"SLC_par path does not exist ({SLC_par})")
         if SLC_shift is not None:
             Path(SLC_shift).touch()
         if SLC_shift_par is not None:
             Path(SLC_shift_par).touch()
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.SLC_freq_shift(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("ISP", "SLC_freq_shift", supplied_args, result[0]))
         self._on_error("SLC_freq_shift", supplied_args, result[0])
@@ -8127,9 +8130,9 @@ class PyGammaTestProxy(object):
             self.call_count["DELFT_vec2"] = 1
 
         if SLC_par is not None:
-            result = self._validate(Path(SLC_par).exists(), result)
+            result = self._validate("DELFT_vec2", Path(SLC_par).exists(), result, f"SLC_par path does not exist ({SLC_par})")
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.DELFT_vec2(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("ISP", "DELFT_vec2", supplied_args, result[0]))
         self._on_error("DELFT_vec2", supplied_args, result[0])
@@ -8145,27 +8148,27 @@ class PyGammaTestProxy(object):
             self.call_count["SLC_intf"] = 1
 
         if SLC_1 is not None:
-            result = self._validate(Path(SLC_1).exists(), result)
+            result = self._validate("SLC_intf", Path(SLC_1).exists(), result, f"SLC_1 path does not exist ({SLC_1})")
         if SLC_2R is not None:
-            result = self._validate(Path(SLC_2R).exists(), result)
+            result = self._validate("SLC_intf", Path(SLC_2R).exists(), result, f"SLC_2R path does not exist ({SLC_2R})")
         if SLC1_par is not None:
-            result = self._validate(Path(SLC1_par).exists(), result)
+            result = self._validate("SLC_intf", Path(SLC1_par).exists(), result, f"SLC1_par path does not exist ({SLC1_par})")
         if SLC2R_par is not None:
-            result = self._validate(Path(SLC2R_par).exists(), result)
+            result = self._validate("SLC_intf", Path(SLC2R_par).exists(), result, f"SLC2R_par path does not exist ({SLC2R_par})")
         if OFF_par is not None:
-            result = self._validate(Path(OFF_par).exists(), result)
+            result = self._validate("SLC_intf", Path(OFF_par).exists(), result, f"OFF_par path does not exist ({OFF_par})")
         if interf is not None:
             Path(interf).touch()
         valid_values = [1, 0]
-        result = self._validate(sps_flg in valid_values, result)
+        result = self._validate("SLC_intf", sps_flg in valid_values, result, f"sps_flg is not a valid value (expects: {[1, 0]})")
         valid_values = [1, 0]
-        result = self._validate(azf_flg in valid_values, result)
+        result = self._validate("SLC_intf", azf_flg in valid_values, result, f"azf_flg is not a valid value (expects: {[1, 0]})")
         valid_values = [0, 1]
-        result = self._validate(rp1_flg in valid_values, result)
+        result = self._validate("SLC_intf", rp1_flg in valid_values, result, f"rp1_flg is not a valid value (expects: {[0, 1]})")
         valid_values = [0, 1]
-        result = self._validate(rp2_flg in valid_values, result)
+        result = self._validate("SLC_intf", rp2_flg in valid_values, result, f"rp2_flg is not a valid value (expects: {[0, 1]})")
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.SLC_intf(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("ISP", "SLC_intf", supplied_args, result[0]))
         self._on_error("SLC_intf", supplied_args, result[0])
@@ -8181,9 +8184,9 @@ class PyGammaTestProxy(object):
             self.call_count["ptarg_cal_SLC"] = 1
 
         if SLC_par is not None:
-            result = self._validate(Path(SLC_par).exists(), result)
+            result = self._validate("ptarg_cal_SLC", Path(SLC_par).exists(), result, f"SLC_par path does not exist ({SLC_par})")
         if SLC is not None:
-            result = self._validate(Path(SLC).exists(), result)
+            result = self._validate("ptarg_cal_SLC", Path(SLC).exists(), result, f"SLC path does not exist ({SLC})")
         if ptr_image is not None:
             Path(ptr_image).touch()
         if r_plot is not None:
@@ -8193,11 +8196,11 @@ class PyGammaTestProxy(object):
         if pcal is not None:
             Path(pcal).touch()
         valid_values = [0, 1, 2, 3]
-        result = self._validate(pltflg in valid_values, result)
+        result = self._validate("ptarg_cal_SLC", pltflg in valid_values, result, f"pltflg is not a valid value (expects: {[0, 1, 2, 3]})")
         if c_image is not None:
             Path(c_image).touch()
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.ptarg_cal_SLC(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("ISP", "ptarg_cal_SLC", supplied_args, result[0]))
         self._on_error("ptarg_cal_SLC", supplied_args, result[0])
@@ -8213,11 +8216,11 @@ class PyGammaTestProxy(object):
             self.call_count["sbi_filt"] = 1
 
         if SLC_1 is not None:
-            result = self._validate(Path(SLC_1).exists(), result)
+            result = self._validate("sbi_filt", Path(SLC_1).exists(), result, f"SLC_1 path does not exist ({SLC_1})")
         if SLC1_par is not None:
-            result = self._validate(Path(SLC1_par).exists(), result)
+            result = self._validate("sbi_filt", Path(SLC1_par).exists(), result, f"SLC1_par path does not exist ({SLC1_par})")
         if SLC2R_par is not None:
-            result = self._validate(Path(SLC2R_par).exists(), result)
+            result = self._validate("sbi_filt", Path(SLC2R_par).exists(), result, f"SLC2R_par path does not exist ({SLC2R_par})")
         if SLCf is not None:
             Path(SLCf).touch()
         if SLCf_par is not None:
@@ -8227,9 +8230,9 @@ class PyGammaTestProxy(object):
         if SLCb_par is not None:
             Path(SLCb_par).touch()
         valid_values = [0, 1]
-        result = self._validate(iwflg in valid_values, result)
+        result = self._validate("sbi_filt", iwflg in valid_values, result, f"iwflg is not a valid value (expects: {[0, 1]})")
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.sbi_filt(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("ISP", "sbi_filt", supplied_args, result[0]))
         self._on_error("sbi_filt", supplied_args, result[0])
@@ -8245,17 +8248,17 @@ class PyGammaTestProxy(object):
             self.call_count["ph_slope_base"] = 1
 
         if int_in is not None:
-            result = self._validate(Path(int_in).exists(), result)
+            result = self._validate("ph_slope_base", Path(int_in).exists(), result, f"int_in path does not exist ({int_in})")
         if SLC_par is not None:
-            result = self._validate(Path(SLC_par).exists(), result)
+            result = self._validate("ph_slope_base", Path(SLC_par).exists(), result, f"SLC_par path does not exist ({SLC_par})")
         if OFF_par is not None:
-            result = self._validate(Path(OFF_par).exists(), result)
+            result = self._validate("ph_slope_base", Path(OFF_par).exists(), result, f"OFF_par path does not exist ({OFF_par})")
         if base is not None:
-            result = self._validate(Path(base).exists(), result)
+            result = self._validate("ph_slope_base", Path(base).exists(), result, f"base path does not exist ({base})")
         if int_out is not None:
             Path(int_out).touch()
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.ph_slope_base(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("ISP", "ph_slope_base", supplied_args, result[0]))
         self._on_error("ph_slope_base", supplied_args, result[0])
@@ -8271,17 +8274,17 @@ class PyGammaTestProxy(object):
             self.call_count["multi_look_ScanSAR"] = 1
 
         if SLC_tab is not None:
-            result = self._validate(Path(SLC_tab).exists(), result)
+            result = self._validate("multi_look_ScanSAR", Path(SLC_tab).exists(), result, f"SLC_tab path does not exist ({SLC_tab})")
         if MLI is not None:
             Path(MLI).touch()
         if MLI_par is not None:
             Path(MLI_par).touch()
         valid_values = [0, 1]
-        result = self._validate(bflg in valid_values, result)
+        result = self._validate("multi_look_ScanSAR", bflg in valid_values, result, f"bflg is not a valid value (expects: {[0, 1]})")
         if SLCR_tab is not None:
-            result = self._validate(Path(SLCR_tab).exists(), result)
+            result = self._validate("multi_look_ScanSAR", Path(SLCR_tab).exists(), result, f"SLCR_tab path does not exist ({SLCR_tab})")
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.multi_look_ScanSAR(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("ISP", "multi_look_ScanSAR", supplied_args, result[0]))
         self._on_error("multi_look_ScanSAR", supplied_args, result[0])
@@ -8297,17 +8300,17 @@ class PyGammaTestProxy(object):
             self.call_count["par_ASNARO2"] = 1
 
         if CEOS_data is not None:
-            result = self._validate(Path(CEOS_data).exists(), result)
+            result = self._validate("par_ASNARO2", Path(CEOS_data).exists(), result, f"CEOS_data path does not exist ({CEOS_data})")
         if CEOS_leader is not None:
-            result = self._validate(Path(CEOS_leader).exists(), result)
+            result = self._validate("par_ASNARO2", Path(CEOS_leader).exists(), result, f"CEOS_leader path does not exist ({CEOS_leader})")
         if SLC_par is not None:
             Path(SLC_par).touch()
         if SLC is not None:
             Path(SLC).touch()
         valid_values = [0, 1]
-        result = self._validate(reramp in valid_values, result)
+        result = self._validate("par_ASNARO2", reramp in valid_values, result, f"reramp is not a valid value (expects: {[0, 1]})")
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.par_ASNARO2(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("ISP", "par_ASNARO2", supplied_args, result[0]))
         self._on_error("par_ASNARO2", supplied_args, result[0])
@@ -8323,13 +8326,13 @@ class PyGammaTestProxy(object):
             self.call_count["grasses"] = 1
 
         if int is not None:
-            result = self._validate(Path(int).exists(), result)
+            result = self._validate("grasses", Path(int).exists(), result, f"int path does not exist ({int})")
         if flag is not None:
-            result = self._validate(Path(flag).exists(), result)
+            result = self._validate("grasses", Path(flag).exists(), result, f"flag path does not exist ({flag})")
         if unw is not None:
             Path(unw).touch()
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.grasses(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("ISP", "grasses", supplied_args, result[0]))
         self._on_error("grasses", supplied_args, result[0])
@@ -8345,15 +8348,15 @@ class PyGammaTestProxy(object):
             self.call_count["mask_data"] = 1
 
         if data_in is not None:
-            result = self._validate(Path(data_in).exists(), result)
+            result = self._validate("mask_data", Path(data_in).exists(), result, f"data_in path does not exist ({data_in})")
         if data_out is not None:
             Path(data_out).touch()
         if mask is not None:
-            result = self._validate(Path(mask).exists(), result)
+            result = self._validate("mask_data", Path(mask).exists(), result, f"mask path does not exist ({mask})")
         valid_values = [0, 1]
-        result = self._validate(dtype in valid_values, result)
+        result = self._validate("mask_data", dtype in valid_values, result, f"dtype is not a valid value (expects: {[0, 1]})")
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.mask_data(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("ISP", "mask_data", supplied_args, result[0]))
         self._on_error("mask_data", supplied_args, result[0])
@@ -8369,15 +8372,15 @@ class PyGammaTestProxy(object):
             self.call_count["par_ESA_JERS_SEASAT_SLC"] = 1
 
         if CEOS_data is not None:
-            result = self._validate(Path(CEOS_data).exists(), result)
+            result = self._validate("par_ESA_JERS_SEASAT_SLC", Path(CEOS_data).exists(), result, f"CEOS_data path does not exist ({CEOS_data})")
         if CEOS_leader is not None:
-            result = self._validate(Path(CEOS_leader).exists(), result)
+            result = self._validate("par_ESA_JERS_SEASAT_SLC", Path(CEOS_leader).exists(), result, f"CEOS_leader path does not exist ({CEOS_leader})")
         if SLC_par is not None:
             Path(SLC_par).touch()
         if SLC is not None:
             Path(SLC).touch()
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.par_ESA_JERS_SEASAT_SLC(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("ISP", "par_ESA_JERS_SEASAT_SLC", supplied_args, result[0]))
         self._on_error("par_ESA_JERS_SEASAT_SLC", supplied_args, result[0])
@@ -8393,17 +8396,17 @@ class PyGammaTestProxy(object):
             self.call_count["ScanSAR_burst_overlap"] = 1
 
         if SLC_tab is not None:
-            result = self._validate(Path(SLC_tab).exists(), result)
+            result = self._validate("ScanSAR_burst_overlap", Path(SLC_tab).exists(), result, f"SLC_tab path does not exist ({SLC_tab})")
         if root_name is not None:
             Path(root_name).touch()
         valid_values = [0, 1, 2]
-        result = self._validate(mode in valid_values, result)
+        result = self._validate("ScanSAR_burst_overlap", mode in valid_values, result, f"mode is not a valid value (expects: {[0, 1, 2]})")
         valid_values = [0, 1]
-        result = self._validate(bflg in valid_values, result)
+        result = self._validate("ScanSAR_burst_overlap", bflg in valid_values, result, f"bflg is not a valid value (expects: {[0, 1]})")
         if SLCR_tab is not None:
-            result = self._validate(Path(SLCR_tab).exists(), result)
+            result = self._validate("ScanSAR_burst_overlap", Path(SLCR_tab).exists(), result, f"SLCR_tab path does not exist ({SLCR_tab})")
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.ScanSAR_burst_overlap(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("ISP", "ScanSAR_burst_overlap", supplied_args, result[0]))
         self._on_error("ScanSAR_burst_overlap", supplied_args, result[0])
@@ -8419,9 +8422,9 @@ class PyGammaTestProxy(object):
             self.call_count["ORB_prop_SLC"] = 1
 
         if SLC_par is not None:
-            result = self._validate(Path(SLC_par).exists(), result)
+            result = self._validate("ORB_prop_SLC", Path(SLC_par).exists(), result, f"SLC_par path does not exist ({SLC_par})")
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.ORB_prop_SLC(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("ISP", "ORB_prop_SLC", supplied_args, result[0]))
         self._on_error("ORB_prop_SLC", supplied_args, result[0])
@@ -8437,17 +8440,17 @@ class PyGammaTestProxy(object):
             self.call_count["interp_ad"] = 1
 
         if data_in is not None:
-            result = self._validate(Path(data_in).exists(), result)
+            result = self._validate("interp_ad", Path(data_in).exists(), result, f"data_in path does not exist ({data_in})")
         if data_out is not None:
             Path(data_out).touch()
         valid_values = [0, 1, 2, 3]
-        result = self._validate(w_mode in valid_values, result)
+        result = self._validate("interp_ad", w_mode in valid_values, result, f"w_mode is not a valid value (expects: {[0, 1, 2, 3]})")
         valid_values = [0, 1, 2, 3, 4]
-        result = self._validate(dtype in valid_values, result)
+        result = self._validate("interp_ad", dtype in valid_values, result, f"dtype is not a valid value (expects: {[0, 1, 2, 3, 4]})")
         valid_values = [0, 1]
-        result = self._validate(cp_data in valid_values, result)
+        result = self._validate("interp_ad", cp_data in valid_values, result, f"cp_data is not a valid value (expects: {[0, 1]})")
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.interp_ad(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("ISP", "interp_ad", supplied_args, result[0]))
         self._on_error("interp_ad", supplied_args, result[0])
@@ -8463,19 +8466,19 @@ class PyGammaTestProxy(object):
             self.call_count["par_RISAT_GRD"] = 1
 
         if CEOS_leader is not None:
-            result = self._validate(Path(CEOS_leader).exists(), result)
+            result = self._validate("par_RISAT_GRD", Path(CEOS_leader).exists(), result, f"CEOS_leader path does not exist ({CEOS_leader})")
         if BAND_META is not None:
-            result = self._validate(Path(BAND_META).exists(), result)
+            result = self._validate("par_RISAT_GRD", Path(BAND_META).exists(), result, f"BAND_META path does not exist ({BAND_META})")
         if GRD_par is not None:
             Path(GRD_par).touch()
         if CEOS_image is not None:
-            result = self._validate(Path(CEOS_image).exists(), result)
+            result = self._validate("par_RISAT_GRD", Path(CEOS_image).exists(), result, f"CEOS_image path does not exist ({CEOS_image})")
         if GRD is not None:
             Path(GRD).touch()
         valid_values = [0, 1]
-        result = self._validate(cal_flg in valid_values, result)
+        result = self._validate("par_RISAT_GRD", cal_flg in valid_values, result, f"cal_flg is not a valid value (expects: {[0, 1]})")
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.par_RISAT_GRD(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("ISP", "par_RISAT_GRD", supplied_args, result[0]))
         self._on_error("par_RISAT_GRD", supplied_args, result[0])
@@ -8491,17 +8494,17 @@ class PyGammaTestProxy(object):
             self.call_count["par_RSAT_SCW"] = 1
 
         if CEOS_leader is not None:
-            result = self._validate(Path(CEOS_leader).exists(), result)
+            result = self._validate("par_RSAT_SCW", Path(CEOS_leader).exists(), result, f"CEOS_leader path does not exist ({CEOS_leader})")
         if CEOS_trailer is not None:
-            result = self._validate(Path(CEOS_trailer).exists(), result)
+            result = self._validate("par_RSAT_SCW", Path(CEOS_trailer).exists(), result, f"CEOS_trailer path does not exist ({CEOS_trailer})")
         if CEOS_data is not None:
-            result = self._validate(Path(CEOS_data).exists(), result)
+            result = self._validate("par_RSAT_SCW", Path(CEOS_data).exists(), result, f"CEOS_data path does not exist ({CEOS_data})")
         if GRD_par is not None:
             Path(GRD_par).touch()
         if GRD is not None:
             Path(GRD).touch()
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.par_RSAT_SCW(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("ISP", "par_RSAT_SCW", supplied_args, result[0]))
         self._on_error("par_RSAT_SCW", supplied_args, result[0])
@@ -8517,11 +8520,11 @@ class PyGammaTestProxy(object):
             self.call_count["neutron"] = 1
 
         if intensity is not None:
-            result = self._validate(Path(intensity).exists(), result)
+            result = self._validate("neutron", Path(intensity).exists(), result, f"intensity path does not exist ({intensity})")
         if flag is not None:
-            result = self._validate(Path(flag).exists(), result)
+            result = self._validate("neutron", Path(flag).exists(), result, f"flag path does not exist ({flag})")
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.neutron(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("ISP", "neutron", supplied_args, result[0]))
         self._on_error("neutron", supplied_args, result[0])
@@ -8537,17 +8540,17 @@ class PyGammaTestProxy(object):
             self.call_count["SLC_mosaic_S1_TOPS"] = 1
 
         if SLC_tab is not None:
-            result = self._validate(Path(SLC_tab).exists(), result)
+            result = self._validate("SLC_mosaic_S1_TOPS", Path(SLC_tab).exists(), result, f"SLC_tab path does not exist ({SLC_tab})")
         if SLC is not None:
             Path(SLC).touch()
         if SLC_par is not None:
             Path(SLC_par).touch()
         valid_values = [0, 1]
-        result = self._validate(bflg in valid_values, result)
+        result = self._validate("SLC_mosaic_S1_TOPS", bflg in valid_values, result, f"bflg is not a valid value (expects: {[0, 1]})")
         if SLCR_tab is not None:
-            result = self._validate(Path(SLCR_tab).exists(), result)
+            result = self._validate("SLC_mosaic_S1_TOPS", Path(SLCR_tab).exists(), result, f"SLCR_tab path does not exist ({SLCR_tab})")
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.SLC_mosaic_S1_TOPS(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("ISP", "SLC_mosaic_S1_TOPS", supplied_args, result[0]))
         self._on_error("SLC_mosaic_S1_TOPS", supplied_args, result[0])
@@ -8563,15 +8566,15 @@ class PyGammaTestProxy(object):
             self.call_count["multi_look"] = 1
 
         if SLC is not None:
-            result = self._validate(Path(SLC).exists(), result)
+            result = self._validate("multi_look", Path(SLC).exists(), result, f"SLC path does not exist ({SLC})")
         if SLC_par is not None:
-            result = self._validate(Path(SLC_par).exists(), result)
+            result = self._validate("multi_look", Path(SLC_par).exists(), result, f"SLC_par path does not exist ({SLC_par})")
         if MLI is not None:
             Path(MLI).touch()
         if MLI_par is not None:
             Path(MLI_par).touch()
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.multi_look(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("ISP", "multi_look", supplied_args, result[0]))
         self._on_error("multi_look", supplied_args, result[0])
@@ -8587,17 +8590,17 @@ class PyGammaTestProxy(object):
             self.call_count["mosaic_WB"] = 1
 
         if data_tab is not None:
-            result = self._validate(Path(data_tab).exists(), result)
+            result = self._validate("mosaic_WB", Path(data_tab).exists(), result, f"data_tab path does not exist ({data_tab})")
         if dtype is not None:
-            result = self._validate(Path(dtype).exists(), result)
+            result = self._validate("mosaic_WB", Path(dtype).exists(), result, f"dtype path does not exist ({dtype})")
         if data_out is not None:
             Path(data_out).touch()
         if data_par_out is not None:
             Path(data_par_out).touch()
         valid_values = [0, 1]
-        result = self._validate(sc_flg in valid_values, result)
+        result = self._validate("mosaic_WB", sc_flg in valid_values, result, f"sc_flg is not a valid value (expects: {[0, 1]})")
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.mosaic_WB(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("ISP", "mosaic_WB", supplied_args, result[0]))
         self._on_error("mosaic_WB", supplied_args, result[0])
@@ -8613,15 +8616,15 @@ class PyGammaTestProxy(object):
             self.call_count["ScanSAR_burst_to_mosaic"] = 1
 
         if DATA_tab is not None:
-            result = self._validate(Path(DATA_tab).exists(), result)
+            result = self._validate("ScanSAR_burst_to_mosaic", Path(DATA_tab).exists(), result, f"DATA_tab path does not exist ({DATA_tab})")
         if mosaic is not None:
             Path(mosaic).touch()
         if MLI_par is not None:
             Path(MLI_par).touch()
         valid_values = [0, 1, 2]
-        result = self._validate(mflg in valid_values, result)
+        result = self._validate("ScanSAR_burst_to_mosaic", mflg in valid_values, result, f"mflg is not a valid value (expects: {[0, 1, 2]})")
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.ScanSAR_burst_to_mosaic(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("ISP", "ScanSAR_burst_to_mosaic", supplied_args, result[0]))
         self._on_error("ScanSAR_burst_to_mosaic", supplied_args, result[0])
@@ -8637,19 +8640,19 @@ class PyGammaTestProxy(object):
             self.call_count["par_UAVSAR_SLC"] = 1
 
         if ann is not None:
-            result = self._validate(Path(ann).exists(), result)
+            result = self._validate("par_UAVSAR_SLC", Path(ann).exists(), result, f"ann path does not exist ({ann})")
         if SLC_MLC_in is not None:
-            result = self._validate(Path(SLC_MLC_in).exists(), result)
+            result = self._validate("par_UAVSAR_SLC", Path(SLC_MLC_in).exists(), result, f"SLC_MLC_in path does not exist ({SLC_MLC_in})")
         if SLC_MLI_par is not None:
             Path(SLC_MLI_par).touch()
         if SLC_MLI_out is not None:
             Path(SLC_MLI_out).touch()
         valid_values = [0, 2]
-        result = self._validate(image_format in valid_values, result)
+        result = self._validate("par_UAVSAR_SLC", image_format in valid_values, result, f"image_format is not a valid value (expects: {[0, 2]})")
         if DOP is not None:
-            result = self._validate(Path(DOP).exists(), result)
+            result = self._validate("par_UAVSAR_SLC", Path(DOP).exists(), result, f"DOP path does not exist ({DOP})")
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.par_UAVSAR_SLC(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("ISP", "par_UAVSAR_SLC", supplied_args, result[0]))
         self._on_error("par_UAVSAR_SLC", supplied_args, result[0])
@@ -8665,23 +8668,23 @@ class PyGammaTestProxy(object):
             self.call_count["ScanSAR_burst_copy"] = 1
 
         if SLC is not None:
-            result = self._validate(Path(SLC).exists(), result)
+            result = self._validate("ScanSAR_burst_copy", Path(SLC).exists(), result, f"SLC path does not exist ({SLC})")
         if SLC_par is not None:
-            result = self._validate(Path(SLC_par).exists(), result)
+            result = self._validate("ScanSAR_burst_copy", Path(SLC_par).exists(), result, f"SLC_par path does not exist ({SLC_par})")
         if TOPS_par is not None:
-            result = self._validate(Path(TOPS_par).exists(), result)
+            result = self._validate("ScanSAR_burst_copy", Path(TOPS_par).exists(), result, f"TOPS_par path does not exist ({TOPS_par})")
         if SLC_out is not None:
             Path(SLC_out).touch()
         if SLC_out_par is not None:
             Path(SLC_out_par).touch()
         valid_values = [0, 1]
-        result = self._validate(drflg in valid_values, result)
+        result = self._validate("ScanSAR_burst_copy", drflg in valid_values, result, f"drflg is not a valid value (expects: {[0, 1]})")
         if SLC_par2 is not None:
             Path(SLC_par2).touch()
         valid_values = [0, 1]
-        result = self._validate(dtype in valid_values, result)
+        result = self._validate("ScanSAR_burst_copy", dtype in valid_values, result, f"dtype is not a valid value (expects: {[0, 1]})")
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.ScanSAR_burst_copy(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("ISP", "ScanSAR_burst_copy", supplied_args, result[0]))
         self._on_error("ScanSAR_burst_copy", supplied_args, result[0])
@@ -8697,19 +8700,19 @@ class PyGammaTestProxy(object):
             self.call_count["hgt_map"] = 1
 
         if unw is not None:
-            result = self._validate(Path(unw).exists(), result)
+            result = self._validate("hgt_map", Path(unw).exists(), result, f"unw path does not exist ({unw})")
         if SLC_par is not None:
-            result = self._validate(Path(SLC_par).exists(), result)
+            result = self._validate("hgt_map", Path(SLC_par).exists(), result, f"SLC_par path does not exist ({SLC_par})")
         if OFF_par is not None:
-            result = self._validate(Path(OFF_par).exists(), result)
+            result = self._validate("hgt_map", Path(OFF_par).exists(), result, f"OFF_par path does not exist ({OFF_par})")
         if baseline is not None:
-            result = self._validate(Path(baseline).exists(), result)
+            result = self._validate("hgt_map", Path(baseline).exists(), result, f"baseline path does not exist ({baseline})")
         if hgt is not None:
             Path(hgt).touch()
         if gr is not None:
             Path(gr).touch()
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.hgt_map(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("ISP", "hgt_map", supplied_args, result[0]))
         self._on_error("hgt_map", supplied_args, result[0])
@@ -8725,11 +8728,11 @@ class PyGammaTestProxy(object):
             self.call_count["par_CS_SLC"] = 1
 
         if HDF5 is not None:
-            result = self._validate(Path(HDF5).exists(), result)
+            result = self._validate("par_CS_SLC", Path(HDF5).exists(), result, f"HDF5 path does not exist ({HDF5})")
         if trunk is not None:
             Path(trunk).touch()
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.par_CS_SLC(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("ISP", "par_CS_SLC", supplied_args, result[0]))
         self._on_error("par_CS_SLC", supplied_args, result[0])
@@ -8745,11 +8748,11 @@ class PyGammaTestProxy(object):
             self.call_count["par_TX_GRD"] = 1
 
         if annotation_XML is not None:
-            result = self._validate(Path(annotation_XML).exists(), result)
+            result = self._validate("par_TX_GRD", Path(annotation_XML).exists(), result, f"annotation_XML path does not exist ({annotation_XML})")
         if GRD is not None:
             Path(GRD).touch()
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.par_TX_GRD(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("ISP", "par_TX_GRD", supplied_args, result[0]))
         self._on_error("par_TX_GRD", supplied_args, result[0])
@@ -8765,15 +8768,15 @@ class PyGammaTestProxy(object):
             self.call_count["split_WB"] = 1
 
         if data_in is not None:
-            result = self._validate(Path(data_in).exists(), result)
+            result = self._validate("split_WB", Path(data_in).exists(), result, f"data_in path does not exist ({data_in})")
         if data_par_in is not None:
-            result = self._validate(Path(data_par_in).exists(), result)
+            result = self._validate("split_WB", Path(data_par_in).exists(), result, f"data_par_in path does not exist ({data_par_in})")
         if data_tab is not None:
-            result = self._validate(Path(data_tab).exists(), result)
+            result = self._validate("split_WB", Path(data_tab).exists(), result, f"data_tab path does not exist ({data_tab})")
         if dtype is not None:
-            result = self._validate(Path(dtype).exists(), result)
+            result = self._validate("split_WB", Path(dtype).exists(), result, f"dtype path does not exist ({dtype})")
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.split_WB(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("ISP", "split_WB", supplied_args, result[0]))
         self._on_error("split_WB", supplied_args, result[0])
@@ -8789,17 +8792,17 @@ class PyGammaTestProxy(object):
             self.call_count["base_init"] = 1
 
         if SLC1_par is not None:
-            result = self._validate(Path(SLC1_par).exists(), result)
+            result = self._validate("base_init", Path(SLC1_par).exists(), result, f"SLC1_par path does not exist ({SLC1_par})")
         if SLC2_par is not None:
-            result = self._validate(Path(SLC2_par).exists(), result)
+            result = self._validate("base_init", Path(SLC2_par).exists(), result, f"SLC2_par path does not exist ({SLC2_par})")
         if OFF_par is not None:
-            result = self._validate(Path(OFF_par).exists(), result)
+            result = self._validate("base_init", Path(OFF_par).exists(), result, f"OFF_par path does not exist ({OFF_par})")
         if interf is not None:
-            result = self._validate(Path(interf).exists(), result)
+            result = self._validate("base_init", Path(interf).exists(), result, f"interf path does not exist ({interf})")
         valid_values = [0, 1, 2, 3, 4]
-        result = self._validate(mflag in valid_values, result)
+        result = self._validate("base_init", mflag in valid_values, result, f"mflag is not a valid value (expects: {[0, 1, 2, 3, 4]})")
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.base_init(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("ISP", "base_init", supplied_args, result[0]))
         self._on_error("base_init", supplied_args, result[0])
@@ -8815,11 +8818,11 @@ class PyGammaTestProxy(object):
             self.call_count["par_SIRC"] = 1
 
         if CEOS_leader is not None:
-            result = self._validate(Path(CEOS_leader).exists(), result)
+            result = self._validate("par_SIRC", Path(CEOS_leader).exists(), result, f"CEOS_leader path does not exist ({CEOS_leader})")
         if SLC_par is not None:
             Path(SLC_par).touch()
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.par_SIRC(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("ISP", "par_SIRC", supplied_args, result[0]))
         self._on_error("par_SIRC", supplied_args, result[0])
@@ -8835,13 +8838,13 @@ class PyGammaTestProxy(object):
             self.call_count["rascc_mask"] = 1
 
         if cc is not None:
-            result = self._validate(Path(cc).exists(), result)
+            result = self._validate("rascc_mask", Path(cc).exists(), result, f"cc path does not exist ({cc})")
         if pwr is not None:
-            result = self._validate(Path(pwr).exists(), result)
+            result = self._validate("rascc_mask", Path(pwr).exists(), result, f"pwr path does not exist ({pwr})")
         if rasf is not None:
             Path(rasf).touch()
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.rascc_mask(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("ISP", "rascc_mask", supplied_args, result[0]))
         self._on_error("rascc_mask", supplied_args, result[0])
@@ -8857,15 +8860,15 @@ class PyGammaTestProxy(object):
             self.call_count["init_offset_orbit"] = 1
 
         if SLC1_par is not None:
-            result = self._validate(Path(SLC1_par).exists(), result)
+            result = self._validate("init_offset_orbit", Path(SLC1_par).exists(), result, f"SLC1_par path does not exist ({SLC1_par})")
         if SLC2_par is not None:
-            result = self._validate(Path(SLC2_par).exists(), result)
+            result = self._validate("init_offset_orbit", Path(SLC2_par).exists(), result, f"SLC2_par path does not exist ({SLC2_par})")
         if OFF_par is not None and not Path(OFF_par).exists():
             Path(OFF_par).touch()
         valid_values = [0, 1]
-        result = self._validate(cflag in valid_values, result)
+        result = self._validate("init_offset_orbit", cflag in valid_values, result, f"cflag is not a valid value (expects: {[0, 1]})")
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.init_offset_orbit(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("ISP", "init_offset_orbit", supplied_args, result[0]))
         self._on_error("init_offset_orbit", supplied_args, result[0])
@@ -8881,25 +8884,25 @@ class PyGammaTestProxy(object):
             self.call_count["interf_SLC"] = 1
 
         if SLC_1 is not None:
-            result = self._validate(Path(SLC_1).exists(), result)
+            result = self._validate("interf_SLC", Path(SLC_1).exists(), result, f"SLC_1 path does not exist ({SLC_1})")
         if SLC_2 is not None:
-            result = self._validate(Path(SLC_2).exists(), result)
+            result = self._validate("interf_SLC", Path(SLC_2).exists(), result, f"SLC_2 path does not exist ({SLC_2})")
         if SLC1_par is not None:
-            result = self._validate(Path(SLC1_par).exists(), result)
+            result = self._validate("interf_SLC", Path(SLC1_par).exists(), result, f"SLC1_par path does not exist ({SLC1_par})")
         if SLC2_par is not None:
-            result = self._validate(Path(SLC2_par).exists(), result)
+            result = self._validate("interf_SLC", Path(SLC2_par).exists(), result, f"SLC2_par path does not exist ({SLC2_par})")
         if OFF_par is not None:
-            result = self._validate(Path(OFF_par).exists(), result)
+            result = self._validate("interf_SLC", Path(OFF_par).exists(), result, f"OFF_par path does not exist ({OFF_par})")
         if MLI_1 is not None:
             Path(MLI_1).touch()
         if MLI_2 is not None:
             Path(MLI_2).touch()
         valid_values = [0, 1]
-        result = self._validate(rfilt in valid_values, result)
+        result = self._validate("interf_SLC", rfilt in valid_values, result, f"rfilt is not a valid value (expects: {[0, 1]})")
         valid_values = [0, 1]
-        result = self._validate(azfilt in valid_values, result)
+        result = self._validate("interf_SLC", azfilt in valid_values, result, f"azfilt is not a valid value (expects: {[0, 1]})")
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.interf_SLC(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("ISP", "interf_SLC", supplied_args, result[0]))
         self._on_error("interf_SLC", supplied_args, result[0])
@@ -8915,23 +8918,23 @@ class PyGammaTestProxy(object):
             self.call_count["MLI_cat"] = 1
 
         if MLI_1 is not None:
-            result = self._validate(Path(MLI_1).exists(), result)
+            result = self._validate("MLI_cat", Path(MLI_1).exists(), result, f"MLI_1 path does not exist ({MLI_1})")
         if MLI_2 is not None:
-            result = self._validate(Path(MLI_2).exists(), result)
+            result = self._validate("MLI_cat", Path(MLI_2).exists(), result, f"MLI_2 path does not exist ({MLI_2})")
         if MLI1_par is not None:
-            result = self._validate(Path(MLI1_par).exists(), result)
+            result = self._validate("MLI_cat", Path(MLI1_par).exists(), result, f"MLI1_par path does not exist ({MLI1_par})")
         if MLI2_par is not None:
-            result = self._validate(Path(MLI2_par).exists(), result)
+            result = self._validate("MLI_cat", Path(MLI2_par).exists(), result, f"MLI2_par path does not exist ({MLI2_par})")
         if MLI_3 is not None:
             Path(MLI_3).touch()
         if MLI3_par is not None:
             Path(MLI3_par).touch()
         valid_values = [0, 1]
-        result = self._validate(mflg in valid_values, result)
+        result = self._validate("MLI_cat", mflg in valid_values, result, f"mflg is not a valid value (expects: {[0, 1]})")
         valid_values = [0, 1]
-        result = self._validate(extrapol in valid_values, result)
+        result = self._validate("MLI_cat", extrapol in valid_values, result, f"extrapol is not a valid value (expects: {[0, 1]})")
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.MLI_cat(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("ISP", "MLI_cat", supplied_args, result[0]))
         self._on_error("MLI_cat", supplied_args, result[0])
@@ -8947,9 +8950,9 @@ class PyGammaTestProxy(object):
             self.call_count["par_RCM_SLC"] = 1
 
         if RCM_dir is not None:
-            result = self._validate(Path(RCM_dir).exists(), result)
+            result = self._validate("par_RCM_SLC", Path(RCM_dir).exists(), result, f"RCM_dir path does not exist ({RCM_dir})")
         valid_values = [0, 1, 2, 3]
-        result = self._validate(radcal in valid_values, result)
+        result = self._validate("par_RCM_SLC", radcal in valid_values, result, f"radcal is not a valid value (expects: {[0, 1, 2, 3]})")
         if SLC_par is not None:
             Path(SLC_par).touch()
         if SLC is not None:
@@ -8957,7 +8960,7 @@ class PyGammaTestProxy(object):
         if noise_pwr is not None:
             Path(noise_pwr).touch()
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.par_RCM_SLC(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("ISP", "par_RCM_SLC", supplied_args, result[0]))
         self._on_error("par_RCM_SLC", supplied_args, result[0])
@@ -8973,11 +8976,11 @@ class PyGammaTestProxy(object):
             self.call_count["phase_slope"] = 1
 
         if interf is not None:
-            result = self._validate(Path(interf).exists(), result)
+            result = self._validate("phase_slope", Path(interf).exists(), result, f"interf path does not exist ({interf})")
         if slopes is not None:
             Path(slopes).touch()
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.phase_slope(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("ISP", "phase_slope", supplied_args, result[0]))
         self._on_error("phase_slope", supplied_args, result[0])
@@ -8993,7 +8996,7 @@ class PyGammaTestProxy(object):
             self.call_count["par_TX_ScanSAR"] = 1
 
         if annot_XML is not None:
-            result = self._validate(Path(annot_XML).exists(), result)
+            result = self._validate("par_TX_ScanSAR", Path(annot_XML).exists(), result, f"annot_XML path does not exist ({annot_XML})")
         if SLC_par is not None:
             Path(SLC_par).touch()
         if SLC is not None:
@@ -9001,9 +9004,9 @@ class PyGammaTestProxy(object):
         if TOPS_par is not None:
             Path(TOPS_par).touch()
         valid_values = [0, 1]
-        result = self._validate(bwflg in valid_values, result)
+        result = self._validate("par_TX_ScanSAR", bwflg in valid_values, result, f"bwflg is not a valid value (expects: {[0, 1]})")
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.par_TX_ScanSAR(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("ISP", "par_TX_ScanSAR", supplied_args, result[0]))
         self._on_error("par_TX_ScanSAR", supplied_args, result[0])
@@ -9019,13 +9022,13 @@ class PyGammaTestProxy(object):
             self.call_count["ave_image"] = 1
 
         if im_list is not None:
-            result = self._validate(Path(im_list).exists(), result)
+            result = self._validate("ave_image", Path(im_list).exists(), result, f"im_list path does not exist ({im_list})")
         if ave is not None:
             Path(ave).touch()
         valid_values = [0, 1]
-        result = self._validate(zflag in valid_values, result)
+        result = self._validate("ave_image", zflag in valid_values, result, f"zflag is not a valid value (expects: {[0, 1]})")
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.ave_image(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("ISP", "ave_image", supplied_args, result[0]))
         self._on_error("ave_image", supplied_args, result[0])
@@ -9041,15 +9044,15 @@ class PyGammaTestProxy(object):
             self.call_count["multi_cpx"] = 1
 
         if data_in is not None:
-            result = self._validate(Path(data_in).exists(), result)
+            result = self._validate("multi_cpx", Path(data_in).exists(), result, f"data_in path does not exist ({data_in})")
         if OFF_par_in is not None:
-            result = self._validate(Path(OFF_par_in).exists(), result)
+            result = self._validate("multi_cpx", Path(OFF_par_in).exists(), result, f"OFF_par_in path does not exist ({OFF_par_in})")
         if data_out is not None:
             Path(data_out).touch()
         if OFF_par_out is not None and not Path(OFF_par_out).exists():
             Path(OFF_par_out).touch()
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.multi_cpx(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("ISP", "multi_cpx", supplied_args, result[0]))
         self._on_error("multi_cpx", supplied_args, result[0])
@@ -9065,15 +9068,15 @@ class PyGammaTestProxy(object):
             self.call_count["ASAR_LO_phase_drift"] = 1
 
         if SLC1_par is not None:
-            result = self._validate(Path(SLC1_par).exists(), result)
+            result = self._validate("ASAR_LO_phase_drift", Path(SLC1_par).exists(), result, f"SLC1_par path does not exist ({SLC1_par})")
         if SLC2_par is not None:
-            result = self._validate(Path(SLC2_par).exists(), result)
+            result = self._validate("ASAR_LO_phase_drift", Path(SLC2_par).exists(), result, f"SLC2_par path does not exist ({SLC2_par})")
         if OFF_par is not None:
-            result = self._validate(Path(OFF_par).exists(), result)
+            result = self._validate("ASAR_LO_phase_drift", Path(OFF_par).exists(), result, f"OFF_par path does not exist ({OFF_par})")
         if ph_drift is not None:
             Path(ph_drift).touch()
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.ASAR_LO_phase_drift(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("ISP", "ASAR_LO_phase_drift", supplied_args, result[0]))
         self._on_error("ASAR_LO_phase_drift", supplied_args, result[0])
@@ -9089,13 +9092,13 @@ class PyGammaTestProxy(object):
             self.call_count["radcal_pwr_stat"] = 1
 
         if SLC_tab is not None:
-            result = self._validate(Path(SLC_tab).exists(), result)
+            result = self._validate("radcal_pwr_stat", Path(SLC_tab).exists(), result, f"SLC_tab path does not exist ({SLC_tab})")
         if SLC_tab_cal is not None:
-            result = self._validate(Path(SLC_tab_cal).exists(), result)
+            result = self._validate("radcal_pwr_stat", Path(SLC_tab_cal).exists(), result, f"SLC_tab_cal path does not exist ({SLC_tab_cal})")
         if plist is not None:
-            result = self._validate(Path(plist).exists(), result)
+            result = self._validate("radcal_pwr_stat", Path(plist).exists(), result, f"plist path does not exist ({plist})")
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.radcal_pwr_stat(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("ISP", "radcal_pwr_stat", supplied_args, result[0]))
         self._on_error("radcal_pwr_stat", supplied_args, result[0])
@@ -9111,15 +9114,15 @@ class PyGammaTestProxy(object):
             self.call_count["par_ICEYE_SLC"] = 1
 
         if HDF5 is not None:
-            result = self._validate(Path(HDF5).exists(), result)
+            result = self._validate("par_ICEYE_SLC", Path(HDF5).exists(), result, f"HDF5 path does not exist ({HDF5})")
         if SLC_par is not None:
             Path(SLC_par).touch()
         if slc is not None:
             Path(slc).touch()
         valid_values = [0, 1]
-        result = self._validate(dtype in valid_values, result)
+        result = self._validate("par_ICEYE_SLC", dtype in valid_values, result, f"dtype is not a valid value (expects: {[0, 1]})")
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.par_ICEYE_SLC(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("ISP", "par_ICEYE_SLC", supplied_args, result[0]))
         self._on_error("par_ICEYE_SLC", supplied_args, result[0])
@@ -9135,15 +9138,15 @@ class PyGammaTestProxy(object):
             self.call_count["offset_SLC_tracking"] = 1
 
         if SLC_1 is not None:
-            result = self._validate(Path(SLC_1).exists(), result)
+            result = self._validate("offset_SLC_tracking", Path(SLC_1).exists(), result, f"SLC_1 path does not exist ({SLC_1})")
         if SLC_2 is not None:
-            result = self._validate(Path(SLC_2).exists(), result)
+            result = self._validate("offset_SLC_tracking", Path(SLC_2).exists(), result, f"SLC_2 path does not exist ({SLC_2})")
         if SLC1_par is not None:
-            result = self._validate(Path(SLC1_par).exists(), result)
+            result = self._validate("offset_SLC_tracking", Path(SLC1_par).exists(), result, f"SLC1_par path does not exist ({SLC1_par})")
         if SLC2_par is not None:
-            result = self._validate(Path(SLC2_par).exists(), result)
+            result = self._validate("offset_SLC_tracking", Path(SLC2_par).exists(), result, f"SLC2_par path does not exist ({SLC2_par})")
         if OFF_par is not None:
-            result = self._validate(Path(OFF_par).exists(), result)
+            result = self._validate("offset_SLC_tracking", Path(OFF_par).exists(), result, f"OFF_par path does not exist ({OFF_par})")
         if offs is not None:
             Path(offs).touch()
         if snr is not None:
@@ -9151,9 +9154,9 @@ class PyGammaTestProxy(object):
         if offsets is not None:
             Path(offsets).touch()
         valid_values = [0, 1]
-        result = self._validate(pflag in valid_values, result)
+        result = self._validate("offset_SLC_tracking", pflag in valid_values, result, f"pflag is not a valid value (expects: {[0, 1]})")
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.offset_SLC_tracking(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("ISP", "offset_SLC_tracking", supplied_args, result[0]))
         self._on_error("offset_SLC_tracking", supplied_args, result[0])
@@ -9169,9 +9172,9 @@ class PyGammaTestProxy(object):
             self.call_count["tree_cc"] = 1
 
         if flag is not None:
-            result = self._validate(Path(flag).exists(), result)
+            result = self._validate("tree_cc", Path(flag).exists(), result, f"flag path does not exist ({flag})")
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.tree_cc(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("ISP", "tree_cc", supplied_args, result[0]))
         self._on_error("tree_cc", supplied_args, result[0])
@@ -9187,15 +9190,15 @@ class PyGammaTestProxy(object):
             self.call_count["MLI_copy"] = 1
 
         if MLI_in is not None:
-            result = self._validate(Path(MLI_in).exists(), result)
+            result = self._validate("MLI_copy", Path(MLI_in).exists(), result, f"MLI_in path does not exist ({MLI_in})")
         if MLI_in_par is not None:
-            result = self._validate(Path(MLI_in_par).exists(), result)
+            result = self._validate("MLI_copy", Path(MLI_in_par).exists(), result, f"MLI_in_par path does not exist ({MLI_in_par})")
         if MLI_out is not None:
             Path(MLI_out).touch()
         if MLI_out_par is not None:
             Path(MLI_out_par).touch()
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.MLI_copy(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("ISP", "MLI_copy", supplied_args, result[0]))
         self._on_error("MLI_copy", supplied_args, result[0])
@@ -9213,9 +9216,9 @@ class PyGammaTestProxy(object):
         if SLC_par is not None and not Path(SLC_par).exists():
             Path(SLC_par).touch()
         if ORRM is not None:
-            result = self._validate(Path(ORRM).exists(), result)
+            result = self._validate("ORRM_vec", Path(ORRM).exists(), result, f"ORRM path does not exist ({ORRM})")
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.ORRM_vec(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("ISP", "ORRM_vec", supplied_args, result[0]))
         self._on_error("ORRM_vec", supplied_args, result[0])
@@ -9231,17 +9234,17 @@ class PyGammaTestProxy(object):
             self.call_count["SLC_ovr"] = 1
 
         if SLC is not None:
-            result = self._validate(Path(SLC).exists(), result)
+            result = self._validate("SLC_ovr", Path(SLC).exists(), result, f"SLC path does not exist ({SLC})")
         if SLC_par is not None:
-            result = self._validate(Path(SLC_par).exists(), result)
+            result = self._validate("SLC_ovr", Path(SLC_par).exists(), result, f"SLC_par path does not exist ({SLC_par})")
         if SLC_ovr is not None:
             Path(SLC_ovr).touch()
         if SLC_ovr_par is not None:
             Path(SLC_ovr_par).touch()
         valid_values = [0, 1]
-        result = self._validate(mode in valid_values, result)
+        result = self._validate("SLC_ovr", mode in valid_values, result, f"mode is not a valid value (expects: {[0, 1]})")
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.SLC_ovr(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("ISP", "SLC_ovr", supplied_args, result[0]))
         self._on_error("SLC_ovr", supplied_args, result[0])
@@ -9257,9 +9260,9 @@ class PyGammaTestProxy(object):
             self.call_count["tree_gzw"] = 1
 
         if flag is not None:
-            result = self._validate(Path(flag).exists(), result)
+            result = self._validate("tree_gzw", Path(flag).exists(), result, f"flag path does not exist ({flag})")
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.tree_gzw(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("ISP", "tree_gzw", supplied_args, result[0]))
         self._on_error("tree_gzw", supplied_args, result[0])
@@ -9275,19 +9278,19 @@ class PyGammaTestProxy(object):
             self.call_count["mcf"] = 1
 
         if interf is not None:
-            result = self._validate(Path(interf).exists(), result)
+            result = self._validate("mcf", Path(interf).exists(), result, f"interf path does not exist ({interf})")
         if wgt is not None:
-            result = self._validate(Path(wgt).exists(), result)
+            result = self._validate("mcf", Path(wgt).exists(), result, f"wgt path does not exist ({wgt})")
         if mask is not None:
-            result = self._validate(Path(mask).exists(), result)
+            result = self._validate("mcf", Path(mask).exists(), result, f"mask path does not exist ({mask})")
         if unw is not None:
             Path(unw).touch()
         valid_values = [0, 1]
-        result = self._validate(tri_mode in valid_values, result)
+        result = self._validate("mcf", tri_mode in valid_values, result, f"tri_mode is not a valid value (expects: {[0, 1]})")
         valid_values = [0, 1]
-        result = self._validate(init_flag in valid_values, result)
+        result = self._validate("mcf", init_flag in valid_values, result, f"init_flag is not a valid value (expects: {[0, 1]})")
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.mcf(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("ISP", "mcf", supplied_args, result[0]))
         self._on_error("mcf", supplied_args, result[0])
@@ -9303,15 +9306,15 @@ class PyGammaTestProxy(object):
             self.call_count["par_ESA_ERS"] = 1
 
         if CEOS_SAR_leader is not None:
-            result = self._validate(Path(CEOS_SAR_leader).exists(), result)
+            result = self._validate("par_ESA_ERS", Path(CEOS_SAR_leader).exists(), result, f"CEOS_SAR_leader path does not exist ({CEOS_SAR_leader})")
         if SLC_par is not None:
             Path(SLC_par).touch()
         if CEOS_DAT is not None:
-            result = self._validate(Path(CEOS_DAT).exists(), result)
+            result = self._validate("par_ESA_ERS", Path(CEOS_DAT).exists(), result, f"CEOS_DAT path does not exist ({CEOS_DAT})")
         if SLC is not None:
             Path(SLC).touch()
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.par_ESA_ERS(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("ISP", "par_ESA_ERS", supplied_args, result[0]))
         self._on_error("par_ESA_ERS", supplied_args, result[0])
@@ -9327,21 +9330,21 @@ class PyGammaTestProxy(object):
             self.call_count["SLC_interp"] = 1
 
         if SLC_2 is not None:
-            result = self._validate(Path(SLC_2).exists(), result)
+            result = self._validate("SLC_interp", Path(SLC_2).exists(), result, f"SLC_2 path does not exist ({SLC_2})")
         if SLC1_par is not None:
-            result = self._validate(Path(SLC1_par).exists(), result)
+            result = self._validate("SLC_interp", Path(SLC1_par).exists(), result, f"SLC1_par path does not exist ({SLC1_par})")
         if SLC2_par is not None:
-            result = self._validate(Path(SLC2_par).exists(), result)
+            result = self._validate("SLC_interp", Path(SLC2_par).exists(), result, f"SLC2_par path does not exist ({SLC2_par})")
         if OFF_par is not None:
-            result = self._validate(Path(OFF_par).exists(), result)
+            result = self._validate("SLC_interp", Path(OFF_par).exists(), result, f"OFF_par path does not exist ({OFF_par})")
         if SLC_2R is not None:
             Path(SLC_2R).touch()
         if SLC2R_par is not None:
             Path(SLC2R_par).touch()
         valid_values = [0, 1]
-        result = self._validate(mode in valid_values, result)
+        result = self._validate("SLC_interp", mode in valid_values, result, f"mode is not a valid value (expects: {[0, 1]})")
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.SLC_interp(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("ISP", "SLC_interp", supplied_args, result[0]))
         self._on_error("SLC_interp", supplied_args, result[0])
@@ -9357,13 +9360,13 @@ class PyGammaTestProxy(object):
             self.call_count["par_S1_SLC"] = 1
 
         if GeoTIFF is not None:
-            result = self._validate(Path(GeoTIFF).exists(), result)
+            result = self._validate("par_S1_SLC", Path(GeoTIFF).exists(), result, f"GeoTIFF path does not exist ({GeoTIFF})")
         if annotation_XML is not None:
-            result = self._validate(Path(annotation_XML).exists(), result)
+            result = self._validate("par_S1_SLC", Path(annotation_XML).exists(), result, f"annotation_XML path does not exist ({annotation_XML})")
         if calibration_XML is not None:
-            result = self._validate(Path(calibration_XML).exists(), result)
+            result = self._validate("par_S1_SLC", Path(calibration_XML).exists(), result, f"calibration_XML path does not exist ({calibration_XML})")
         if noise_XML is not None:
-            result = self._validate(Path(noise_XML).exists(), result)
+            result = self._validate("par_S1_SLC", Path(noise_XML).exists(), result, f"noise_XML path does not exist ({noise_XML})")
         if SLC_par is not None:
             Path(SLC_par).touch()
         if SLC is not None:
@@ -9371,9 +9374,9 @@ class PyGammaTestProxy(object):
         if TOPS_par is not None:
             Path(TOPS_par).touch()
         valid_values = [0, 1]
-        result = self._validate(dtype in valid_values, result)
+        result = self._validate("par_S1_SLC", dtype in valid_values, result, f"dtype is not a valid value (expects: {[0, 1]})")
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.par_S1_SLC(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("ISP", "par_S1_SLC", supplied_args, result[0]))
         self._on_error("par_S1_SLC", supplied_args, result[0])
@@ -9389,11 +9392,11 @@ class PyGammaTestProxy(object):
             self.call_count["par_ASAR"] = 1
 
         if ASAR_ERS_file is not None:
-            result = self._validate(Path(ASAR_ERS_file).exists(), result)
+            result = self._validate("par_ASAR", Path(ASAR_ERS_file).exists(), result, f"ASAR_ERS_file path does not exist ({ASAR_ERS_file})")
         if output_name is not None:
             Path(output_name).touch()
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.par_ASAR(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("ISP", "par_ASAR", supplied_args, result[0]))
         self._on_error("par_ASAR", supplied_args, result[0])
@@ -9409,11 +9412,11 @@ class PyGammaTestProxy(object):
             self.call_count["par_ASF_96"] = 1
 
         if CEOS_SAR_leader is not None:
-            result = self._validate(Path(CEOS_SAR_leader).exists(), result)
+            result = self._validate("par_ASF_96", Path(CEOS_SAR_leader).exists(), result, f"CEOS_SAR_leader path does not exist ({CEOS_SAR_leader})")
         if SLC_par is not None:
             Path(SLC_par).touch()
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.par_ASF_96(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("ISP", "par_ASF_96", supplied_args, result[0]))
         self._on_error("par_ASF_96", supplied_args, result[0])
@@ -9429,9 +9432,9 @@ class PyGammaTestProxy(object):
             self.call_count["ScanSAR_mosaic_to_burst"] = 1
 
         if DATA is not None:
-            result = self._validate(Path(DATA).exists(), result)
+            result = self._validate("ScanSAR_mosaic_to_burst", Path(DATA).exists(), result, f"DATA path does not exist ({DATA})")
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.ScanSAR_mosaic_to_burst(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("ISP", "ScanSAR_mosaic_to_burst", supplied_args, result[0]))
         self._on_error("ScanSAR_mosaic_to_burst", supplied_args, result[0])
@@ -9447,17 +9450,17 @@ class PyGammaTestProxy(object):
             self.call_count["base_ls"] = 1
 
         if SLC_par is not None:
-            result = self._validate(Path(SLC_par).exists(), result)
+            result = self._validate("base_ls", Path(SLC_par).exists(), result, f"SLC_par path does not exist ({SLC_par})")
         if OFF_par is not None:
-            result = self._validate(Path(OFF_par).exists(), result)
+            result = self._validate("base_ls", Path(OFF_par).exists(), result, f"OFF_par path does not exist ({OFF_par})")
         if gcp_ph is not None:
-            result = self._validate(Path(gcp_ph).exists(), result)
+            result = self._validate("base_ls", Path(gcp_ph).exists(), result, f"gcp_ph path does not exist ({gcp_ph})")
         if baseline is not None:
-            result = self._validate(Path(baseline).exists(), result)
+            result = self._validate("base_ls", Path(baseline).exists(), result, f"baseline path does not exist ({baseline})")
         if SLC2R_par is not None:
-            result = self._validate(Path(SLC2R_par).exists(), result)
+            result = self._validate("base_ls", Path(SLC2R_par).exists(), result, f"SLC2R_par path does not exist ({SLC2R_par})")
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.base_ls(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("ISP", "base_ls", supplied_args, result[0]))
         self._on_error("base_ls", supplied_args, result[0])
@@ -9473,15 +9476,15 @@ class PyGammaTestProxy(object):
             self.call_count["az_spec_SLC"] = 1
 
         if SLC is not None:
-            result = self._validate(Path(SLC).exists(), result)
+            result = self._validate("az_spec_SLC", Path(SLC).exists(), result, f"SLC path does not exist ({SLC})")
         if SLC_par is not None:
-            result = self._validate(Path(SLC_par).exists(), result)
+            result = self._validate("az_spec_SLC", Path(SLC_par).exists(), result, f"SLC_par path does not exist ({SLC_par})")
         if spectrum is not None:
             Path(spectrum).touch()
         valid_values = [0, 1]
-        result = self._validate(pltflg in valid_values, result)
+        result = self._validate("az_spec_SLC", pltflg in valid_values, result, f"pltflg is not a valid value (expects: {[0, 1]})")
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.az_spec_SLC(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("ISP", "az_spec_SLC", supplied_args, result[0]))
         self._on_error("az_spec_SLC", supplied_args, result[0])
@@ -9497,19 +9500,19 @@ class PyGammaTestProxy(object):
             self.call_count["SLC_copy"] = 1
 
         if SLC_in is not None:
-            result = self._validate(Path(SLC_in).exists(), result)
+            result = self._validate("SLC_copy", Path(SLC_in).exists(), result, f"SLC_in path does not exist ({SLC_in})")
         if SLC_par_in is not None:
-            result = self._validate(Path(SLC_par_in).exists(), result)
+            result = self._validate("SLC_copy", Path(SLC_par_in).exists(), result, f"SLC_par_in path does not exist ({SLC_par_in})")
         if SLC_out is not None:
             Path(SLC_out).touch()
         if SLC_par_out is not None:
             Path(SLC_par_out).touch()
         valid_values = [1, 2, 3, 4]
-        result = self._validate(fcase in valid_values, result)
+        result = self._validate("SLC_copy", fcase in valid_values, result, f"fcase is not a valid value (expects: {[1, 2, 3, 4]})")
         valid_values = [0, 1, 2]
-        result = self._validate(swap in valid_values, result)
+        result = self._validate("SLC_copy", swap in valid_values, result, f"swap is not a valid value (expects: {[0, 1, 2]})")
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.SLC_copy(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("ISP", "SLC_copy", supplied_args, result[0]))
         self._on_error("SLC_copy", supplied_args, result[0])
@@ -9525,15 +9528,15 @@ class PyGammaTestProxy(object):
             self.call_count["az_integrate"] = 1
 
         if data is not None:
-            result = self._validate(Path(data).exists(), result)
+            result = self._validate("az_integrate", Path(data).exists(), result, f"data path does not exist ({data})")
         if width is not None:
-            result = self._validate(Path(width).exists(), result)
+            result = self._validate("az_integrate", Path(width).exists(), result, f"width path does not exist ({width})")
         if azi is not None:
             Path(azi).touch()
         valid_values = [0, 1]
-        result = self._validate(cflg in valid_values, result)
+        result = self._validate("az_integrate", cflg in valid_values, result, f"cflg is not a valid value (expects: {[0, 1]})")
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.az_integrate(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("ISP", "az_integrate", supplied_args, result[0]))
         self._on_error("az_integrate", supplied_args, result[0])
@@ -9549,29 +9552,29 @@ class PyGammaTestProxy(object):
             self.call_count["SLC_cat"] = 1
 
         if SLC_1 is not None:
-            result = self._validate(Path(SLC_1).exists(), result)
+            result = self._validate("SLC_cat", Path(SLC_1).exists(), result, f"SLC_1 path does not exist ({SLC_1})")
         if SLC_2 is not None:
-            result = self._validate(Path(SLC_2).exists(), result)
+            result = self._validate("SLC_cat", Path(SLC_2).exists(), result, f"SLC_2 path does not exist ({SLC_2})")
         if SLC1_par is not None:
-            result = self._validate(Path(SLC1_par).exists(), result)
+            result = self._validate("SLC_cat", Path(SLC1_par).exists(), result, f"SLC1_par path does not exist ({SLC1_par})")
         if SLC2_par is not None:
-            result = self._validate(Path(SLC2_par).exists(), result)
+            result = self._validate("SLC_cat", Path(SLC2_par).exists(), result, f"SLC2_par path does not exist ({SLC2_par})")
         if OFF_par is not None:
-            result = self._validate(Path(OFF_par).exists(), result)
+            result = self._validate("SLC_cat", Path(OFF_par).exists(), result, f"OFF_par path does not exist ({OFF_par})")
         if SLC_3 is not None:
             Path(SLC_3).touch()
         if SLC3_par is not None:
             Path(SLC3_par).touch()
         valid_values = [0, 1]
-        result = self._validate(dopflg in valid_values, result)
+        result = self._validate("SLC_cat", dopflg in valid_values, result, f"dopflg is not a valid value (expects: {[0, 1]})")
         valid_values = [0, 1]
-        result = self._validate(iflg in valid_values, result)
+        result = self._validate("SLC_cat", iflg in valid_values, result, f"iflg is not a valid value (expects: {[0, 1]})")
         valid_values = [0, 1]
-        result = self._validate(phflg in valid_values, result)
+        result = self._validate("SLC_cat", phflg in valid_values, result, f"phflg is not a valid value (expects: {[0, 1]})")
         valid_values = [0, 1]
-        result = self._validate(gainflg in valid_values, result)
+        result = self._validate("SLC_cat", gainflg in valid_values, result, f"gainflg is not a valid value (expects: {[0, 1]})")
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.SLC_cat(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("ISP", "SLC_cat", supplied_args, result[0]))
         self._on_error("SLC_cat", supplied_args, result[0])
@@ -9587,17 +9590,17 @@ class PyGammaTestProxy(object):
             self.call_count["par_NovaSAR_SLC"] = 1
 
         if GeoTIFF is not None:
-            result = self._validate(Path(GeoTIFF).exists(), result)
+            result = self._validate("par_NovaSAR_SLC", Path(GeoTIFF).exists(), result, f"GeoTIFF path does not exist ({GeoTIFF})")
         if XML is not None:
-            result = self._validate(Path(XML).exists(), result)
+            result = self._validate("par_NovaSAR_SLC", Path(XML).exists(), result, f"XML path does not exist ({XML})")
         if SLC_par is not None:
             Path(SLC_par).touch()
         if SLC is not None:
             Path(SLC).touch()
         valid_values = [0, 1]
-        result = self._validate(dtype in valid_values, result)
+        result = self._validate("par_NovaSAR_SLC", dtype in valid_values, result, f"dtype is not a valid value (expects: {[0, 1]})")
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.par_NovaSAR_SLC(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("ISP", "par_NovaSAR_SLC", supplied_args, result[0]))
         self._on_error("par_NovaSAR_SLC", supplied_args, result[0])
@@ -9613,13 +9616,13 @@ class PyGammaTestProxy(object):
             self.call_count["SLC_corners"] = 1
 
         if SLC_par is not None:
-            result = self._validate(Path(SLC_par).exists(), result)
+            result = self._validate("SLC_corners", Path(SLC_par).exists(), result, f"SLC_par path does not exist ({SLC_par})")
         if terra_alt is not None:
-            result = self._validate(Path(terra_alt).exists(), result)
+            result = self._validate("SLC_corners", Path(terra_alt).exists(), result, f"terra_alt path does not exist ({terra_alt})")
         if kml is not None:
             Path(kml).touch()
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.SLC_corners(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("ISP", "SLC_corners", supplied_args, result[0]))
         self._on_error("SLC_corners", supplied_args, result[0])
@@ -9635,19 +9638,19 @@ class PyGammaTestProxy(object):
             self.call_count["SLC_deramp"] = 1
 
         if SLC_1 is not None:
-            result = self._validate(Path(SLC_1).exists(), result)
+            result = self._validate("SLC_deramp", Path(SLC_1).exists(), result, f"SLC_1 path does not exist ({SLC_1})")
         if SLC_par1 is not None:
-            result = self._validate(Path(SLC_par1).exists(), result)
+            result = self._validate("SLC_deramp", Path(SLC_par1).exists(), result, f"SLC_par1 path does not exist ({SLC_par1})")
         if SLC_2 is not None:
             Path(SLC_2).touch()
         if SLC_par2 is not None:
             Path(SLC_par2).touch()
         valid_values = [0, 1]
-        result = self._validate(mode in valid_values, result)
+        result = self._validate("SLC_deramp", mode in valid_values, result, f"mode is not a valid value (expects: {[0, 1]})")
         if dop_ph is not None:
             Path(dop_ph).touch()
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.SLC_deramp(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("ISP", "SLC_deramp", supplied_args, result[0]))
         self._on_error("SLC_deramp", supplied_args, result[0])
@@ -9663,11 +9666,11 @@ class PyGammaTestProxy(object):
             self.call_count["residue"] = 1
 
         if int is not None:
-            result = self._validate(Path(int).exists(), result)
+            result = self._validate("residue", Path(int).exists(), result, f"int path does not exist ({int})")
         if flag is not None:
-            result = self._validate(Path(flag).exists(), result)
+            result = self._validate("residue", Path(flag).exists(), result, f"flag path does not exist ({flag})")
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.residue(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("ISP", "residue", supplied_args, result[0]))
         self._on_error("residue", supplied_args, result[0])
@@ -9683,15 +9686,15 @@ class PyGammaTestProxy(object):
             self.call_count["par_PRI"] = 1
 
         if CEOS_SAR_leader is not None:
-            result = self._validate(Path(CEOS_SAR_leader).exists(), result)
+            result = self._validate("par_PRI", Path(CEOS_SAR_leader).exists(), result, f"CEOS_SAR_leader path does not exist ({CEOS_SAR_leader})")
         if PRI_par is not None:
             Path(PRI_par).touch()
         if CEOS_DAT is not None:
-            result = self._validate(Path(CEOS_DAT).exists(), result)
+            result = self._validate("par_PRI", Path(CEOS_DAT).exists(), result, f"CEOS_DAT path does not exist ({CEOS_DAT})")
         if PRI is not None:
             Path(PRI).touch()
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.par_PRI(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("ISP", "par_PRI", supplied_args, result[0]))
         self._on_error("par_PRI", supplied_args, result[0])
@@ -9707,17 +9710,17 @@ class PyGammaTestProxy(object):
             self.call_count["create_offset"] = 1
 
         if SLC1_par is not None:
-            result = self._validate(Path(SLC1_par).exists(), result)
+            result = self._validate("create_offset", Path(SLC1_par).exists(), result, f"SLC1_par path does not exist ({SLC1_par})")
         if SLC2_par is not None:
-            result = self._validate(Path(SLC2_par).exists(), result)
+            result = self._validate("create_offset", Path(SLC2_par).exists(), result, f"SLC2_par path does not exist ({SLC2_par})")
         if OFF_par is not None and not Path(OFF_par).exists():
             Path(OFF_par).touch()
         valid_values = [1, 2]
-        result = self._validate(algorithm in valid_values, result)
+        result = self._validate("create_offset", algorithm in valid_values, result, f"algorithm is not a valid value (expects: {[1, 2]})")
         valid_values = [0, 1]
-        result = self._validate(iflg in valid_values, result)
+        result = self._validate("create_offset", iflg in valid_values, result, f"iflg is not a valid value (expects: {[0, 1]})")
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.create_offset(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("ISP", "create_offset", supplied_args, result[0]))
         self._on_error("create_offset", supplied_args, result[0])
@@ -9733,17 +9736,17 @@ class PyGammaTestProxy(object):
             self.call_count["multi_look_MLI"] = 1
 
         if MLI_in is not None:
-            result = self._validate(Path(MLI_in).exists(), result)
+            result = self._validate("multi_look_MLI", Path(MLI_in).exists(), result, f"MLI_in path does not exist ({MLI_in})")
         if MLI_in_par is not None:
-            result = self._validate(Path(MLI_in_par).exists(), result)
+            result = self._validate("multi_look_MLI", Path(MLI_in_par).exists(), result, f"MLI_in_par path does not exist ({MLI_in_par})")
         if MLI_out is not None:
             Path(MLI_out).touch()
         if MLI_out_par is not None:
             Path(MLI_out_par).touch()
         valid_values = [0, 1]
-        result = self._validate(e_flag in valid_values, result)
+        result = self._validate("multi_look_MLI", e_flag in valid_values, result, f"e_flag is not a valid value (expects: {[0, 1]})")
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.multi_look_MLI(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("ISP", "multi_look_MLI", supplied_args, result[0]))
         self._on_error("multi_look_MLI", supplied_args, result[0])
@@ -9759,15 +9762,15 @@ class PyGammaTestProxy(object):
             self.call_count["multi_real"] = 1
 
         if data_in is not None:
-            result = self._validate(Path(data_in).exists(), result)
+            result = self._validate("multi_real", Path(data_in).exists(), result, f"data_in path does not exist ({data_in})")
         if OFF_par_in is not None:
-            result = self._validate(Path(OFF_par_in).exists(), result)
+            result = self._validate("multi_real", Path(OFF_par_in).exists(), result, f"OFF_par_in path does not exist ({OFF_par_in})")
         if data_out is not None:
             Path(data_out).touch()
         if OFF_par_out is not None and not Path(OFF_par_out).exists():
             Path(OFF_par_out).touch()
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.multi_real(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("ISP", "multi_real", supplied_args, result[0]))
         self._on_error("multi_real", supplied_args, result[0])
@@ -9783,13 +9786,13 @@ class PyGammaTestProxy(object):
             self.call_count["SLC_intf2"] = 1
 
         if SLC_1 is not None:
-            result = self._validate(Path(SLC_1).exists(), result)
+            result = self._validate("SLC_intf2", Path(SLC_1).exists(), result, f"SLC_1 path does not exist ({SLC_1})")
         if SLC_2R is not None:
-            result = self._validate(Path(SLC_2R).exists(), result)
+            result = self._validate("SLC_intf2", Path(SLC_2R).exists(), result, f"SLC_2R path does not exist ({SLC_2R})")
         if SLC1_par is not None:
-            result = self._validate(Path(SLC1_par).exists(), result)
+            result = self._validate("SLC_intf2", Path(SLC1_par).exists(), result, f"SLC1_par path does not exist ({SLC1_par})")
         if SLC2R_par is not None:
-            result = self._validate(Path(SLC2R_par).exists(), result)
+            result = self._validate("SLC_intf2", Path(SLC2R_par).exists(), result, f"SLC2R_par path does not exist ({SLC2R_par})")
         if MLI_1 is not None:
             Path(MLI_1).touch()
         if MLI_2R is not None:
@@ -9803,9 +9806,9 @@ class PyGammaTestProxy(object):
         if cc is not None:
             Path(cc).touch()
         valid_values = [0, 1]
-        result = self._validate(wflg in valid_values, result)
+        result = self._validate("SLC_intf2", wflg in valid_values, result, f"wflg is not a valid value (expects: {[0, 1]})")
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.SLC_intf2(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("ISP", "SLC_intf2", supplied_args, result[0]))
         self._on_error("SLC_intf2", supplied_args, result[0])
@@ -9821,15 +9824,15 @@ class PyGammaTestProxy(object):
             self.call_count["par_ASF_PRI"] = 1
 
         if CEOS_leader is not None:
-            result = self._validate(Path(CEOS_leader).exists(), result)
+            result = self._validate("par_ASF_PRI", Path(CEOS_leader).exists(), result, f"CEOS_leader path does not exist ({CEOS_leader})")
         if CEOS_data is not None:
-            result = self._validate(Path(CEOS_data).exists(), result)
+            result = self._validate("par_ASF_PRI", Path(CEOS_data).exists(), result, f"CEOS_data path does not exist ({CEOS_data})")
         if GRD_par is not None:
             Path(GRD_par).touch()
         if GRD is not None:
             Path(GRD).touch()
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.par_ASF_PRI(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("ISP", "par_ASF_PRI", supplied_args, result[0]))
         self._on_error("par_ASF_PRI", supplied_args, result[0])
@@ -9845,15 +9848,15 @@ class PyGammaTestProxy(object):
             self.call_count["offset_pwr"] = 1
 
         if SLC1 is not None:
-            result = self._validate(Path(SLC1).exists(), result)
+            result = self._validate("offset_pwr", Path(SLC1).exists(), result, f"SLC1 path does not exist ({SLC1})")
         if SLC2 is not None:
-            result = self._validate(Path(SLC2).exists(), result)
+            result = self._validate("offset_pwr", Path(SLC2).exists(), result, f"SLC2 path does not exist ({SLC2})")
         if SLC1_par is not None:
-            result = self._validate(Path(SLC1_par).exists(), result)
+            result = self._validate("offset_pwr", Path(SLC1_par).exists(), result, f"SLC1_par path does not exist ({SLC1_par})")
         if SLC2_par is not None:
-            result = self._validate(Path(SLC2_par).exists(), result)
+            result = self._validate("offset_pwr", Path(SLC2_par).exists(), result, f"SLC2_par path does not exist ({SLC2_par})")
         if OFF_par is not None:
-            result = self._validate(Path(OFF_par).exists(), result)
+            result = self._validate("offset_pwr", Path(OFF_par).exists(), result, f"OFF_par path does not exist ({OFF_par})")
         if offs is not None:
             Path(offs).touch()
         if ccp is not None:
@@ -9861,17 +9864,17 @@ class PyGammaTestProxy(object):
         if offsets is not None:
             Path(offsets).touch()
         valid_values = [0, 1]
-        result = self._validate(deramp in valid_values, result)
+        result = self._validate("offset_pwr", deramp in valid_values, result, f"deramp is not a valid value (expects: {[0, 1]})")
         valid_values = [0, 1]
-        result = self._validate(int_filt in valid_values, result)
+        result = self._validate("offset_pwr", int_filt in valid_values, result, f"int_filt is not a valid value (expects: {[0, 1]})")
         valid_values = [0, 1]
-        result = self._validate(pflag in valid_values, result)
+        result = self._validate("offset_pwr", pflag in valid_values, result, f"pflag is not a valid value (expects: {[0, 1]})")
         valid_values = [0, 1, 2, 3]
-        result = self._validate(pltflg in valid_values, result)
+        result = self._validate("offset_pwr", pltflg in valid_values, result, f"pltflg is not a valid value (expects: {[0, 1, 2, 3]})")
         if ccs is not None:
             Path(ccs).touch()
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.offset_pwr(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("ISP", "offset_pwr", supplied_args, result[0]))
         self._on_error("offset_pwr", supplied_args, result[0])
@@ -9887,11 +9890,11 @@ class PyGammaTestProxy(object):
             self.call_count["par_ATLSCI_ERS"] = 1
 
         if CEOS_Image is not None:
-            result = self._validate(Path(CEOS_Image).exists(), result)
+            result = self._validate("par_ATLSCI_ERS", Path(CEOS_Image).exists(), result, f"CEOS_Image path does not exist ({CEOS_Image})")
         if SLC_par is not None:
             Path(SLC_par).touch()
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.par_ATLSCI_ERS(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("ISP", "par_ATLSCI_ERS", supplied_args, result[0]))
         self._on_error("par_ATLSCI_ERS", supplied_args, result[0])
@@ -9907,15 +9910,15 @@ class PyGammaTestProxy(object):
             self.call_count["par_PRI_ESRIN_JERS"] = 1
 
         if CEOS_SAR_leader is not None:
-            result = self._validate(Path(CEOS_SAR_leader).exists(), result)
+            result = self._validate("par_PRI_ESRIN_JERS", Path(CEOS_SAR_leader).exists(), result, f"CEOS_SAR_leader path does not exist ({CEOS_SAR_leader})")
         if PRI_par is not None:
             Path(PRI_par).touch()
         if CEOS_DAT is not None:
-            result = self._validate(Path(CEOS_DAT).exists(), result)
+            result = self._validate("par_PRI_ESRIN_JERS", Path(CEOS_DAT).exists(), result, f"CEOS_DAT path does not exist ({CEOS_DAT})")
         if PRI is not None:
             Path(PRI).touch()
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.par_PRI_ESRIN_JERS(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("ISP", "par_PRI_ESRIN_JERS", supplied_args, result[0]))
         self._on_error("par_PRI_ESRIN_JERS", supplied_args, result[0])
@@ -9931,21 +9934,21 @@ class PyGammaTestProxy(object):
             self.call_count["par_KC_PALSAR_slr"] = 1
 
         if facter_m is not None:
-            result = self._validate(Path(facter_m).exists(), result)
+            result = self._validate("par_KC_PALSAR_slr", Path(facter_m).exists(), result, f"facter_m path does not exist ({facter_m})")
         if CEOS_leader is not None:
-            result = self._validate(Path(CEOS_leader).exists(), result)
+            result = self._validate("par_KC_PALSAR_slr", Path(CEOS_leader).exists(), result, f"CEOS_leader path does not exist ({CEOS_leader})")
         if SLC_par is not None:
             Path(SLC_par).touch()
         valid_values = [1, 2, 3]
-        result = self._validate(pls_mode in valid_values, result)
+        result = self._validate("par_KC_PALSAR_slr", pls_mode in valid_values, result, f"pls_mode is not a valid value (expects: {[1, 2, 3]})")
         if KC_data is not None:
-            result = self._validate(Path(KC_data).exists(), result)
+            result = self._validate("par_KC_PALSAR_slr", Path(KC_data).exists(), result, f"KC_data path does not exist ({KC_data})")
         if pwr is not None:
             Path(pwr).touch()
         if fdtab is not None:
             Path(fdtab).touch()
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.par_KC_PALSAR_slr(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("ISP", "par_KC_PALSAR_slr", supplied_args, result[0]))
         self._on_error("par_KC_PALSAR_slr", supplied_args, result[0])
@@ -9961,9 +9964,9 @@ class PyGammaTestProxy(object):
             self.call_count["ptarg_SLC"] = 1
 
         if SLC_par is not None:
-            result = self._validate(Path(SLC_par).exists(), result)
+            result = self._validate("ptarg_SLC", Path(SLC_par).exists(), result, f"SLC_par path does not exist ({SLC_par})")
         if SLC is not None:
-            result = self._validate(Path(SLC).exists(), result)
+            result = self._validate("ptarg_SLC", Path(SLC).exists(), result, f"SLC path does not exist ({SLC})")
         if ptr_image is not None:
             Path(ptr_image).touch()
         if r_plot is not None:
@@ -9973,9 +9976,9 @@ class PyGammaTestProxy(object):
         if ptr_par is not None:
             Path(ptr_par).touch()
         valid_values = [0, 1, 2, 3]
-        result = self._validate(pltflg in valid_values, result)
+        result = self._validate("ptarg_SLC", pltflg in valid_values, result, f"pltflg is not a valid value (expects: {[0, 1, 2, 3]})")
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.ptarg_SLC(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("ISP", "ptarg_SLC", supplied_args, result[0]))
         self._on_error("ptarg_SLC", supplied_args, result[0])
@@ -9991,15 +9994,15 @@ class PyGammaTestProxy(object):
             self.call_count["par_EORC_PALSAR"] = 1
 
         if CEOS_leader is not None:
-            result = self._validate(Path(CEOS_leader).exists(), result)
+            result = self._validate("par_EORC_PALSAR", Path(CEOS_leader).exists(), result, f"CEOS_leader path does not exist ({CEOS_leader})")
         if SLC_par is not None:
             Path(SLC_par).touch()
         if CEOS_data is not None:
-            result = self._validate(Path(CEOS_data).exists(), result)
+            result = self._validate("par_EORC_PALSAR", Path(CEOS_data).exists(), result, f"CEOS_data path does not exist ({CEOS_data})")
         if SLC is not None:
             Path(SLC).touch()
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.par_EORC_PALSAR(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("ISP", "par_EORC_PALSAR", supplied_args, result[0]))
         self._on_error("par_EORC_PALSAR", supplied_args, result[0])
@@ -10015,9 +10018,9 @@ class PyGammaTestProxy(object):
             self.call_count["S1_burstloc"] = 1
 
         if annotation_XML is not None:
-            result = self._validate(Path(annotation_XML).exists(), result)
+            result = self._validate("S1_burstloc", Path(annotation_XML).exists(), result, f"annotation_XML path does not exist ({annotation_XML})")
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.S1_burstloc(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("ISP", "S1_burstloc", supplied_args, result[0]))
         self._on_error("S1_burstloc", supplied_args, result[0])
@@ -10033,15 +10036,15 @@ class PyGammaTestProxy(object):
             self.call_count["par_GF3_SLC"] = 1
 
         if GeoTIFF is not None:
-            result = self._validate(Path(GeoTIFF).exists(), result)
+            result = self._validate("par_GF3_SLC", Path(GeoTIFF).exists(), result, f"GeoTIFF path does not exist ({GeoTIFF})")
         if annotation_XML is not None:
-            result = self._validate(Path(annotation_XML).exists(), result)
+            result = self._validate("par_GF3_SLC", Path(annotation_XML).exists(), result, f"annotation_XML path does not exist ({annotation_XML})")
         if SLC_par is not None:
             Path(SLC_par).touch()
         if SLC is not None:
             Path(SLC).touch()
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.par_GF3_SLC(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("ISP", "par_GF3_SLC", supplied_args, result[0]))
         self._on_error("par_GF3_SLC", supplied_args, result[0])
@@ -10057,15 +10060,15 @@ class PyGammaTestProxy(object):
             self.call_count["cc_wave"] = 1
 
         if interf is not None:
-            result = self._validate(Path(interf).exists(), result)
+            result = self._validate("cc_wave", Path(interf).exists(), result, f"interf path does not exist ({interf})")
         if MLI_1 is not None:
-            result = self._validate(Path(MLI_1).exists(), result)
+            result = self._validate("cc_wave", Path(MLI_1).exists(), result, f"MLI_1 path does not exist ({MLI_1})")
         if MLI_2 is not None:
-            result = self._validate(Path(MLI_2).exists(), result)
+            result = self._validate("cc_wave", Path(MLI_2).exists(), result, f"MLI_2 path does not exist ({MLI_2})")
         if cc is not None:
             Path(cc).touch()
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.cc_wave(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("ISP", "cc_wave", supplied_args, result[0]))
         self._on_error("cc_wave", supplied_args, result[0])
@@ -10081,19 +10084,19 @@ class PyGammaTestProxy(object):
             self.call_count["par_RSAT2_SLC"] = 1
 
         if product_XML is not None:
-            result = self._validate(Path(product_XML).exists(), result)
+            result = self._validate("par_RSAT2_SLC", Path(product_XML).exists(), result, f"product_XML path does not exist ({product_XML})")
         if lut_XML is not None:
-            result = self._validate(Path(lut_XML).exists(), result)
+            result = self._validate("par_RSAT2_SLC", Path(lut_XML).exists(), result, f"lut_XML path does not exist ({lut_XML})")
         if GeoTIFF is not None:
-            result = self._validate(Path(GeoTIFF).exists(), result)
+            result = self._validate("par_RSAT2_SLC", Path(GeoTIFF).exists(), result, f"GeoTIFF path does not exist ({GeoTIFF})")
         if polarization is not None:
-            result = self._validate(Path(polarization).exists(), result)
+            result = self._validate("par_RSAT2_SLC", Path(polarization).exists(), result, f"polarization path does not exist ({polarization})")
         if SLC_par is not None:
             Path(SLC_par).touch()
         if SLC is not None:
             Path(SLC).touch()
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.par_RSAT2_SLC(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("ISP", "par_RSAT2_SLC", supplied_args, result[0]))
         self._on_error("par_RSAT2_SLC", supplied_args, result[0])
@@ -10109,11 +10112,11 @@ class PyGammaTestProxy(object):
             self.call_count["residue_cc"] = 1
 
         if int is not None:
-            result = self._validate(Path(int).exists(), result)
+            result = self._validate("residue_cc", Path(int).exists(), result, f"int path does not exist ({int})")
         if flag is not None:
-            result = self._validate(Path(flag).exists(), result)
+            result = self._validate("residue_cc", Path(flag).exists(), result, f"flag path does not exist ({flag})")
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.residue_cc(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("ISP", "residue_cc", supplied_args, result[0]))
         self._on_error("residue_cc", supplied_args, result[0])
@@ -10129,11 +10132,11 @@ class PyGammaTestProxy(object):
             self.call_count["par_PulSAR"] = 1
 
         if CEOS_SAR_leader is not None:
-            result = self._validate(Path(CEOS_SAR_leader).exists(), result)
+            result = self._validate("par_PulSAR", Path(CEOS_SAR_leader).exists(), result, f"CEOS_SAR_leader path does not exist ({CEOS_SAR_leader})")
         if SLC_par is not None:
             Path(SLC_par).touch()
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.par_PulSAR(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("ISP", "par_PulSAR", supplied_args, result[0]))
         self._on_error("par_PulSAR", supplied_args, result[0])
@@ -10149,13 +10152,13 @@ class PyGammaTestProxy(object):
             self.call_count["par_ASF_91"] = 1
 
         if CEOS_leader is not None:
-            result = self._validate(Path(CEOS_leader).exists(), result)
+            result = self._validate("par_ASF_91", Path(CEOS_leader).exists(), result, f"CEOS_leader path does not exist ({CEOS_leader})")
         if CEOS_trailer is not None:
-            result = self._validate(Path(CEOS_trailer).exists(), result)
+            result = self._validate("par_ASF_91", Path(CEOS_trailer).exists(), result, f"CEOS_trailer path does not exist ({CEOS_trailer})")
         if SLC_par is not None:
             Path(SLC_par).touch()
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.par_ASF_91(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("ISP", "par_ASF_91", supplied_args, result[0]))
         self._on_error("par_ASF_91", supplied_args, result[0])
@@ -10171,15 +10174,15 @@ class PyGammaTestProxy(object):
             self.call_count["fspf"] = 1
 
         if data_in is not None:
-            result = self._validate(Path(data_in).exists(), result)
+            result = self._validate("fspf", Path(data_in).exists(), result, f"data_in path does not exist ({data_in})")
         if data_out is not None:
             Path(data_out).touch()
         valid_values = [0, 1, 2]
-        result = self._validate(dtype in valid_values, result)
+        result = self._validate("fspf", dtype in valid_values, result, f"dtype is not a valid value (expects: {[0, 1, 2]})")
         valid_values = [0, 1, 2, 3, 4, 5]
-        result = self._validate(spf_type in valid_values, result)
+        result = self._validate("fspf", spf_type in valid_values, result, f"spf_type is not a valid value (expects: {[0, 1, 2, 3, 4, 5]})")
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.fspf(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("ISP", "fspf", supplied_args, result[0]))
         self._on_error("fspf", supplied_args, result[0])
@@ -10195,19 +10198,19 @@ class PyGammaTestProxy(object):
             self.call_count["radcal_SLC"] = 1
 
         if SLC is not None:
-            result = self._validate(Path(SLC).exists(), result)
+            result = self._validate("radcal_SLC", Path(SLC).exists(), result, f"SLC path does not exist ({SLC})")
         if SLC_PAR is not None:
-            result = self._validate(Path(SLC_PAR).exists(), result)
+            result = self._validate("radcal_SLC", Path(SLC_PAR).exists(), result, f"SLC_PAR path does not exist ({SLC_PAR})")
         if CSLC is not None:
             Path(CSLC).touch()
         if CSLC_PAR is not None:
             Path(CSLC_PAR).touch()
         valid_values = [1, 2, 3, 4]
-        result = self._validate(fcase in valid_values, result)
+        result = self._validate("radcal_SLC", fcase in valid_values, result, f"fcase is not a valid value (expects: {[1, 2, 3, 4]})")
         if pix_area is not None:
             Path(pix_area).touch()
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.radcal_SLC(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("ISP", "radcal_SLC", supplied_args, result[0]))
         self._on_error("radcal_SLC", supplied_args, result[0])
@@ -10223,7 +10226,7 @@ class PyGammaTestProxy(object):
             self.call_count["line_interp"] = 1
 
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.line_interp(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("LAT", "line_interp", supplied_args, result[0]))
         self._on_error("line_interp", supplied_args, result[0])
@@ -10239,15 +10242,15 @@ class PyGammaTestProxy(object):
             self.call_count["product_cpx"] = 1
 
         if f1 is not None:
-            result = self._validate(Path(f1).exists(), result)
+            result = self._validate("product_cpx", Path(f1).exists(), result, f"f1 path does not exist ({f1})")
         if f2 is not None:
-            result = self._validate(Path(f2).exists(), result)
+            result = self._validate("product_cpx", Path(f2).exists(), result, f"f2 path does not exist ({f2})")
         if f_out is not None:
             Path(f_out).touch()
         valid_values = [0, 1]
-        result = self._validate(conjg_flg in valid_values, result)
+        result = self._validate("product_cpx", conjg_flg in valid_values, result, f"conjg_flg is not a valid value (expects: {[0, 1]})")
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.product_cpx(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("LAT", "product_cpx", supplied_args, result[0]))
         self._on_error("product_cpx", supplied_args, result[0])
@@ -10263,11 +10266,11 @@ class PyGammaTestProxy(object):
             self.call_count["ras_majority"] = 1
 
         if ras_in is not None:
-            result = self._validate(Path(ras_in).exists(), result)
+            result = self._validate("ras_majority", Path(ras_in).exists(), result, f"ras_in path does not exist ({ras_in})")
         if ras_out is not None:
             Path(ras_out).touch()
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.ras_majority(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("LAT", "ras_majority", supplied_args, result[0]))
         self._on_error("ras_majority", supplied_args, result[0])
@@ -10283,15 +10286,15 @@ class PyGammaTestProxy(object):
             self.call_count["average_filter"] = 1
 
         if din is not None:
-            result = self._validate(Path(din).exists(), result)
+            result = self._validate("average_filter", Path(din).exists(), result, f"din path does not exist ({din})")
         if dout is not None:
             Path(dout).touch()
         valid_values = [0, 1, 2]
-        result = self._validate(wflg in valid_values, result)
+        result = self._validate("average_filter", wflg in valid_values, result, f"wflg is not a valid value (expects: {[0, 1, 2]})")
         valid_values = [0, 1]
-        result = self._validate(zflg in valid_values, result)
+        result = self._validate("average_filter", zflg in valid_values, result, f"zflg is not a valid value (expects: {[0, 1]})")
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.average_filter(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("LAT", "average_filter", supplied_args, result[0]))
         self._on_error("average_filter", supplied_args, result[0])
@@ -10307,15 +10310,15 @@ class PyGammaTestProxy(object):
             self.call_count["mask_class"] = 1
 
         if class_map is not None:
-            result = self._validate(Path(class_map).exists(), result)
+            result = self._validate("mask_class", Path(class_map).exists(), result, f"class_map path does not exist ({class_map})")
         if file_in is not None:
-            result = self._validate(Path(file_in).exists(), result)
+            result = self._validate("mask_class", Path(file_in).exists(), result, f"file_in path does not exist ({file_in})")
         if file_out is not None:
             Path(file_out).touch()
         valid_values = [0, 1, 2, 3]
-        result = self._validate(format_flag in valid_values, result)
+        result = self._validate("mask_class", format_flag in valid_values, result, f"format_flag is not a valid value (expects: {[0, 1, 2, 3]})")
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.mask_class(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("LAT", "mask_class", supplied_args, result[0]))
         self._on_error("mask_class", supplied_args, result[0])
@@ -10331,13 +10334,13 @@ class PyGammaTestProxy(object):
             self.call_count["ras_ratio_dB"] = 1
 
         if pwr1 is not None:
-            result = self._validate(Path(pwr1).exists(), result)
+            result = self._validate("ras_ratio_dB", Path(pwr1).exists(), result, f"pwr1 path does not exist ({pwr1})")
         if pwr2 is not None:
-            result = self._validate(Path(pwr2).exists(), result)
+            result = self._validate("ras_ratio_dB", Path(pwr2).exists(), result, f"pwr2 path does not exist ({pwr2})")
         if rasf is not None:
             Path(rasf).touch()
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.ras_ratio_dB(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("LAT", "ras_ratio_dB", supplied_args, result[0]))
         self._on_error("ras_ratio_dB", supplied_args, result[0])
@@ -10353,13 +10356,13 @@ class PyGammaTestProxy(object):
             self.call_count["linear_to_dB"] = 1
 
         if data_in is not None:
-            result = self._validate(Path(data_in).exists(), result)
+            result = self._validate("linear_to_dB", Path(data_in).exists(), result, f"data_in path does not exist ({data_in})")
         if data_out is not None:
             Path(data_out).touch()
         valid_values = [0, 1]
-        result = self._validate(inverse_flag in valid_values, result)
+        result = self._validate("linear_to_dB", inverse_flag in valid_values, result, f"inverse_flag is not a valid value (expects: {[0, 1]})")
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.linear_to_dB(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("LAT", "linear_to_dB", supplied_args, result[0]))
         self._on_error("linear_to_dB", supplied_args, result[0])
@@ -10375,19 +10378,19 @@ class PyGammaTestProxy(object):
             self.call_count["histogram"] = 1
 
         if data_in is not None:
-            result = self._validate(Path(data_in).exists(), result)
+            result = self._validate("histogram", Path(data_in).exists(), result, f"data_in path does not exist ({data_in})")
         if polygon is not None:
-            result = self._validate(Path(polygon).exists(), result)
+            result = self._validate("histogram", Path(polygon).exists(), result, f"polygon path does not exist ({polygon})")
         if hist is not None:
             Path(hist).touch()
         if stat is not None:
             Path(stat).touch()
         valid_values = [0, 1]
-        result = self._validate(mode in valid_values, result)
+        result = self._validate("histogram", mode in valid_values, result, f"mode is not a valid value (expects: {[0, 1]})")
         valid_values = [0, 1]
-        result = self._validate(lin_log in valid_values, result)
+        result = self._validate("histogram", lin_log in valid_values, result, f"lin_log is not a valid value (expects: {[0, 1]})")
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.histogram(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("LAT", "histogram", supplied_args, result[0]))
         self._on_error("histogram", supplied_args, result[0])
@@ -10403,11 +10406,11 @@ class PyGammaTestProxy(object):
             self.call_count["gamma_map"] = 1
 
         if input_data is not None:
-            result = self._validate(Path(input_data).exists(), result)
+            result = self._validate("gamma_map", Path(input_data).exists(), result, f"input_data path does not exist ({input_data})")
         if output_data is not None:
             Path(output_data).touch()
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.gamma_map(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("LAT", "gamma_map", supplied_args, result[0]))
         self._on_error("gamma_map", supplied_args, result[0])
@@ -10423,13 +10426,13 @@ class PyGammaTestProxy(object):
             self.call_count["m-chi"] = 1
 
         if s0 is not None:
-            result = self._validate(Path(s0).exists(), result)
+            result = self._validate("m-chi", Path(s0).exists(), result, f"s0 path does not exist ({s0})")
         if m is not None:
-            result = self._validate(Path(m).exists(), result)
+            result = self._validate("m-chi", Path(m).exists(), result, f"m path does not exist ({m})")
         if s2chi is not None:
-            result = self._validate(Path(s2chi).exists(), result)
+            result = self._validate("m-chi", Path(s2chi).exists(), result, f"s2chi path does not exist ({s2chi})")
         if S_par is not None:
-            result = self._validate(Path(S_par).exists(), result)
+            result = self._validate("m-chi", Path(S_par).exists(), result, f"S_par path does not exist ({S_par})")
         if c1 is not None:
             Path(c1).touch()
         if c2 is not None:
@@ -10437,7 +10440,7 @@ class PyGammaTestProxy(object):
         if c3 is not None:
             Path(c3).touch()
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.m-chi(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("LAT", "m-chi", supplied_args, result[0]))
         self._on_error("m-chi", supplied_args, result[0])
@@ -10453,11 +10456,11 @@ class PyGammaTestProxy(object):
             self.call_count["reallks"] = 1
 
         if image is not None:
-            result = self._validate(Path(image).exists(), result)
+            result = self._validate("reallks", Path(image).exists(), result, f"image path does not exist ({image})")
         if ML_image is not None:
             Path(ML_image).touch()
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.reallks(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("LAT", "reallks", supplied_args, result[0]))
         self._on_error("reallks", supplied_args, result[0])
@@ -10473,11 +10476,11 @@ class PyGammaTestProxy(object):
             self.call_count["frost"] = 1
 
         if pwr1 is not None:
-            result = self._validate(Path(pwr1).exists(), result)
+            result = self._validate("frost", Path(pwr1).exists(), result, f"pwr1 path does not exist ({pwr1})")
         if pwr1_frost is not None:
             Path(pwr1_frost).touch()
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.frost(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("LAT", "frost", supplied_args, result[0]))
         self._on_error("frost", supplied_args, result[0])
@@ -10493,11 +10496,11 @@ class PyGammaTestProxy(object):
             self.call_count["mt_lee_filt"] = 1
 
         if im_list is not None:
-            result = self._validate(Path(im_list).exists(), result)
+            result = self._validate("mt_lee_filt", Path(im_list).exists(), result, f"im_list path does not exist ({im_list})")
         if ref_image is not None:
-            result = self._validate(Path(ref_image).exists(), result)
+            result = self._validate("mt_lee_filt", Path(ref_image).exists(), result, f"ref_image path does not exist ({ref_image})")
         if out_list is not None:
-            result = self._validate(Path(out_list).exists(), result)
+            result = self._validate("mt_lee_filt", Path(out_list).exists(), result, f"out_list path does not exist ({out_list})")
         if ref_out is not None:
             Path(ref_out).touch()
         if b_coeff is not None:
@@ -10509,7 +10512,7 @@ class PyGammaTestProxy(object):
         if ctr is not None:
             Path(ctr).touch()
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.mt_lee_filt(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("LAT", "mt_lee_filt", supplied_args, result[0]))
         self._on_error("mt_lee_filt", supplied_args, result[0])
@@ -10525,13 +10528,13 @@ class PyGammaTestProxy(object):
             self.call_count["multi_stat"] = 1
 
         if im_list is not None:
-            result = self._validate(Path(im_list).exists(), result)
+            result = self._validate("multi_stat", Path(im_list).exists(), result, f"im_list path does not exist ({im_list})")
         if im_out is not None:
             Path(im_out).touch()
         valid_values = [0, 1, 2, 3, 4]
-        result = self._validate(mode in valid_values, result)
+        result = self._validate("multi_stat", mode in valid_values, result, f"mode is not a valid value (expects: {[0, 1, 2, 3, 4]})")
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.multi_stat(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("LAT", "multi_stat", supplied_args, result[0]))
         self._on_error("multi_stat", supplied_args, result[0])
@@ -10547,13 +10550,13 @@ class PyGammaTestProxy(object):
             self.call_count["trigo"] = 1
 
         if data1 is not None:
-            result = self._validate(Path(data1).exists(), result)
+            result = self._validate("trigo", Path(data1).exists(), result, f"data1 path does not exist ({data1})")
         valid_values = [1]
-        result = self._validate(func in valid_values, result)
+        result = self._validate("trigo", func in valid_values, result, f"func is not a valid value (expects: {[1]})")
         if data2 is not None:
             Path(data2).touch()
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.trigo(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("LAT", "trigo", supplied_args, result[0]))
         self._on_error("trigo", supplied_args, result[0])
@@ -10569,13 +10572,13 @@ class PyGammaTestProxy(object):
             self.call_count["temp_filt"] = 1
 
         if data_tab is not None:
-            result = self._validate(Path(data_tab).exists(), result)
+            result = self._validate("temp_filt", Path(data_tab).exists(), result, f"data_tab path does not exist ({data_tab})")
         valid_values = [0, 1, 2]
-        result = self._validate(wt_flag in valid_values, result)
+        result = self._validate("temp_filt", wt_flag in valid_values, result, f"wt_flag is not a valid value (expects: {[0, 1, 2]})")
         valid_values = [0, 1]
-        result = self._validate(zero_flag in valid_values, result)
+        result = self._validate("temp_filt", zero_flag in valid_values, result, f"zero_flag is not a valid value (expects: {[0, 1]})")
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.temp_filt(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("LAT", "temp_filt", supplied_args, result[0]))
         self._on_error("temp_filt", supplied_args, result[0])
@@ -10591,11 +10594,11 @@ class PyGammaTestProxy(object):
             self.call_count["cpxlks"] = 1
 
         if CMPLX is not None:
-            result = self._validate(Path(CMPLX).exists(), result)
+            result = self._validate("cpxlks", Path(CMPLX).exists(), result, f"CMPLX path does not exist ({CMPLX})")
         if ML_CMPLX is not None:
             Path(ML_CMPLX).touch()
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.cpxlks(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("LAT", "cpxlks", supplied_args, result[0]))
         self._on_error("cpxlks", supplied_args, result[0])
@@ -10611,17 +10614,17 @@ class PyGammaTestProxy(object):
             self.call_count["ras_to_rgb"] = 1
 
         if red_channel is not None:
-            result = self._validate(Path(red_channel).exists(), result)
+            result = self._validate("ras_to_rgb", Path(red_channel).exists(), result, f"red_channel path does not exist ({red_channel})")
         if green_channel is not None:
-            result = self._validate(Path(green_channel).exists(), result)
+            result = self._validate("ras_to_rgb", Path(green_channel).exists(), result, f"green_channel path does not exist ({green_channel})")
         if blue_channel is not None:
-            result = self._validate(Path(blue_channel).exists(), result)
+            result = self._validate("ras_to_rgb", Path(blue_channel).exists(), result, f"blue_channel path does not exist ({blue_channel})")
         if ras_out is not None:
             Path(ras_out).touch()
         valid_values = [0, 1]
-        result = self._validate(null_flag in valid_values, result)
+        result = self._validate("ras_to_rgb", null_flag in valid_values, result, f"null_flag is not a valid value (expects: {[0, 1]})")
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.ras_to_rgb(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("LAT", "ras_to_rgb", supplied_args, result[0]))
         self._on_error("ras_to_rgb", supplied_args, result[0])
@@ -10637,13 +10640,13 @@ class PyGammaTestProxy(object):
             self.call_count["ave2pwr"] = 1
 
         if pwr1 is not None:
-            result = self._validate(Path(pwr1).exists(), result)
+            result = self._validate("ave2pwr", Path(pwr1).exists(), result, f"pwr1 path does not exist ({pwr1})")
         if pwr2 is not None:
-            result = self._validate(Path(pwr2).exists(), result)
+            result = self._validate("ave2pwr", Path(pwr2).exists(), result, f"pwr2 path does not exist ({pwr2})")
         if pwr_out is not None:
             Path(pwr_out).touch()
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.ave2pwr(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("LAT", "ave2pwr", supplied_args, result[0]))
         self._on_error("ave2pwr", supplied_args, result[0])
@@ -10659,17 +10662,17 @@ class PyGammaTestProxy(object):
             self.call_count["ras_m-chi"] = 1
 
         if s1 is not None:
-            result = self._validate(Path(s1).exists(), result)
+            result = self._validate("ras_m-chi", Path(s1).exists(), result, f"s1 path does not exist ({s1})")
         if c1 is not None:
-            result = self._validate(Path(c1).exists(), result)
+            result = self._validate("ras_m-chi", Path(c1).exists(), result, f"c1 path does not exist ({c1})")
         if c2 is not None:
-            result = self._validate(Path(c2).exists(), result)
+            result = self._validate("ras_m-chi", Path(c2).exists(), result, f"c2 path does not exist ({c2})")
         if c3 is not None:
-            result = self._validate(Path(c3).exists(), result)
+            result = self._validate("ras_m-chi", Path(c3).exists(), result, f"c3 path does not exist ({c3})")
         if rasf is not None:
             Path(rasf).touch()
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.ras_m-chi(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("LAT", "ras_m-chi", supplied_args, result[0]))
         self._on_error("ras_m-chi", supplied_args, result[0])
@@ -10685,13 +10688,13 @@ class PyGammaTestProxy(object):
             self.call_count["sigma2gamma"] = 1
 
         if pwr1 is not None:
-            result = self._validate(Path(pwr1).exists(), result)
+            result = self._validate("sigma2gamma", Path(pwr1).exists(), result, f"pwr1 path does not exist ({pwr1})")
         if inc is not None:
-            result = self._validate(Path(inc).exists(), result)
+            result = self._validate("sigma2gamma", Path(inc).exists(), result, f"inc path does not exist ({inc})")
         if gamma is not None:
             Path(gamma).touch()
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.sigma2gamma(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("LAT", "sigma2gamma", supplied_args, result[0]))
         self._on_error("sigma2gamma", supplied_args, result[0])
@@ -10709,9 +10712,9 @@ class PyGammaTestProxy(object):
         if file_out is not None:
             Path(file_out).touch()
         valid_values = [0]
-        result = self._validate(nval in valid_values, result)
+        result = self._validate("hsi_color_scale", nval in valid_values, result, f"nval is not a valid value (expects: {[0]})")
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.hsi_color_scale(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("LAT", "hsi_color_scale", supplied_args, result[0]))
         self._on_error("hsi_color_scale", supplied_args, result[0])
@@ -10727,11 +10730,11 @@ class PyGammaTestProxy(object):
             self.call_count["unw_to_cpx"] = 1
 
         if unw is not None:
-            result = self._validate(Path(unw).exists(), result)
+            result = self._validate("unw_to_cpx", Path(unw).exists(), result, f"unw path does not exist ({unw})")
         if cpx is not None:
             Path(cpx).touch()
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.unw_to_cpx(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("LAT", "unw_to_cpx", supplied_args, result[0]))
         self._on_error("unw_to_cpx", supplied_args, result[0])
@@ -10747,7 +10750,7 @@ class PyGammaTestProxy(object):
             self.call_count["polyx"] = 1
 
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.polyx(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("LAT", "polyx", supplied_args, result[0]))
         self._on_error("polyx", supplied_args, result[0])
@@ -10763,21 +10766,21 @@ class PyGammaTestProxy(object):
             self.call_count["pauli"] = 1
 
         if SLC_HH is not None:
-            result = self._validate(Path(SLC_HH).exists(), result)
+            result = self._validate("pauli", Path(SLC_HH).exists(), result, f"SLC_HH path does not exist ({SLC_HH})")
         if SLC_VV is not None:
-            result = self._validate(Path(SLC_VV).exists(), result)
+            result = self._validate("pauli", Path(SLC_VV).exists(), result, f"SLC_VV path does not exist ({SLC_VV})")
         if SLC_HV is not None:
-            result = self._validate(Path(SLC_HV).exists(), result)
+            result = self._validate("pauli", Path(SLC_HV).exists(), result, f"SLC_HV path does not exist ({SLC_HV})")
         if SLC_HH_par is not None:
-            result = self._validate(Path(SLC_HH_par).exists(), result)
+            result = self._validate("pauli", Path(SLC_HH_par).exists(), result, f"SLC_HH_par path does not exist ({SLC_HH_par})")
         if SLC_VV_par is not None:
-            result = self._validate(Path(SLC_VV_par).exists(), result)
+            result = self._validate("pauli", Path(SLC_VV_par).exists(), result, f"SLC_VV_par path does not exist ({SLC_VV_par})")
         if SLC_HV_par is not None:
-            result = self._validate(Path(SLC_HV_par).exists(), result)
+            result = self._validate("pauli", Path(SLC_HV_par).exists(), result, f"SLC_HV_par path does not exist ({SLC_HV_par})")
         if P is not None:
             Path(P).touch()
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.pauli(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("LAT", "pauli", supplied_args, result[0]))
         self._on_error("pauli", supplied_args, result[0])
@@ -10793,13 +10796,13 @@ class PyGammaTestProxy(object):
             self.call_count["m-alpha"] = 1
 
         if s0 is not None:
-            result = self._validate(Path(s0).exists(), result)
+            result = self._validate("m-alpha", Path(s0).exists(), result, f"s0 path does not exist ({s0})")
         if m is not None:
-            result = self._validate(Path(m).exists(), result)
+            result = self._validate("m-alpha", Path(m).exists(), result, f"m path does not exist ({m})")
         if alpha is not None:
-            result = self._validate(Path(alpha).exists(), result)
+            result = self._validate("m-alpha", Path(alpha).exists(), result, f"alpha path does not exist ({alpha})")
         if S_par is not None:
-            result = self._validate(Path(S_par).exists(), result)
+            result = self._validate("m-alpha", Path(S_par).exists(), result, f"S_par path does not exist ({S_par})")
         if c1 is not None:
             Path(c1).touch()
         if c2 is not None:
@@ -10807,7 +10810,7 @@ class PyGammaTestProxy(object):
         if c3 is not None:
             Path(c3).touch()
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.m-alpha(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("LAT", "m-alpha", supplied_args, result[0]))
         self._on_error("m-alpha", supplied_args, result[0])
@@ -10823,19 +10826,19 @@ class PyGammaTestProxy(object):
             self.call_count["stokes"] = 1
 
         if SLC_1 is not None:
-            result = self._validate(Path(SLC_1).exists(), result)
+            result = self._validate("stokes", Path(SLC_1).exists(), result, f"SLC_1 path does not exist ({SLC_1})")
         if SLC_2 is not None:
-            result = self._validate(Path(SLC_2).exists(), result)
+            result = self._validate("stokes", Path(SLC_2).exists(), result, f"SLC_2 path does not exist ({SLC_2})")
         if SLC1_par is not None:
-            result = self._validate(Path(SLC1_par).exists(), result)
+            result = self._validate("stokes", Path(SLC1_par).exists(), result, f"SLC1_par path does not exist ({SLC1_par})")
         if SLC2_par is not None:
-            result = self._validate(Path(SLC2_par).exists(), result)
+            result = self._validate("stokes", Path(SLC2_par).exists(), result, f"SLC2_par path does not exist ({SLC2_par})")
         if S is not None:
             Path(S).touch()
         if S_par is not None:
             Path(S_par).touch()
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.stokes(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("LAT", "stokes", supplied_args, result[0]))
         self._on_error("stokes", supplied_args, result[0])
@@ -10851,9 +10854,9 @@ class PyGammaTestProxy(object):
             self.call_count["histogram_ras"] = 1
 
         if ras_in is not None:
-            result = self._validate(Path(ras_in).exists(), result)
+            result = self._validate("histogram_ras", Path(ras_in).exists(), result, f"ras_in path does not exist ({ras_in})")
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.histogram_ras(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("LAT", "histogram_ras", supplied_args, result[0]))
         self._on_error("histogram_ras", supplied_args, result[0])
@@ -10869,15 +10872,15 @@ class PyGammaTestProxy(object):
             self.call_count["product"] = 1
 
         if data_1 is not None:
-            result = self._validate(Path(data_1).exists(), result)
+            result = self._validate("product", Path(data_1).exists(), result, f"data_1 path does not exist ({data_1})")
         if data_2 is not None:
-            result = self._validate(Path(data_2).exists(), result)
+            result = self._validate("product", Path(data_2).exists(), result, f"data_2 path does not exist ({data_2})")
         if product is not None:
             Path(product).touch()
         valid_values = [0, 1, 2]
-        result = self._validate(wgt_flag in valid_values, result)
+        result = self._validate("product", wgt_flag in valid_values, result, f"wgt_flag is not a valid value (expects: {[0, 1, 2]})")
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.product(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("LAT", "product", supplied_args, result[0]))
         self._on_error("product", supplied_args, result[0])
@@ -10893,11 +10896,11 @@ class PyGammaTestProxy(object):
             self.call_count["mt_lee_filt_cpx"] = 1
 
         if cpx_list is not None:
-            result = self._validate(Path(cpx_list).exists(), result)
+            result = self._validate("mt_lee_filt_cpx", Path(cpx_list).exists(), result, f"cpx_list path does not exist ({cpx_list})")
         if ref_image is not None:
-            result = self._validate(Path(ref_image).exists(), result)
+            result = self._validate("mt_lee_filt_cpx", Path(ref_image).exists(), result, f"ref_image path does not exist ({ref_image})")
         if out_list is not None:
-            result = self._validate(Path(out_list).exists(), result)
+            result = self._validate("mt_lee_filt_cpx", Path(out_list).exists(), result, f"out_list path does not exist ({out_list})")
         if ref_out is not None:
             Path(ref_out).touch()
         if b_coeff is not None:
@@ -10909,7 +10912,7 @@ class PyGammaTestProxy(object):
         if ctr is not None:
             Path(ctr).touch()
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.mt_lee_filt_cpx(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("LAT", "mt_lee_filt_cpx", supplied_args, result[0]))
         self._on_error("mt_lee_filt_cpx", supplied_args, result[0])
@@ -10925,23 +10928,23 @@ class PyGammaTestProxy(object):
             self.call_count["polcovar"] = 1
 
         if SLC_1 is not None:
-            result = self._validate(Path(SLC_1).exists(), result)
+            result = self._validate("polcovar", Path(SLC_1).exists(), result, f"SLC_1 path does not exist ({SLC_1})")
         if SLC_2 is not None:
-            result = self._validate(Path(SLC_2).exists(), result)
+            result = self._validate("polcovar", Path(SLC_2).exists(), result, f"SLC_2 path does not exist ({SLC_2})")
         if SLC_3 is not None:
-            result = self._validate(Path(SLC_3).exists(), result)
+            result = self._validate("polcovar", Path(SLC_3).exists(), result, f"SLC_3 path does not exist ({SLC_3})")
         if SLC1_par is not None:
-            result = self._validate(Path(SLC1_par).exists(), result)
+            result = self._validate("polcovar", Path(SLC1_par).exists(), result, f"SLC1_par path does not exist ({SLC1_par})")
         if SLC2_par is not None:
-            result = self._validate(Path(SLC2_par).exists(), result)
+            result = self._validate("polcovar", Path(SLC2_par).exists(), result, f"SLC2_par path does not exist ({SLC2_par})")
         if SLC3_par is not None:
-            result = self._validate(Path(SLC3_par).exists(), result)
+            result = self._validate("polcovar", Path(SLC3_par).exists(), result, f"SLC3_par path does not exist ({SLC3_par})")
         if C is not None:
             Path(C).touch()
         if C_par is not None:
             Path(C_par).touch()
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.polcovar(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("LAT", "polcovar", supplied_args, result[0]))
         self._on_error("polcovar", supplied_args, result[0])
@@ -10957,9 +10960,9 @@ class PyGammaTestProxy(object):
             self.call_count["stokes_qm"] = 1
 
         if S is not None:
-            result = self._validate(Path(S).exists(), result)
+            result = self._validate("stokes_qm", Path(S).exists(), result, f"S path does not exist ({S})")
         if S_par is not None:
-            result = self._validate(Path(S_par).exists(), result)
+            result = self._validate("stokes_qm", Path(S_par).exists(), result, f"S_par path does not exist ({S_par})")
         if m is not None:
             Path(m).touch()
         if s2chi is not None:
@@ -10983,7 +10986,7 @@ class PyGammaTestProxy(object):
         if phi is not None:
             Path(phi).touch()
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.stokes_qm(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("LAT", "stokes_qm", supplied_args, result[0]))
         self._on_error("stokes_qm", supplied_args, result[0])
@@ -10999,17 +11002,17 @@ class PyGammaTestProxy(object):
             self.call_count["frame"] = 1
 
         if data_in is not None:
-            result = self._validate(Path(data_in).exists(), result)
+            result = self._validate("frame", Path(data_in).exists(), result, f"data_in path does not exist ({data_in})")
         if data_out is not None:
             Path(data_out).touch()
         valid_values = [0, 1, 2, 3, 4, 5]
-        result = self._validate(dtype in valid_values, result)
+        result = self._validate("frame", dtype in valid_values, result, f"dtype is not a valid value (expects: {[0, 1, 2, 3, 4, 5]})")
         valid_values = [0, 1]
-        result = self._validate(null_flag in valid_values, result)
+        result = self._validate("frame", null_flag in valid_values, result, f"null_flag is not a valid value (expects: {[0, 1]})")
         valid_values = [0, 1]
-        result = self._validate(all_flag in valid_values, result)
+        result = self._validate("frame", all_flag in valid_values, result, f"all_flag is not a valid value (expects: {[0, 1]})")
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.frame(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("LAT", "frame", supplied_args, result[0]))
         self._on_error("frame", supplied_args, result[0])
@@ -11025,7 +11028,7 @@ class PyGammaTestProxy(object):
             self.call_count["looks"] = 1
 
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.looks(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("LAT", "looks", supplied_args, result[0]))
         self._on_error("looks", supplied_args, result[0])
@@ -11041,23 +11044,23 @@ class PyGammaTestProxy(object):
             self.call_count["polcoh"] = 1
 
         if SLC_1 is not None:
-            result = self._validate(Path(SLC_1).exists(), result)
+            result = self._validate("polcoh", Path(SLC_1).exists(), result, f"SLC_1 path does not exist ({SLC_1})")
         if SLC_2 is not None:
-            result = self._validate(Path(SLC_2).exists(), result)
+            result = self._validate("polcoh", Path(SLC_2).exists(), result, f"SLC_2 path does not exist ({SLC_2})")
         if SLC_3 is not None:
-            result = self._validate(Path(SLC_3).exists(), result)
+            result = self._validate("polcoh", Path(SLC_3).exists(), result, f"SLC_3 path does not exist ({SLC_3})")
         if SLC1_par is not None:
-            result = self._validate(Path(SLC1_par).exists(), result)
+            result = self._validate("polcoh", Path(SLC1_par).exists(), result, f"SLC1_par path does not exist ({SLC1_par})")
         if SLC2_par is not None:
-            result = self._validate(Path(SLC2_par).exists(), result)
+            result = self._validate("polcoh", Path(SLC2_par).exists(), result, f"SLC2_par path does not exist ({SLC2_par})")
         if SLC3_par is not None:
-            result = self._validate(Path(SLC3_par).exists(), result)
+            result = self._validate("polcoh", Path(SLC3_par).exists(), result, f"SLC3_par path does not exist ({SLC3_par})")
         if T is not None:
             Path(T).touch()
         if T_par is not None:
             Path(T_par).touch()
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.polcoh(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("LAT", "polcoh", supplied_args, result[0]))
         self._on_error("polcoh", supplied_args, result[0])
@@ -11073,15 +11076,15 @@ class PyGammaTestProxy(object):
             self.call_count["lin_comb"] = 1
 
         if f1 is not None:
-            result = self._validate(Path(f1).exists(), result)
+            result = self._validate("lin_comb", Path(f1).exists(), result, f"f1 path does not exist ({f1})")
         if f2 is not None:
-            result = self._validate(Path(f2).exists(), result)
+            result = self._validate("lin_comb", Path(f2).exists(), result, f"f2 path does not exist ({f2})")
         if f_out is not None:
             Path(f_out).touch()
         valid_values = [0, 1]
-        result = self._validate(zero_flag in valid_values, result)
+        result = self._validate("lin_comb", zero_flag in valid_values, result, f"zero_flag is not a valid value (expects: {[0, 1]})")
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.lin_comb(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("LAT", "lin_comb", supplied_args, result[0]))
         self._on_error("lin_comb", supplied_args, result[0])
@@ -11097,19 +11100,19 @@ class PyGammaTestProxy(object):
             self.call_count["multi_class_mapping"] = 1
 
         if f1 is not None:
-            result = self._validate(Path(f1).exists(), result)
+            result = self._validate("multi_class_mapping", Path(f1).exists(), result, f"f1 path does not exist ({f1})")
         if f2 is not None:
-            result = self._validate(Path(f2).exists(), result)
+            result = self._validate("multi_class_mapping", Path(f2).exists(), result, f"f2 path does not exist ({f2})")
         if fn is not None:
-            result = self._validate(Path(fn).exists(), result)
+            result = self._validate("multi_class_mapping", Path(fn).exists(), result, f"fn path does not exist ({fn})")
         if classf is not None:
-            result = self._validate(Path(classf).exists(), result)
+            result = self._validate("multi_class_mapping", Path(classf).exists(), result, f"classf path does not exist ({classf})")
         if ras_out is not None:
             Path(ras_out).touch()
         valid_values = [0, 1]
-        result = self._validate(color_flag in valid_values, result)
+        result = self._validate("multi_class_mapping", color_flag in valid_values, result, f"color_flag is not a valid value (expects: {[0, 1]})")
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.multi_class_mapping(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("LAT", "multi_class_mapping", supplied_args, result[0]))
         self._on_error("multi_class_mapping", supplied_args, result[0])
@@ -11125,13 +11128,13 @@ class PyGammaTestProxy(object):
             self.call_count["takecut"] = 1
 
         if data_in is not None:
-            result = self._validate(Path(data_in).exists(), result)
+            result = self._validate("takecut", Path(data_in).exists(), result, f"data_in path does not exist ({data_in})")
         if report is not None:
             Path(report).touch()
         valid_values = [0, 1]
-        result = self._validate(pr_flag in valid_values, result)
+        result = self._validate("takecut", pr_flag in valid_values, result, f"pr_flag is not a valid value (expects: {[0, 1]})")
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.takecut(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("LAT", "takecut", supplied_args, result[0]))
         self._on_error("takecut", supplied_args, result[0])
@@ -11147,13 +11150,13 @@ class PyGammaTestProxy(object):
             self.call_count["polyx_phase"] = 1
 
         if data is not None:
-            result = self._validate(Path(data).exists(), result)
+            result = self._validate("polyx_phase", Path(data).exists(), result, f"data path does not exist ({data})")
         if polygon is not None:
-            result = self._validate(Path(polygon).exists(), result)
+            result = self._validate("polyx_phase", Path(polygon).exists(), result, f"polygon path does not exist ({polygon})")
         if report is not None:
             Path(report).touch()
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.polyx_phase(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("LAT", "polyx_phase", supplied_args, result[0]))
         self._on_error("polyx_phase", supplied_args, result[0])
@@ -11169,17 +11172,17 @@ class PyGammaTestProxy(object):
             self.call_count["temp_lin_var"] = 1
 
         if data_tab is not None:
-            result = self._validate(Path(data_tab).exists(), result)
+            result = self._validate("temp_lin_var", Path(data_tab).exists(), result, f"data_tab path does not exist ({data_tab})")
         if mean is not None:
             Path(mean).touch()
         if stdev is not None:
             Path(stdev).touch()
         valid_values = [0, 1, 2]
-        result = self._validate(wt_flag in valid_values, result)
+        result = self._validate("temp_lin_var", wt_flag in valid_values, result, f"wt_flag is not a valid value (expects: {[0, 1, 2]})")
         valid_values = [0, 1]
-        result = self._validate(zero_flag in valid_values, result)
+        result = self._validate("temp_lin_var", zero_flag in valid_values, result, f"zero_flag is not a valid value (expects: {[0, 1]})")
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.temp_lin_var(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("LAT", "temp_lin_var", supplied_args, result[0]))
         self._on_error("temp_lin_var", supplied_args, result[0])
@@ -11195,13 +11198,13 @@ class PyGammaTestProxy(object):
             self.call_count["ave_cpx"] = 1
 
         if cpx_list is not None:
-            result = self._validate(Path(cpx_list).exists(), result)
+            result = self._validate("ave_cpx", Path(cpx_list).exists(), result, f"cpx_list path does not exist ({cpx_list})")
         if ave is not None:
             Path(ave).touch()
         valid_values = [0, 1]
-        result = self._validate(zflag in valid_values, result)
+        result = self._validate("ave_cpx", zflag in valid_values, result, f"zflag is not a valid value (expects: {[0, 1]})")
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.ave_cpx(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("LAT", "ave_cpx", supplied_args, result[0]))
         self._on_error("ave_cpx", supplied_args, result[0])
@@ -11217,15 +11220,15 @@ class PyGammaTestProxy(object):
             self.call_count["mask_op"] = 1
 
         if mask_1 is not None:
-            result = self._validate(Path(mask_1).exists(), result)
+            result = self._validate("mask_op", Path(mask_1).exists(), result, f"mask_1 path does not exist ({mask_1})")
         if mask_2 is not None:
-            result = self._validate(Path(mask_2).exists(), result)
+            result = self._validate("mask_op", Path(mask_2).exists(), result, f"mask_2 path does not exist ({mask_2})")
         if mask_out is not None:
             Path(mask_out).touch()
         valid_values = [0, 1, 2]
-        result = self._validate(mode in valid_values, result)
+        result = self._validate("mask_op", mode in valid_values, result, f"mode is not a valid value (expects: {[0, 1, 2]})")
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.mask_op(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("LAT", "mask_op", supplied_args, result[0]))
         self._on_error("mask_op", supplied_args, result[0])
@@ -11241,27 +11244,27 @@ class PyGammaTestProxy(object):
             self.call_count["quad2cp"] = 1
 
         if SLC_HH is not None:
-            result = self._validate(Path(SLC_HH).exists(), result)
+            result = self._validate("quad2cp", Path(SLC_HH).exists(), result, f"SLC_HH path does not exist ({SLC_HH})")
         if SLC_HV is not None:
-            result = self._validate(Path(SLC_HV).exists(), result)
+            result = self._validate("quad2cp", Path(SLC_HV).exists(), result, f"SLC_HV path does not exist ({SLC_HV})")
         if SLC_VH is not None:
-            result = self._validate(Path(SLC_VH).exists(), result)
+            result = self._validate("quad2cp", Path(SLC_VH).exists(), result, f"SLC_VH path does not exist ({SLC_VH})")
         if SLC_VV is not None:
-            result = self._validate(Path(SLC_VV).exists(), result)
+            result = self._validate("quad2cp", Path(SLC_VV).exists(), result, f"SLC_VV path does not exist ({SLC_VV})")
         if SLC_HH_par is not None:
-            result = self._validate(Path(SLC_HH_par).exists(), result)
+            result = self._validate("quad2cp", Path(SLC_HH_par).exists(), result, f"SLC_HH_par path does not exist ({SLC_HH_par})")
         if SLC_HV_par is not None:
-            result = self._validate(Path(SLC_HV_par).exists(), result)
+            result = self._validate("quad2cp", Path(SLC_HV_par).exists(), result, f"SLC_HV_par path does not exist ({SLC_HV_par})")
         if SLC_VH_par is not None:
-            result = self._validate(Path(SLC_VH_par).exists(), result)
+            result = self._validate("quad2cp", Path(SLC_VH_par).exists(), result, f"SLC_VH_par path does not exist ({SLC_VH_par})")
         if SLC_VV_par is not None:
-            result = self._validate(Path(SLC_VV_par).exists(), result)
+            result = self._validate("quad2cp", Path(SLC_VV_par).exists(), result, f"SLC_VV_par path does not exist ({SLC_VV_par})")
         if CP is not None:
             Path(CP).touch()
         valid_values = [0, 1]
-        result = self._validate(TX_pol in valid_values, result)
+        result = self._validate("quad2cp", TX_pol in valid_values, result, f"TX_pol is not a valid value (expects: {[0, 1]})")
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.quad2cp(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("LAT", "quad2cp", supplied_args, result[0]))
         self._on_error("quad2cp", supplied_args, result[0])
@@ -11277,7 +11280,7 @@ class PyGammaTestProxy(object):
             self.call_count["poly_math"] = 1
 
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.poly_math(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("LAT", "poly_math", supplied_args, result[0]))
         self._on_error("poly_math", supplied_args, result[0])
@@ -11293,13 +11296,13 @@ class PyGammaTestProxy(object):
             self.call_count["single_class_mapping"] = 1
 
         if f1 is not None:
-            result = self._validate(Path(f1).exists(), result)
+            result = self._validate("single_class_mapping", Path(f1).exists(), result, f"f1 path does not exist ({f1})")
         if fn is not None:
-            result = self._validate(Path(fn).exists(), result)
+            result = self._validate("single_class_mapping", Path(fn).exists(), result, f"fn path does not exist ({fn})")
         if ras_out is not None:
             Path(ras_out).touch()
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.single_class_mapping(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("LAT", "single_class_mapping", supplied_args, result[0]))
         self._on_error("single_class_mapping", supplied_args, result[0])
@@ -11315,17 +11318,17 @@ class PyGammaTestProxy(object):
             self.call_count["drawthat"] = 1
 
         if ras_in is not None:
-            result = self._validate(Path(ras_in).exists(), result)
+            result = self._validate("drawthat", Path(ras_in).exists(), result, f"ras_in path does not exist ({ras_in})")
         if ras_out is not None:
             Path(ras_out).touch()
         if pt_list is not None:
-            result = self._validate(Path(pt_list).exists(), result)
+            result = self._validate("drawthat", Path(pt_list).exists(), result, f"pt_list path does not exist ({pt_list})")
         valid_values = [0, 1, 2]
-        result = self._validate(mode in valid_values, result)
+        result = self._validate("drawthat", mode in valid_values, result, f"mode is not a valid value (expects: {[0, 1, 2]})")
         valid_values = [0, 1]
-        result = self._validate(zflg in valid_values, result)
+        result = self._validate("drawthat", zflg in valid_values, result, f"zflg is not a valid value (expects: {[0, 1]})")
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.drawthat(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("LAT", "drawthat", supplied_args, result[0]))
         self._on_error("drawthat", supplied_args, result[0])
@@ -11341,13 +11344,13 @@ class PyGammaTestProxy(object):
             self.call_count["m-delta"] = 1
 
         if s0 is not None:
-            result = self._validate(Path(s0).exists(), result)
+            result = self._validate("m-delta", Path(s0).exists(), result, f"s0 path does not exist ({s0})")
         if m is not None:
-            result = self._validate(Path(m).exists(), result)
+            result = self._validate("m-delta", Path(m).exists(), result, f"m path does not exist ({m})")
         if delta is not None:
-            result = self._validate(Path(delta).exists(), result)
+            result = self._validate("m-delta", Path(delta).exists(), result, f"delta path does not exist ({delta})")
         if S_par is not None:
-            result = self._validate(Path(S_par).exists(), result)
+            result = self._validate("m-delta", Path(S_par).exists(), result, f"S_par path does not exist ({S_par})")
         if c1 is not None:
             Path(c1).touch()
         if c2 is not None:
@@ -11355,7 +11358,7 @@ class PyGammaTestProxy(object):
         if c3 is not None:
             Path(c3).touch()
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.m-delta(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("LAT", "m-delta", supplied_args, result[0]))
         self._on_error("m-delta", supplied_args, result[0])
@@ -11371,11 +11374,11 @@ class PyGammaTestProxy(object):
             self.call_count["temp_filt_ad"] = 1
 
         if data_tab is not None:
-            result = self._validate(Path(data_tab).exists(), result)
+            result = self._validate("temp_filt_ad", Path(data_tab).exists(), result, f"data_tab path does not exist ({data_tab})")
         valid_values = [0, 1]
-        result = self._validate(zero_flag in valid_values, result)
+        result = self._validate("temp_filt_ad", zero_flag in valid_values, result, f"zero_flag is not a valid value (expects: {[0, 1]})")
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.temp_filt_ad(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("LAT", "temp_filt_ad", supplied_args, result[0]))
         self._on_error("temp_filt_ad", supplied_args, result[0])
@@ -11391,19 +11394,19 @@ class PyGammaTestProxy(object):
             self.call_count["bm3d"] = 1
 
         if data_in is not None:
-            result = self._validate(Path(data_in).exists(), result)
+            result = self._validate("bm3d", Path(data_in).exists(), result, f"data_in path does not exist ({data_in})")
         if data_out is not None:
             Path(data_out).touch()
         valid_values = [0, 1, 2]
-        result = self._validate(dtype in valid_values, result)
+        result = self._validate("bm3d", dtype in valid_values, result, f"dtype is not a valid value (expects: {[0, 1, 2]})")
         valid_values = [0, 1, 2, 3, 4, 5, 6]
-        result = self._validate(profile in valid_values, result)
+        result = self._validate("bm3d", profile in valid_values, result, f"profile is not a valid value (expects: {[0, 1, 2, 3, 4, 5, 6]})")
         valid_values = [0, 1]
-        result = self._validate(d_max in valid_values, result)
+        result = self._validate("bm3d", d_max in valid_values, result, f"d_max is not a valid value (expects: {[0, 1]})")
         valid_values = [0, 1]
-        result = self._validate(t1d in valid_values, result)
+        result = self._validate("bm3d", t1d in valid_values, result, f"t1d is not a valid value (expects: {[0, 1]})")
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.bm3d(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("LAT", "bm3d", supplied_args, result[0]))
         self._on_error("bm3d", supplied_args, result[0])
@@ -11419,7 +11422,7 @@ class PyGammaTestProxy(object):
             self.call_count["restore_float"] = 1
 
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.restore_float(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("LAT", "restore_float", supplied_args, result[0]))
         self._on_error("restore_float", supplied_args, result[0])
@@ -11437,11 +11440,11 @@ class PyGammaTestProxy(object):
         if alpha is not None:
             Path(alpha).touch()
         if beta is not None:
-            result = self._validate(Path(beta).exists(), result)
+            result = self._validate("haalpha", Path(beta).exists(), result, f"beta path does not exist ({beta})")
         if gamma is not None:
-            result = self._validate(Path(gamma).exists(), result)
+            result = self._validate("haalpha", Path(gamma).exists(), result, f"gamma path does not exist ({gamma})")
         if SLC_par is not None:
-            result = self._validate(Path(SLC_par).exists(), result)
+            result = self._validate("haalpha", Path(SLC_par).exists(), result, f"SLC_par path does not exist ({SLC_par})")
         if anisotropy is not None:
             Path(anisotropy).touch()
         if entropy is not None:
@@ -11455,7 +11458,7 @@ class PyGammaTestProxy(object):
         if MLI_par is not None:
             Path(MLI_par).touch()
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.haalpha(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("LAT", "haalpha", supplied_args, result[0]))
         self._on_error("haalpha", supplied_args, result[0])
@@ -11471,19 +11474,19 @@ class PyGammaTestProxy(object):
             self.call_count["wolf"] = 1
 
         if SLC_1 is not None:
-            result = self._validate(Path(SLC_1).exists(), result)
+            result = self._validate("wolf", Path(SLC_1).exists(), result, f"SLC_1 path does not exist ({SLC_1})")
         if SLC_2 is not None:
-            result = self._validate(Path(SLC_2).exists(), result)
+            result = self._validate("wolf", Path(SLC_2).exists(), result, f"SLC_2 path does not exist ({SLC_2})")
         if SLC1_par is not None:
-            result = self._validate(Path(SLC1_par).exists(), result)
+            result = self._validate("wolf", Path(SLC1_par).exists(), result, f"SLC1_par path does not exist ({SLC1_par})")
         if SLC2_par is not None:
-            result = self._validate(Path(SLC2_par).exists(), result)
+            result = self._validate("wolf", Path(SLC2_par).exists(), result, f"SLC2_par path does not exist ({SLC2_par})")
         if J is not None:
             Path(J).touch()
         if J_par is not None:
             Path(J_par).touch()
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.wolf(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("LAT", "wolf", supplied_args, result[0]))
         self._on_error("wolf", supplied_args, result[0])
@@ -11499,15 +11502,15 @@ class PyGammaTestProxy(object):
             self.call_count["takethat_dem_par"] = 1
 
         if data_in is not None:
-            result = self._validate(Path(data_in).exists(), result)
+            result = self._validate("takethat_dem_par", Path(data_in).exists(), result, f"data_in path does not exist ({data_in})")
         if positions is not None:
-            result = self._validate(Path(positions).exists(), result)
+            result = self._validate("takethat_dem_par", Path(positions).exists(), result, f"positions path does not exist ({positions})")
         if DEM_par is not None:
-            result = self._validate(Path(DEM_par).exists(), result)
+            result = self._validate("takethat_dem_par", Path(DEM_par).exists(), result, f"DEM_par path does not exist ({DEM_par})")
         if report is not None:
             Path(report).touch()
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.takethat_dem_par(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("LAT", "takethat_dem_par", supplied_args, result[0]))
         self._on_error("takethat_dem_par", supplied_args, result[0])
@@ -11523,11 +11526,11 @@ class PyGammaTestProxy(object):
             self.call_count["lee"] = 1
 
         if input_data is not None:
-            result = self._validate(Path(input_data).exists(), result)
+            result = self._validate("lee", Path(input_data).exists(), result, f"input_data path does not exist ({input_data})")
         if output_data is not None:
             Path(output_data).touch()
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.lee(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("LAT", "lee", supplied_args, result[0]))
         self._on_error("lee", supplied_args, result[0])
@@ -11543,11 +11546,11 @@ class PyGammaTestProxy(object):
             self.call_count["enh_lee"] = 1
 
         if input_data is not None:
-            result = self._validate(Path(input_data).exists(), result)
+            result = self._validate("enh_lee", Path(input_data).exists(), result, f"input_data path does not exist ({input_data})")
         if output_data is not None:
             Path(output_data).touch()
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.enh_lee(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("LAT", "enh_lee", supplied_args, result[0]))
         self._on_error("enh_lee", supplied_args, result[0])
@@ -11563,15 +11566,15 @@ class PyGammaTestProxy(object):
             self.call_count["ratio"] = 1
 
         if d1 is not None:
-            result = self._validate(Path(d1).exists(), result)
+            result = self._validate("ratio", Path(d1).exists(), result, f"d1 path does not exist ({d1})")
         if d2 is not None:
-            result = self._validate(Path(d2).exists(), result)
+            result = self._validate("ratio", Path(d2).exists(), result, f"d2 path does not exist ({d2})")
         if ratio is not None:
             Path(ratio).touch()
         valid_values = [0, 1, 2]
-        result = self._validate(wgt_flag in valid_values, result)
+        result = self._validate("ratio", wgt_flag in valid_values, result, f"wgt_flag is not a valid value (expects: {[0, 1, 2]})")
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.ratio(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("LAT", "ratio", supplied_args, result[0]))
         self._on_error("ratio", supplied_args, result[0])
@@ -11587,21 +11590,21 @@ class PyGammaTestProxy(object):
             self.call_count["cc_ad"] = 1
 
         if interf is not None:
-            result = self._validate(Path(interf).exists(), result)
+            result = self._validate("cc_ad", Path(interf).exists(), result, f"interf path does not exist ({interf})")
         if pwr1 is not None:
-            result = self._validate(Path(pwr1).exists(), result)
+            result = self._validate("cc_ad", Path(pwr1).exists(), result, f"pwr1 path does not exist ({pwr1})")
         if pwr2 is not None:
-            result = self._validate(Path(pwr2).exists(), result)
+            result = self._validate("cc_ad", Path(pwr2).exists(), result, f"pwr2 path does not exist ({pwr2})")
         if slope is not None:
-            result = self._validate(Path(slope).exists(), result)
+            result = self._validate("cc_ad", Path(slope).exists(), result, f"slope path does not exist ({slope})")
         if texture is not None:
-            result = self._validate(Path(texture).exists(), result)
+            result = self._validate("cc_ad", Path(texture).exists(), result, f"texture path does not exist ({texture})")
         if cc_ad is not None:
             Path(cc_ad).touch()
         valid_values = [0, 1]
-        result = self._validate(wgt_flag in valid_values, result)
+        result = self._validate("cc_ad", wgt_flag in valid_values, result, f"wgt_flag is not a valid value (expects: {[0, 1]})")
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.cc_ad(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("LAT", "cc_ad", supplied_args, result[0]))
         self._on_error("cc_ad", supplied_args, result[0])
@@ -11617,13 +11620,13 @@ class PyGammaTestProxy(object):
             self.call_count["ras_ras"] = 1
 
         if ras_in is not None:
-            result = self._validate(Path(ras_in).exists(), result)
+            result = self._validate("ras_ras", Path(ras_in).exists(), result, f"ras_in path does not exist ({ras_in})")
         if ras_out is not None:
             Path(ras_out).touch()
         valid_values = [0, 1]
-        result = self._validate(force24 in valid_values, result)
+        result = self._validate("ras_ras", force24 in valid_values, result, f"force24 is not a valid value (expects: {[0, 1]})")
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.ras_ras(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("LAT", "ras_ras", supplied_args, result[0]))
         self._on_error("ras_ras", supplied_args, result[0])
@@ -11639,15 +11642,15 @@ class PyGammaTestProxy(object):
             self.call_count["lin_comb_cpx"] = 1
 
         if f1 is not None:
-            result = self._validate(Path(f1).exists(), result)
+            result = self._validate("lin_comb_cpx", Path(f1).exists(), result, f"f1 path does not exist ({f1})")
         if f2 is not None:
-            result = self._validate(Path(f2).exists(), result)
+            result = self._validate("lin_comb_cpx", Path(f2).exists(), result, f"f2 path does not exist ({f2})")
         if f_out is not None:
             Path(f_out).touch()
         valid_values = [0, 1]
-        result = self._validate(zero_flag in valid_values, result)
+        result = self._validate("lin_comb_cpx", zero_flag in valid_values, result, f"zero_flag is not a valid value (expects: {[0, 1]})")
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.lin_comb_cpx(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("LAT", "lin_comb_cpx", supplied_args, result[0]))
         self._on_error("lin_comb_cpx", supplied_args, result[0])
@@ -11663,13 +11666,13 @@ class PyGammaTestProxy(object):
             self.call_count["median_filter"] = 1
 
         if din is not None:
-            result = self._validate(Path(din).exists(), result)
+            result = self._validate("median_filter", Path(din).exists(), result, f"din path does not exist ({din})")
         if dout is not None:
             Path(dout).touch()
         valid_values = [0, 1]
-        result = self._validate(zflg in valid_values, result)
+        result = self._validate("median_filter", zflg in valid_values, result, f"zflg is not a valid value (expects: {[0, 1]})")
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.median_filter(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("LAT", "median_filter", supplied_args, result[0]))
         self._on_error("median_filter", supplied_args, result[0])
@@ -11685,13 +11688,13 @@ class PyGammaTestProxy(object):
             self.call_count["takethat"] = 1
 
         if data_in is not None:
-            result = self._validate(Path(data_in).exists(), result)
+            result = self._validate("takethat", Path(data_in).exists(), result, f"data_in path does not exist ({data_in})")
         if positions is not None:
-            result = self._validate(Path(positions).exists(), result)
+            result = self._validate("takethat", Path(positions).exists(), result, f"positions path does not exist ({positions})")
         if report is not None:
             Path(report).touch()
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.takethat(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("LAT", "takethat", supplied_args, result[0]))
         self._on_error("takethat", supplied_args, result[0])
@@ -11707,13 +11710,13 @@ class PyGammaTestProxy(object):
             self.call_count["cc_monitoring"] = 1
 
         if f1 is not None:
-            result = self._validate(Path(f1).exists(), result)
+            result = self._validate("cc_monitoring", Path(f1).exists(), result, f"f1 path does not exist ({f1})")
         if f2 is not None:
-            result = self._validate(Path(f2).exists(), result)
+            result = self._validate("cc_monitoring", Path(f2).exists(), result, f"f2 path does not exist ({f2})")
         if ras_out is not None:
             Path(ras_out).touch()
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.cc_monitoring(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("LAT", "cc_monitoring", supplied_args, result[0]))
         self._on_error("cc_monitoring", supplied_args, result[0])
@@ -11729,17 +11732,17 @@ class PyGammaTestProxy(object):
             self.call_count["temp_log_var"] = 1
 
         if data_tab is not None:
-            result = self._validate(Path(data_tab).exists(), result)
+            result = self._validate("temp_log_var", Path(data_tab).exists(), result, f"data_tab path does not exist ({data_tab})")
         if mean is not None:
             Path(mean).touch()
         if stdev is not None:
             Path(stdev).touch()
         valid_values = [0, 1, 2]
-        result = self._validate(wt_flag in valid_values, result)
+        result = self._validate("temp_log_var", wt_flag in valid_values, result, f"wt_flag is not a valid value (expects: {[0, 1, 2]})")
         valid_values = [0, 1]
-        result = self._validate(zero_flag in valid_values, result)
+        result = self._validate("temp_log_var", zero_flag in valid_values, result, f"zero_flag is not a valid value (expects: {[0, 1]})")
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.temp_log_var(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("LAT", "temp_log_var", supplied_args, result[0]))
         self._on_error("temp_log_var", supplied_args, result[0])
@@ -11755,17 +11758,17 @@ class PyGammaTestProxy(object):
             self.call_count["ras_to_hsi"] = 1
 
         if HUE is not None:
-            result = self._validate(Path(HUE).exists(), result)
+            result = self._validate("ras_to_hsi", Path(HUE).exists(), result, f"HUE path does not exist ({HUE})")
         if SATURATION is not None:
-            result = self._validate(Path(SATURATION).exists(), result)
+            result = self._validate("ras_to_hsi", Path(SATURATION).exists(), result, f"SATURATION path does not exist ({SATURATION})")
         if INTENSITY is not None:
-            result = self._validate(Path(INTENSITY).exists(), result)
+            result = self._validate("ras_to_hsi", Path(INTENSITY).exists(), result, f"INTENSITY path does not exist ({INTENSITY})")
         if ras_out is not None:
             Path(ras_out).touch()
         valid_values = [0, 1]
-        result = self._validate(cflg in valid_values, result)
+        result = self._validate("ras_to_hsi", cflg in valid_values, result, f"cflg is not a valid value (expects: {[0, 1]})")
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.ras_to_hsi(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("LAT", "ras_to_hsi", supplied_args, result[0]))
         self._on_error("ras_to_hsi", supplied_args, result[0])
@@ -11781,19 +11784,19 @@ class PyGammaTestProxy(object):
             self.call_count["edge_detection"] = 1
 
         if data_in is not None:
-            result = self._validate(Path(data_in).exists(), result)
+            result = self._validate("edge_detection", Path(data_in).exists(), result, f"data_in path does not exist ({data_in})")
         if data_out is not None:
             Path(data_out).touch()
         valid_values = [0, 1]
-        result = self._validate(dtype in valid_values, result)
+        result = self._validate("edge_detection", dtype in valid_values, result, f"dtype is not a valid value (expects: {[0, 1]})")
         valid_values = [0, 1, 2]
-        result = self._validate(op_flg in valid_values, result)
+        result = self._validate("edge_detection", op_flg in valid_values, result, f"op_flg is not a valid value (expects: {[0, 1, 2]})")
         if seg_out is not None:
             Path(seg_out).touch()
         valid_values = [0, 1]
-        result = self._validate(line_filt in valid_values, result)
+        result = self._validate("edge_detection", line_filt in valid_values, result, f"line_filt is not a valid value (expects: {[0, 1]})")
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.edge_detection(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("LAT", "edge_detection", supplied_args, result[0]))
         self._on_error("edge_detection", supplied_args, result[0])
@@ -11809,17 +11812,17 @@ class PyGammaTestProxy(object):
             self.call_count["texture"] = 1
 
         if data_in is not None:
-            result = self._validate(Path(data_in).exists(), result)
+            result = self._validate("texture", Path(data_in).exists(), result, f"data_in path does not exist ({data_in})")
         if texture is not None:
             Path(texture).touch()
         valid_values = [0, 1]
-        result = self._validate(type in valid_values, result)
+        result = self._validate("texture", type in valid_values, result, f"type is not a valid value (expects: {[0, 1]})")
         valid_values = [0, 1, 2]
-        result = self._validate(weights_flag in valid_values, result)
+        result = self._validate("texture", weights_flag in valid_values, result, f"weights_flag is not a valid value (expects: {[0, 1, 2]})")
         if data_in_mean is not None:
-            result = self._validate(Path(data_in_mean).exists(), result)
+            result = self._validate("texture", Path(data_in_mean).exists(), result, f"data_in_mean path does not exist ({data_in_mean})")
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.texture(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("LAT", "texture", supplied_args, result[0]))
         self._on_error("texture", supplied_args, result[0])
@@ -11835,11 +11838,11 @@ class PyGammaTestProxy(object):
             self.call_count["diplane_helix"] = 1
 
         if LL is not None:
-            result = self._validate(Path(LL).exists(), result)
+            result = self._validate("diplane_helix", Path(LL).exists(), result, f"LL path does not exist ({LL})")
         if RR is not None:
-            result = self._validate(Path(RR).exists(), result)
+            result = self._validate("diplane_helix", Path(RR).exists(), result, f"RR path does not exist ({RR})")
         if SLC_par is not None:
-            result = self._validate(Path(SLC_par).exists(), result)
+            result = self._validate("diplane_helix", Path(SLC_par).exists(), result, f"SLC_par path does not exist ({SLC_par})")
         if diplane is not None:
             Path(diplane).touch()
         if helix is not None:
@@ -11847,7 +11850,7 @@ class PyGammaTestProxy(object):
         if MLI_par is not None:
             Path(MLI_par).touch()
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.diplane_helix(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("LAT", "diplane_helix", supplied_args, result[0]))
         self._on_error("diplane_helix", supplied_args, result[0])
@@ -11863,15 +11866,15 @@ class PyGammaTestProxy(object):
             self.call_count["lin_comb_ref"] = 1
 
         if f1 is not None:
-            result = self._validate(Path(f1).exists(), result)
+            result = self._validate("lin_comb_ref", Path(f1).exists(), result, f"f1 path does not exist ({f1})")
         if f2 is not None:
-            result = self._validate(Path(f2).exists(), result)
+            result = self._validate("lin_comb_ref", Path(f2).exists(), result, f"f2 path does not exist ({f2})")
         if f_out is not None:
             Path(f_out).touch()
         valid_values = [0, 1]
-        result = self._validate(zflag in valid_values, result)
+        result = self._validate("lin_comb_ref", zflag in valid_values, result, f"zflag is not a valid value (expects: {[0, 1]})")
         if self._wraps is not None:
-            result = self._wraps.{program}(*supplied_args)
+            result = self._wraps.lin_comb_ref(*supplied_args)
 
         self.call_sequence.append(PyGammaCall("LAT", "lin_comb_ref", supplied_args, result[0]))
         self._on_error("lin_comb_ref", supplied_args, result[0])

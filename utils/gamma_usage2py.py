@@ -193,8 +193,13 @@ if __name__ == '__main__':
             'call_count: Dict[str, int]',
             'error_count: int',
             '',
-            'def __init__(self):',
+            '_exception_type: type',
+            '_wraps: object',
+            '',
+            'def __init__(self, exception_type=None, wraps=None):',
             '    self.reset_proxy()',
+            '    self._exception_type = exception_type',
+            '    self._wraps = wraps',
             '',
             'def reset_proxy(self):',
             '    self.call_sequence = []',
@@ -209,6 +214,15 @@ if __name__ == '__main__':
             '    # TODO: stderr?',
             '',
             '    return stat, stdout, stderr',
+            '',
+            'def _on_error(self, cmd, params, status):',
+            '    if status is None or status == 0:',
+            '        return',
+            '',
+            '    if self._exception_type is None:',
+            '        return',
+            '',
+            '    raise self._exception_type(f"failed to execute pg.{cmd}")',
         ])))
 
         for module, programs in decls.items():
@@ -283,6 +297,10 @@ if __name__ == '__main__':
                         ])))
 
                 writeline('\n'.join(indent(2, [
+                    'if self._wraps is not None:',
+                    '    result = self._wraps.{program}(*supplied_args)',
+                    '',
                     f'self.call_sequence.append(PyGammaCall("{module}", "{program}", supplied_args, result[0]))',
+                    f'self._on_error("{program}", supplied_args, result[0])',
                     'return result',
                 ])))

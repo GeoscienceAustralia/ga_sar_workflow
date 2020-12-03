@@ -160,7 +160,7 @@ if __name__ == '__main__':
             '# See utils/gamma_usage2py.py',
             '# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!',
             '',
-            'PyGammaCall = NamedTuple("PyGammaCall", [("module", str), ("program", str), ("parameters", Dict[str, object])])',
+            'PyGammaCall = NamedTuple("PyGammaCall", [("module", str), ("program", str), ("parameters", Dict[str, object]), ("status", int)])',
             '',
             '',
             'class SimpleParFile(object):',
@@ -191,6 +191,7 @@ if __name__ == '__main__':
             '',
             'call_sequence: Sequence[PyGammaCall]',
             'call_count: Dict[str, int]',
+            'error_count: int',
             '',
             'def __init__(self):',
             '    self.reset_proxy()',
@@ -198,11 +199,12 @@ if __name__ == '__main__':
             'def reset_proxy(self):',
             '    self.call_sequence = []',
             '    self.call_count = {}',
+            '    self.error_count = 0',
             '',
             'def _validate(self, condition, result):',
             '    stat, stdout, stderr = result',
             '',
-            '    # TODO: error stats?',
+            '    self.error_count += 0 if condition else 1',
             '    stat = stat if condition else -1',
             '    # TODO: stderr?',
             '',
@@ -234,8 +236,6 @@ if __name__ == '__main__':
                     f'def {program.replace("-", "_")}(self, {args}):',
                     '    supplied_args = locals()',
                     '    result = (0, "", "")',
-                    '',
-                    f'    self.call_sequence.append(PyGammaCall("{module}", "{program}", supplied_args))',
                     '',
                     f'    if "{program}" in self.call_count:',
                     f'        self.call_count["{program}"] += 1',
@@ -283,5 +283,6 @@ if __name__ == '__main__':
                         ])))
 
                 writeline('\n'.join(indent(2, [
+                    f'self.call_sequence.append(PyGammaCall("{module}", "{program}", supplied_args, result[0]))',
                     'return result',
                 ])))

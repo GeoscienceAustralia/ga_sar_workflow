@@ -1110,22 +1110,11 @@ class CoregisterDem:
             rasf_pathname,
         )
 
-        if False:
-            command = [
-                "convert",
-                self.dem_master_gamma0_eqa_bmp.as_posix(),
-                "-transparent",
-                "black",
-                self.dem_master_gamma0_eqa_bmp.with_suffix(".png").as_posix(),
-            ]
-            run_command(command, os.getcwd())
-
-        else:
-            img = Image.open(self.dem_master_gamma0_eqa_bmp.as_posix())
-            img = np.array(img.convert('RGBA'))
-            # Convert black to transparent
-            img[(img[:, :, :3] == (0, 0, 0)).all(axis=-1)] = (0, 0, 0, 0)
-            Image.fromarray(img).save(self.dem_master_gamma0_eqa_bmp.with_suffix(".png").as_posix())
+        # Convert the bitmap to a PNG w/ black pixels made transparent
+        img = Image.open(self.dem_master_gamma0_eqa_bmp.as_posix())
+        img = np.array(img.convert('RGBA'))
+        img[(img[:, :, :3] == (0, 0, 0)).all(axis=-1)] = (0, 0, 0, 0)
+        Image.fromarray(img).save(self.dem_master_gamma0_eqa_bmp.with_suffix(".png").as_posix())
 
         # geotiff gamma0 file
         dem_par_pathname = str(self.eqa_dem_par)

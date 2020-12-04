@@ -8,7 +8,7 @@ from PIL import Image
 from tests.py_gamma_test_proxy import PyGammaTestProxy
 
 import insar.coregister_dem
-from insar.coregister_dem import CoregisterDem
+from insar.coregister_dem import CoregisterDem, CoregisterDemException
 from insar.project import ProcConfig, IfgFileNames, DEMFileNames
 
 
@@ -16,67 +16,74 @@ def get_test_context():
     temp_dir = tempfile.TemporaryDirectory()
     data_dir = Path(temp_dir.name) / '20151127'
 
-    pgp = PyGammaTestProxy()
-    pgp = mock.Mock(spec=PyGammaTestProxy, wraps=pgp)
+    pgp = PyGammaTestProxy(exception_type=CoregisterDemException)
+    pgmock = mock.Mock(spec=PyGammaTestProxy, wraps=pgp)
 
     # Make offset_fit return parseable stdout as required for coregister_slc to function
-    def offset_fit_sideffect(offs: str, ccp: str, OFF_par: str, coffs: str, coffsets: str, thres, npoly, interact_flag):
+    def offset_fit_se(*args, **kwargs):
+        result = pgp.offset_fit(*args, **kwargs)
+        OFF_par = args[2]
         shutil.copyfile(data_dir / 'offset_fit.start', OFF_par)
-        return 0, 'final model fit std. dev. (samples) range:   0.3699  azimuth:   0.1943', ''
+        return result[0], 'final model fit std. dev. (samples) range:   0.3699  azimuth:   0.1943', ''
 
     # raspwr needs to create a dummy bmp
-    def raspwr_sideffect(pwr: str, width, start, nlines, pixavr, pixavaz, scale, exp, LR, rasf: str, data_type = None, hdrz = None):
+    def raspwr_se(*args, **kwargs):
+        rasf = args[9]
         slave_gamma0_eqa = data_dir / rasf
         Image.new('RGB', size=(50, 50), color=(155, 0, 0)).save(slave_gamma0_eqa)
-        return 0, '', ''
+        return pgp.raspwr(*args, **kwargs)
 
-    def SLC_copy_se(SLC_in: str, SLC_par_in: str, SLC_out: str, SLC_par_out: str, *args):
-        #shutil.copyfile(SLC_in, SLC_out)
+    def SLC_copy_se(*args, **kwargs):
+        result = pgp.SLC_copy(*args, **kwargs)
+        SLC_in, SLC_par_in, SLC_out, SLC_par_out = args[:4]
+        shutil.copyfile(SLC_in, SLC_out)
         shutil.copyfile(SLC_par_in, SLC_par_out)
-        print(SLC_par_in, Path(SLC_par_in).stat().st_size)
-        print(SLC_par_out, Path(SLC_par_out).stat().st_size)
-        return 0, '', ''
+        return result
 
-    def multi_look_se(MLI_in: str, MLI_in_par: str, MLI_out: str, MLI_out_par: str, rlks, azlks, *args):
+    def multi_look_se(*args, **kwargs):
+        result = pgp.multi_look(*args, **kwargs)
+        MLI_in_par = args[1]
+        MLI_out_par = args[3]
         shutil.copyfile(MLI_in_par, MLI_out_par)
-        return 0, '', ''
+        return result
 
-    def gc_map1_se(MLI_par: str, OFF_par: str, DEM_par: str, DEM: str, DEM_seg_par: str, DEM_seg: str, lookup_table: str, *args):
+    def gc_map1_se(*args, **kwargs):
+        result = pgp.gc_map1(*args, **kwargs)
+        DEM_par, DEM, DEM_seg_par, DEM_seg = args[2:6]
         shutil.copyfile(DEM_par, DEM_seg_par)
         Path(DEM_seg).touch()
-        return 0, '', ''
+        return result
 
-    def rashgt_se(hgt: str, pwr: str, width, start_hgt = None, start_pwr = None, nlines = None, pixavr = None, pixavaz = None, m_cycle = None, scale = None, exp = None, LR = None, rasf: str = None):
+    def rashgt_se(*args, **kwargs):
+        rasf = args[12]
         Image.new('RGB', size=(50, 50), color=(155, 0, 0)).save(rasf)
-        return 0, '', ''
+        return pgp.rashgt(*args, **kwargs)
 
-    pgp.raspwr.side_effect = raspwr_sideffect
-    pgp.raspwr.return_value = 0, '', ''
+    pgmock.raspwr.side_effect = raspwr_se
+    pgmock.raspwr.return_value = 0, '', ''
 
-    pgp.offset_fit.side_effect = offset_fit_sideffect
-    pgp.offset_fit.return_value = 0, 'final model fit std. dev. (samples) range:   0.3699  azimuth:   0.1943', ''
+    pgmock.offset_fit.side_effect = offset_fit_se
+    pgmock.offset_fit.return_value = 0, 'final model fit std. dev. (samples) range:   0.3699  azimuth:   0.1943', ''
 
-    pgp.SLC_copy.side_effect = SLC_copy_se
-    pgp.SLC_copy.return_value = 0, '', ''
+    pgmock.SLC_copy.side_effect = SLC_copy_se
+    pgmock.SLC_copy.return_value = 0, '', ''
 
-    pgp.multi_look.side_effect = multi_look_se
-    pgp.multi_look.return_value = 0, '', ''
+    pgmock.multi_look.side_effect = multi_look_se
+    pgmock.multi_look.return_value = 0, '', ''
 
-    pgp.gc_map1.side_effect = gc_map1_se
-    pgp.gc_map1.return_value = 0, '', ''
+    pgmock.gc_map1.side_effect = gc_map1_se
+    pgmock.gc_map1.return_value = 0, '', ''
 
-    pgp.rashgt.side_effect = rashgt_se
-    pgp.rashgt.return_value = 0, '', ''
+    pgmock.rashgt.side_effect = rashgt_se
+    pgmock.rashgt.return_value = 0, '', ''
 
     # Copy test data
     shutil.copytree(Path(__file__).parent.absolute() / 'data' / '20151127', data_dir)
 
-    print('data_dir', data_dir)
-
     data = {
         'rlks': 8,
         'alks': 8,
-        'dem': data_dir / '20180127_VV_8rlks_eqa.dem',
+        'dem': data_dir / '20180127_VV_blah.dem',
         'slc': data_dir / '20151127_VV.slc',
         'dem_par': data_dir / '20180127_VV_8rlks_eqa.dem.par',
         'slc_par': data_dir / '20151127_VV.slc.par',
@@ -91,13 +98,21 @@ def get_test_context():
         'dem_ovr': 1,
     }
 
-    return pgp, data, temp_dir
+    # Create dummy data inputs (config/par/etc files don't need to be touched, as we provide real test files for those)
+    data['slc'].touch()
+    data['dem'].touch()
+
+    return pgp, pgmock, data, temp_dir
+
+
+def fake_cmd_runner(cmds, cwd):
+    shutil.copyfile(cmds[1], cmds[3])
 
 
 def test_valid_data(monkeypatch):
-    pgp, data, temp_dir = get_test_context()
-    monkeypatch.setattr(insar.coregister_dem, 'pg', pgp)
-    monkeypatch.setattr(insar.coregister_dem, 'run_command', lambda cmds, cwd: print('run_command', cmds, 'in dir', cwd))
+    pgp, pgmock, data, temp_dir = get_test_context()
+    monkeypatch.setattr(insar.coregister_dem, 'pg', pgmock)
+    monkeypatch.setattr(insar.coregister_dem, 'run_command', fake_cmd_runner)
 
     with temp_dir as temp_path:
         out_dir = Path(temp_path)
@@ -110,12 +125,14 @@ def test_valid_data(monkeypatch):
             slc_outdir
         )
 
+        dem_outdir.mkdir(parents=True, exist_ok=True)
+        slc_outdir.mkdir(parents=True, exist_ok=True)
+
         assert(str(coreg.dem_outdir) == str(dem_outdir))
 
         coreg.main()
 
-        for path in dem_outdir.iterdir():
-            print(path)
+        assert(pgp.error_count == 0)
 
         dem_filenames = coreg.dem_filenames(dem_prefix=f"{coreg.slc.stem}_{coreg.rlks}rlks", outdir=coreg.dem_outdir)
         for name, path in dem_filenames.items():
@@ -123,9 +140,46 @@ def test_valid_data(monkeypatch):
                 assert(Path(path).exists())
 
 
+def test_missing_par_files_cause_errors(monkeypatch):
+    par_file_patterns = [
+        '*.slc',
+        '*.dem',
+        '*.slc.par',
+    ]
+
+    for pattern in par_file_patterns:
+        pgp, pgmock, data, temp_dir = get_test_context()
+        monkeypatch.setattr(insar.coregister_dem, 'pg', pgmock)
+        monkeypatch.setattr(insar.coregister_dem, 'run_command', fake_cmd_runner)
+
+        with temp_dir as temp_path:
+            out_dir = Path(temp_path)
+            slc_outdir = out_dir / '20151127'
+            dem_outdir = out_dir / '20151127' / 'dem'
+
+            # Remove matched files
+            for matched_file in slc_outdir.glob(pattern):
+                matched_file.unlink()
+
+            coreg = CoregisterDem(
+                *data.values(),
+                dem_outdir,
+                slc_outdir
+            )
+
+            dem_outdir.mkdir(parents=True, exist_ok=True)
+            slc_outdir.mkdir(parents=True, exist_ok=True)
+
+            with pytest.raises(CoregisterDemException):
+                coreg.main()
+
+            # Simply assert that removal of the files cause errors (when test_valid_data asserts 0 errors otherwise)
+            assert(pgp.error_count != 0)
+
 def test_copy_slc(monkeypatch):
-    pgp, data, temp_dir = get_test_context()
-    monkeypatch.setattr(insar.coregister_dem, 'pg', pgp)
+    pgp, pgmock, data, temp_dir = get_test_context()
+    monkeypatch.setattr(insar.coregister_dem, 'pg', pgmock)
+    monkeypatch.setattr(insar.coregister_dem, 'run_command', fake_cmd_runner)
 
     with temp_dir as temp_path:
         out_dir = Path(temp_path)
@@ -137,6 +191,9 @@ def test_copy_slc(monkeypatch):
             dem_outdir,
             slc_outdir
         )
+
+        dem_outdir.mkdir(parents=True, exist_ok=True)
+        slc_outdir.mkdir(parents=True, exist_ok=True)
 
         coreg.copy_slc(False)
 
@@ -152,8 +209,9 @@ def test_copy_slc(monkeypatch):
 
 
 def test_gen_dem_rdc(monkeypatch):
-    pgp, data, temp_dir = get_test_context()
-    monkeypatch.setattr(insar.coregister_dem, 'pg', pgp)
+    pgp, pgmock, data, temp_dir = get_test_context()
+    monkeypatch.setattr(insar.coregister_dem, 'pg', pgmock)
+    monkeypatch.setattr(insar.coregister_dem, 'run_command', fake_cmd_runner)
 
     with temp_dir as temp_path:
         out_dir = Path(temp_path)
@@ -186,8 +244,9 @@ def test_gen_dem_rdc(monkeypatch):
 
 
 def test_create_diff_par(monkeypatch):
-    pgp, data, temp_dir = get_test_context()
-    monkeypatch.setattr(insar.coregister_dem, 'pg', pgp)
+    pgp, pgmock, data, temp_dir = get_test_context()
+    monkeypatch.setattr(insar.coregister_dem, 'pg', pgmock)
+    monkeypatch.setattr(insar.coregister_dem, 'run_command', fake_cmd_runner)
 
     with temp_dir as temp_path:
         outdir = Path(temp_path) / '20151127'
@@ -199,7 +258,8 @@ def test_create_diff_par(monkeypatch):
             outdir
         )
 
-        coreg.geocode()
+        coreg.copy_slc()
+        coreg.gen_dem_rdc()
 
         # create_diff_par runs an external command to generate the diff, we create it explicitly...
         # which defeats the purpose of the test right now - but when it's migrated to pg.create_diff_par
@@ -212,8 +272,9 @@ def test_create_diff_par(monkeypatch):
 
 
 def test_offset_calc(monkeypatch):
-    pgp, data, temp_dir = get_test_context()
-    monkeypatch.setattr(insar.coregister_dem, 'pg', pgp)
+    pgp, pgmock, data, temp_dir = get_test_context()
+    monkeypatch.setattr(insar.coregister_dem, 'pg', pgmock)
+    monkeypatch.setattr(insar.coregister_dem, 'run_command', fake_cmd_runner)
 
     with temp_dir as temp_path:
         out_dir = Path(temp_path)
@@ -229,8 +290,13 @@ def test_offset_calc(monkeypatch):
         dem_outdir.mkdir(parents=True, exist_ok=True)
         slc_outdir.mkdir(parents=True, exist_ok=True)
 
+        # Create dummy inputs that would have been created in normal workflow before this test call
+        coreg.dem_loc_inc.touch()
+
         coreg.copy_slc()
         coreg.gen_dem_rdc()
+        coreg.create_diff_par()
+
         coreg.offset_calc()
 
         assert(Path(coreg.dem_lt_fine).exists())
@@ -240,8 +306,9 @@ def test_offset_calc(monkeypatch):
 
 
 def test_geocode(monkeypatch):
-    pgp, data, temp_dir = get_test_context()
-    monkeypatch.setattr(insar.coregister_dem, 'pg', pgp)
+    pgp, pgmock, data, temp_dir = get_test_context()
+    monkeypatch.setattr(insar.coregister_dem, 'pg', pgmock)
+    monkeypatch.setattr(insar.coregister_dem, 'run_command', fake_cmd_runner)
 
     with temp_dir as temp_path:
         outdir = Path(temp_path) / '20151127'
@@ -252,6 +319,12 @@ def test_geocode(monkeypatch):
             outdir,
             outdir
         )
+
+        # Create dummy inputs that would have been created in normal workflow before this test call
+        coreg.copy_slc()
+        coreg.gen_dem_rdc()
+        coreg.create_diff_par()
+        coreg.offset_calc()
 
         coreg.geocode()
 
@@ -270,8 +343,9 @@ def test_geocode(monkeypatch):
 
 
 def test_look_vector(monkeypatch):
-    pgp, data, temp_dir = get_test_context()
-    monkeypatch.setattr(insar.coregister_dem, 'pg', pgp)
+    pgp, pgmock, data, temp_dir = get_test_context()
+    monkeypatch.setattr(insar.coregister_dem, 'pg', pgmock)
+    monkeypatch.setattr(insar.coregister_dem, 'run_command', fake_cmd_runner)
 
     with temp_dir as temp_path:
         outdir = Path(temp_path) / '20151127'
@@ -283,6 +357,9 @@ def test_look_vector(monkeypatch):
             outdir,
             outdir
         )
+
+        # Create dummy inputs that would have been created in normal workflow before this test call
+        coreg.eqa_dem.touch()
 
         coreg.look_vector()
 

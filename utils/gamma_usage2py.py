@@ -273,14 +273,14 @@ if __name__ == '__main__':
                         # Touch in/out files if they don't already exist
                         if param['is_outfile'] and param['is_infile']:
                             writeline('\n'.join(indent(2, [
-                                f'if {argname} is not None and not Path({argname}).exists():',
+                                f'if {argname} is not None and {argname} != "-" and not Path({argname}).exists():',
                                 f'    Path({argname}).touch()',
                             ])))
 
                         # Touch output files
                         elif param['is_outfile']:
                             writeline('\n'.join(indent(2, [
-                                f'if {argname} is not None:',
+                                f'if {argname} is not None and {argname} != "-":',
                                 f'    Path({argname}).touch()',
                             ])))
 
@@ -288,15 +288,15 @@ if __name__ == '__main__':
                         else:
                             writeline('\n'.join(indent(2, [
                                 f'if {argname} is not None:',
-                                f'    result = self._validate("{program}", Path({argname}).exists(), result, f"{argname} path does not exist ({{{argname}}})")',
+                                f'    result = self._validate("{program}", {argname} == "-" or Path({argname}).exists(), result, f"{argname} path does not exist ({{{argname}}})")',
                             ])))
 
                     elif param['type'] == 'enum':
                         valid_values = param['enum']
 
                         writeline('\n'.join(indent(2, [
-                            f'valid_values = {repr(valid_values)}',
-                            f'result = self._validate("{program}", {argname} in valid_values, result, f"{argname} is not a valid value (expects: {{{valid_values}}})")',
+                            f'valid_values = {repr(valid_values)}' + (' + [None]' if param['optional'] else ''),
+                            f'result = self._validate("{program}", {argname} in valid_values, result, f"{argname} is not a valid value (expects: {{valid_values}}, got: {{{argname}}})")',
                         ])))
 
                 writeline('\n'.join(indent(2, [

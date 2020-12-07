@@ -14,10 +14,13 @@ class SimpleParFile(object):
 
     def __init__(self, path):
         with open(path, 'r') as file:
-            lines = file.read().splitlines()[2:]  # Skip header lines
+            lines = file.read().splitlines()[1:]  # Skip header lines
 
             for line in lines:
                 value_id = line.split(':')[0]
+                if len(value_id.strip()) == 0:
+                    continue
+
                 value_data = line[len(value_id)+2:].strip()
 
                 self.values[value_id] = value_data
@@ -84,7 +87,7 @@ class PyGammaTestProxy(object):
         if gc_out is not None and gc_out != "-":
             Path(gc_out).touch()
         valid_values = [0, 1] + [None]
-        result = self._validate("gc_map_fine", ref_flg in valid_values, result, f"ref_flg is not a valid value (expects: {valid_values}, got: {ref_flg})")
+        result = self._validate("gc_map_fine", ref_flg == "-" or ref_flg in valid_values, result, f"ref_flg is not a valid value (expects: {valid_values}, got: {ref_flg})")
         if self._wraps is not None:
             result = self._wraps.gc_map_fine(*supplied_args)
 
@@ -132,7 +135,7 @@ class PyGammaTestProxy(object):
         if WSS_data is not None and WSS_data != "-":
             Path(WSS_data).touch()
         valid_values = [0, 1]
-        result = self._validate("WSS_mosaic", type in valid_values, result, f"type is not a valid value (expects: {valid_values}, got: {type})")
+        result = self._validate("WSS_mosaic", type == "-" or type in valid_values, result, f"type is not a valid value (expects: {valid_values}, got: {type})")
         if self._wraps is not None:
             result = self._wraps.WSS_mosaic(*supplied_args)
 
@@ -174,7 +177,7 @@ class PyGammaTestProxy(object):
         if dv_z is not None and dv_z != "-":
             Path(dv_z).touch()
         valid_values = [0, 1] + [None]
-        result = self._validate("dispmap_vec_offset", mode in valid_values, result, f"mode is not a valid value (expects: {valid_values}, got: {mode})")
+        result = self._validate("dispmap_vec_offset", mode == "-" or mode in valid_values, result, f"mode is not a valid value (expects: {valid_values}, got: {mode})")
         if self._wraps is not None:
             result = self._wraps.dispmap_vec_offset(*supplied_args)
 
@@ -198,9 +201,9 @@ class PyGammaTestProxy(object):
         if DIFF_par is not None and DIFF_par != "-" and not Path(DIFF_par).exists():
             Path(DIFF_par).touch()
         valid_values = [0, 1, 2] + [None]
-        result = self._validate("create_diff_par", PAR_type in valid_values, result, f"PAR_type is not a valid value (expects: {valid_values}, got: {PAR_type})")
+        result = self._validate("create_diff_par", PAR_type == "-" or PAR_type in valid_values, result, f"PAR_type is not a valid value (expects: {valid_values}, got: {PAR_type})")
         valid_values = [0, 1] + [None]
-        result = self._validate("create_diff_par", iflg in valid_values, result, f"iflg is not a valid value (expects: {valid_values}, got: {iflg})")
+        result = self._validate("create_diff_par", iflg == "-" or iflg in valid_values, result, f"iflg is not a valid value (expects: {valid_values}, got: {iflg})")
         if self._wraps is not None:
             result = self._wraps.create_diff_par(*supplied_args)
 
@@ -244,7 +247,7 @@ class PyGammaTestProxy(object):
         if ls_map is not None and ls_map != "-":
             Path(ls_map).touch()
         valid_values = [0, 1, 2, 3] + [None]
-        result = self._validate("gc_map_grd", ls_mode in valid_values, result, f"ls_mode is not a valid value (expects: {valid_values}, got: {ls_mode})")
+        result = self._validate("gc_map_grd", ls_mode == "-" or ls_mode in valid_values, result, f"ls_mode is not a valid value (expects: {valid_values}, got: {ls_mode})")
         if self._wraps is not None:
             result = self._wraps.gc_map_grd(*supplied_args)
 
@@ -268,9 +271,9 @@ class PyGammaTestProxy(object):
         if DEM_par_out is not None and DEM_par_out != "-":
             Path(DEM_par_out).touch()
         valid_values = [0, 1]
-        result = self._validate("multi_mosaic", mode in valid_values, result, f"mode is not a valid value (expects: {valid_values}, got: {mode})")
+        result = self._validate("multi_mosaic", mode == "-" or mode in valid_values, result, f"mode is not a valid value (expects: {valid_values}, got: {mode})")
         valid_values = [0, 1, 2, 3, 4, 5]
-        result = self._validate("multi_mosaic", format_flag in valid_values, result, f"format_flag is not a valid value (expects: {valid_values}, got: {format_flag})")
+        result = self._validate("multi_mosaic", format_flag == "-" or format_flag in valid_values, result, f"format_flag is not a valid value (expects: {valid_values}, got: {format_flag})")
         if self._wraps is not None:
             result = self._wraps.multi_mosaic(*supplied_args)
 
@@ -316,7 +319,7 @@ class PyGammaTestProxy(object):
         if ls_map is not None and ls_map != "-":
             Path(ls_map).touch()
         valid_values = [0, 1, 2, 3] + [None]
-        result = self._validate("gc_map1", ls_mode in valid_values, result, f"ls_mode is not a valid value (expects: {valid_values}, got: {ls_mode})")
+        result = self._validate("gc_map1", ls_mode == "-" or ls_mode in valid_values, result, f"ls_mode is not a valid value (expects: {valid_values}, got: {ls_mode})")
         if self._wraps is not None:
             result = self._wraps.gc_map1(*supplied_args)
 
@@ -348,13 +351,13 @@ class PyGammaTestProxy(object):
         if diff_int is not None and diff_int != "-":
             Path(diff_int).touch()
         valid_values = [1, 0] + [None]
-        result = self._validate("SLC_diff_intf", sps_flg in valid_values, result, f"sps_flg is not a valid value (expects: {valid_values}, got: {sps_flg})")
+        result = self._validate("SLC_diff_intf", sps_flg == "-" or sps_flg in valid_values, result, f"sps_flg is not a valid value (expects: {valid_values}, got: {sps_flg})")
         valid_values = [1, 0] + [None]
-        result = self._validate("SLC_diff_intf", azf_flg in valid_values, result, f"azf_flg is not a valid value (expects: {valid_values}, got: {azf_flg})")
+        result = self._validate("SLC_diff_intf", azf_flg == "-" or azf_flg in valid_values, result, f"azf_flg is not a valid value (expects: {valid_values}, got: {azf_flg})")
         valid_values = [0, 1] + [None]
-        result = self._validate("SLC_diff_intf", rp1_flg in valid_values, result, f"rp1_flg is not a valid value (expects: {valid_values}, got: {rp1_flg})")
+        result = self._validate("SLC_diff_intf", rp1_flg == "-" or rp1_flg in valid_values, result, f"rp1_flg is not a valid value (expects: {valid_values}, got: {rp1_flg})")
         valid_values = [0, 1] + [None]
-        result = self._validate("SLC_diff_intf", rp2_flg in valid_values, result, f"rp2_flg is not a valid value (expects: {valid_values}, got: {rp2_flg})")
+        result = self._validate("SLC_diff_intf", rp2_flg == "-" or rp2_flg in valid_values, result, f"rp2_flg is not a valid value (expects: {valid_values}, got: {rp2_flg})")
         if self._wraps is not None:
             result = self._wraps.SLC_diff_intf(*supplied_args)
 
@@ -464,13 +467,13 @@ class PyGammaTestProxy(object):
         if pix is not None and pix != "-":
             Path(pix).touch()
         valid_values = [0, 1, 2, 3] + [None]
-        result = self._validate("gc_map2", mask in valid_values, result, f"mask is not a valid value (expects: {valid_values}, got: {mask})")
+        result = self._validate("gc_map2", mask == "-" or mask in valid_values, result, f"mask is not a valid value (expects: {valid_values}, got: {mask})")
         valid_values = [0, 1] + [None]
-        result = self._validate("gc_map2", ls_scaling in valid_values, result, f"ls_scaling is not a valid value (expects: {valid_values}, got: {ls_scaling})")
+        result = self._validate("gc_map2", ls_scaling == "-" or ls_scaling in valid_values, result, f"ls_scaling is not a valid value (expects: {valid_values}, got: {ls_scaling})")
         if DIFF_par is not None:
             result = self._validate("gc_map2", DIFF_par == "-" or Path(DIFF_par).exists(), result, f"DIFF_par path does not exist ({DIFF_par})")
         valid_values = [0, 1] + [None]
-        result = self._validate("gc_map2", ref_flg in valid_values, result, f"ref_flg is not a valid value (expects: {valid_values}, got: {ref_flg})")
+        result = self._validate("gc_map2", ref_flg == "-" or ref_flg in valid_values, result, f"ref_flg is not a valid value (expects: {valid_values}, got: {ref_flg})")
         if self._wraps is not None:
             result = self._wraps.gc_map2(*supplied_args)
 
@@ -496,13 +499,13 @@ class PyGammaTestProxy(object):
         if DEM2 is not None and DEM2 != "-":
             Path(DEM2).touch()
         valid_values = [0, 1] + [None]
-        result = self._validate("dem_trans", datum_shift in valid_values, result, f"datum_shift is not a valid value (expects: {valid_values}, got: {datum_shift})")
+        result = self._validate("dem_trans", datum_shift == "-" or datum_shift in valid_values, result, f"datum_shift is not a valid value (expects: {valid_values}, got: {datum_shift})")
         valid_values = [0, 1] + [None]
-        result = self._validate("dem_trans", bflg in valid_values, result, f"bflg is not a valid value (expects: {valid_values}, got: {bflg})")
+        result = self._validate("dem_trans", bflg == "-" or bflg in valid_values, result, f"bflg is not a valid value (expects: {valid_values}, got: {bflg})")
         if lookup_table is not None and lookup_table != "-":
             Path(lookup_table).touch()
         valid_values = [0, 1, 2] + [None]
-        result = self._validate("dem_trans", interp_mode in valid_values, result, f"interp_mode is not a valid value (expects: {valid_values}, got: {interp_mode})")
+        result = self._validate("dem_trans", interp_mode == "-" or interp_mode in valid_values, result, f"interp_mode is not a valid value (expects: {valid_values}, got: {interp_mode})")
         if self._wraps is not None:
             result = self._wraps.dem_trans(*supplied_args)
 
@@ -526,9 +529,9 @@ class PyGammaTestProxy(object):
         if int_2 is not None and int_2 != "-":
             Path(int_2).touch()
         valid_values = [0, 1]
-        result = self._validate("quad_sub", int_type in valid_values, result, f"int_type is not a valid value (expects: {valid_values}, got: {int_type})")
+        result = self._validate("quad_sub", int_type == "-" or int_type in valid_values, result, f"int_type is not a valid value (expects: {valid_values}, got: {int_type})")
         valid_values = [0, 1] + [None]
-        result = self._validate("quad_sub", mode in valid_values, result, f"mode is not a valid value (expects: {valid_values}, got: {mode})")
+        result = self._validate("quad_sub", mode == "-" or mode in valid_values, result, f"mode is not a valid value (expects: {valid_values}, got: {mode})")
         if self._wraps is not None:
             result = self._wraps.quad_sub(*supplied_args)
 
@@ -550,7 +553,7 @@ class PyGammaTestProxy(object):
         if sum is not None and sum != "-":
             Path(sum).touch()
         valid_values = [0, 1] + [None]
-        result = self._validate("phase_sum", zflag in valid_values, result, f"zflag is not a valid value (expects: {valid_values}, got: {zflag})")
+        result = self._validate("phase_sum", zflag == "-" or zflag in valid_values, result, f"zflag is not a valid value (expects: {valid_values}, got: {zflag})")
         if self._wraps is not None:
             result = self._wraps.phase_sum(*supplied_args)
 
@@ -778,9 +781,9 @@ class PyGammaTestProxy(object):
         if data2 is not None and data2 != "-":
             Path(data2).touch()
         valid_values = [0, 1, 2, 3, 4, 5] + [None]
-        result = self._validate("map_trans", dtype in valid_values, result, f"dtype is not a valid value (expects: {valid_values}, got: {dtype})")
+        result = self._validate("map_trans", dtype == "-" or dtype in valid_values, result, f"dtype is not a valid value (expects: {valid_values}, got: {dtype})")
         valid_values = [0, 1] + [None]
-        result = self._validate("map_trans", bflg in valid_values, result, f"bflg is not a valid value (expects: {valid_values}, got: {bflg})")
+        result = self._validate("map_trans", bflg == "-" or bflg in valid_values, result, f"bflg is not a valid value (expects: {valid_values}, got: {bflg})")
         if lookup_table is not None and lookup_table != "-":
             Path(lookup_table).touch()
         if self._wraps is not None:
@@ -800,7 +803,7 @@ class PyGammaTestProxy(object):
             self.call_count["gc_map_inversion"] = 1
 
         valid_values = [0, 1, 2, 3, 4] + [None]
-        result = self._validate("gc_map_inversion", interp_mode in valid_values, result, f"interp_mode is not a valid value (expects: {valid_values}, got: {interp_mode})")
+        result = self._validate("gc_map_inversion", interp_mode == "-" or interp_mode in valid_values, result, f"interp_mode is not a valid value (expects: {valid_values}, got: {interp_mode})")
         if self._wraps is not None:
             result = self._wraps.gc_map_inversion(*supplied_args)
 
@@ -850,7 +853,7 @@ class PyGammaTestProxy(object):
         if data2_out is not None and data2_out != "-":
             Path(data2_out).touch()
         valid_values = [0, 1, 2, 3, 4, 5, 6] + [None]
-        result = self._validate("interp_data", dtype in valid_values, result, f"dtype is not a valid value (expects: {valid_values}, got: {dtype})")
+        result = self._validate("interp_data", dtype == "-" or dtype in valid_values, result, f"dtype is not a valid value (expects: {valid_values}, got: {dtype})")
         if self._wraps is not None:
             result = self._wraps.interp_data(*supplied_args)
 
@@ -914,7 +917,7 @@ class PyGammaTestProxy(object):
         if SLC2R_par is not None and SLC2R_par != "-":
             Path(SLC2R_par).touch()
         valid_values = [0, 1] + [None]
-        result = self._validate("SLC_interp_lt_ScanSAR", mode in valid_values, result, f"mode is not a valid value (expects: {valid_values}, got: {mode})")
+        result = self._validate("SLC_interp_lt_ScanSAR", mode == "-" or mode in valid_values, result, f"mode is not a valid value (expects: {valid_values}, got: {mode})")
         if self._wraps is not None:
             result = self._wraps.SLC_interp_lt_ScanSAR(*supplied_args)
 
@@ -960,7 +963,7 @@ class PyGammaTestProxy(object):
         if GEO is not None and GEO != "-":
             Path(GEO).touch()
         valid_values = [0, 1] + [None]
-        result = self._validate("par_RCM_geo", dtype in valid_values, result, f"dtype is not a valid value (expects: {valid_values}, got: {dtype})")
+        result = self._validate("par_RCM_geo", dtype == "-" or dtype in valid_values, result, f"dtype is not a valid value (expects: {valid_values}, got: {dtype})")
         if self._wraps is not None:
             result = self._wraps.par_RCM_geo(*supplied_args)
 
@@ -994,9 +997,9 @@ class PyGammaTestProxy(object):
         if offsets is not None and offsets != "-":
             Path(offsets).touch()
         valid_values = [0, 1] + [None]
-        result = self._validate("offset_pwr_trackingm2", pflag in valid_values, result, f"pflag is not a valid value (expects: {valid_values}, got: {pflag})")
+        result = self._validate("offset_pwr_trackingm2", pflag == "-" or pflag in valid_values, result, f"pflag is not a valid value (expects: {valid_values}, got: {pflag})")
         valid_values = [0, 1, 2, 3] + [None]
-        result = self._validate("offset_pwr_trackingm2", pltflg in valid_values, result, f"pltflg is not a valid value (expects: {valid_values}, got: {pltflg})")
+        result = self._validate("offset_pwr_trackingm2", pltflg == "-" or pltflg in valid_values, result, f"pltflg is not a valid value (expects: {valid_values}, got: {pltflg})")
         if ccs is not None and ccs != "-":
             Path(ccs).touch()
         if self._wraps is not None:
@@ -1022,7 +1025,7 @@ class PyGammaTestProxy(object):
         if DIFF_par is not None and DIFF_par != "-" and not Path(DIFF_par).exists():
             Path(DIFF_par).touch()
         valid_values = [0, 1] + [None]
-        result = self._validate("init_offset_orbitm", cflag in valid_values, result, f"cflag is not a valid value (expects: {valid_values}, got: {cflag})")
+        result = self._validate("init_offset_orbitm", cflag == "-" or cflag in valid_values, result, f"cflag is not a valid value (expects: {valid_values}, got: {cflag})")
         if self._wraps is not None:
             result = self._wraps.init_offset_orbitm(*supplied_args)
 
@@ -1046,7 +1049,7 @@ class PyGammaTestProxy(object):
         if plot_data is not None and plot_data != "-":
             Path(plot_data).touch()
         valid_values = [0, 1, 2, 3, 4, 5, 6, 7] + [None]
-        result = self._validate("quad_fit", model in valid_values, result, f"model is not a valid value (expects: {valid_values}, got: {model})")
+        result = self._validate("quad_fit", model == "-" or model in valid_values, result, f"model is not a valid value (expects: {valid_values}, got: {model})")
         if pmodel is not None and pmodel != "-":
             Path(pmodel).touch()
         if self._wraps is not None:
@@ -1074,7 +1077,7 @@ class PyGammaTestProxy(object):
         if sig_ph is not None and sig_ph != "-":
             Path(sig_ph).touch()
         valid_values = [0, 1] + [None]
-        result = self._validate("stacking", tscale in valid_values, result, f"tscale is not a valid value (expects: {valid_values}, got: {tscale})")
+        result = self._validate("stacking", tscale == "-" or tscale in valid_values, result, f"tscale is not a valid value (expects: {valid_values}, got: {tscale})")
         if self._wraps is not None:
             result = self._wraps.stacking(*supplied_args)
 
@@ -1102,7 +1105,7 @@ class PyGammaTestProxy(object):
         if mask is not None:
             result = self._validate("atm_mod2", mask == "-" or Path(mask).exists(), result, f"mask path does not exist ({mask})")
         valid_values = [0, 1, 2, 3] + [None]
-        result = self._validate("atm_mod2", mode in valid_values, result, f"mode is not a valid value (expects: {valid_values}, got: {mode})")
+        result = self._validate("atm_mod2", mode == "-" or mode in valid_values, result, f"mode is not a valid value (expects: {valid_values}, got: {mode})")
         if report is not None and report != "-":
             Path(report).touch()
         if self._wraps is not None:
@@ -1150,17 +1153,17 @@ class PyGammaTestProxy(object):
         if DEM_par is not None and DEM_par != "-" and not Path(DEM_par).exists():
             Path(DEM_par).touch()
         valid_values = [0, 1, 2, 3, 4] + [None]
-        result = self._validate("dem_import", input_type in valid_values, result, f"input_type is not a valid value (expects: {valid_values}, got: {input_type})")
+        result = self._validate("dem_import", input_type == "-" or input_type in valid_values, result, f"input_type is not a valid value (expects: {valid_values}, got: {input_type})")
         valid_values = [0, 1] + [None]
-        result = self._validate("dem_import", priority in valid_values, result, f"priority is not a valid value (expects: {valid_values}, got: {priority})")
+        result = self._validate("dem_import", priority == "-" or priority in valid_values, result, f"priority is not a valid value (expects: {valid_values}, got: {priority})")
         if geoid is not None:
             result = self._validate("dem_import", geoid == "-" or Path(geoid).exists(), result, f"geoid path does not exist ({geoid})")
         if geoid_par is not None:
             result = self._validate("dem_import", geoid_par == "-" or Path(geoid_par).exists(), result, f"geoid_par path does not exist ({geoid_par})")
         valid_values = [0, 1] + [None]
-        result = self._validate("dem_import", geoid_type in valid_values, result, f"geoid_type is not a valid value (expects: {valid_values}, got: {geoid_type})")
+        result = self._validate("dem_import", geoid_type == "-" or geoid_type in valid_values, result, f"geoid_type is not a valid value (expects: {valid_values}, got: {geoid_type})")
         valid_values = [0, 1] + [None]
-        result = self._validate("dem_import", zflg in valid_values, result, f"zflg is not a valid value (expects: {valid_values}, got: {zflg})")
+        result = self._validate("dem_import", zflg == "-" or zflg in valid_values, result, f"zflg is not a valid value (expects: {valid_values}, got: {zflg})")
         if self._wraps is not None:
             result = self._wraps.dem_import(*supplied_args)
 
@@ -1196,7 +1199,7 @@ class PyGammaTestProxy(object):
         if SLC2R_par is not None and SLC2R_par != "-":
             Path(SLC2R_par).touch()
         valid_values = [0, 1] + [None]
-        result = self._validate("SLC_interp_lt", mode in valid_values, result, f"mode is not a valid value (expects: {valid_values}, got: {mode})")
+        result = self._validate("SLC_interp_lt", mode == "-" or mode in valid_values, result, f"mode is not a valid value (expects: {valid_values}, got: {mode})")
         if self._wraps is not None:
             result = self._wraps.SLC_interp_lt(*supplied_args)
 
@@ -1250,7 +1253,7 @@ class PyGammaTestProxy(object):
         if mask is not None:
             result = self._validate("atm_mod", mask == "-" or Path(mask).exists(), result, f"mask path does not exist ({mask})")
         valid_values = [0, 1] + [None]
-        result = self._validate("atm_mod", mode in valid_values, result, f"mode is not a valid value (expects: {valid_values}, got: {mode})")
+        result = self._validate("atm_mod", mode == "-" or mode in valid_values, result, f"mode is not a valid value (expects: {valid_values}, got: {mode})")
         if self._wraps is not None:
             result = self._wraps.atm_mod(*supplied_args)
 
@@ -1296,9 +1299,9 @@ class PyGammaTestProxy(object):
         if diff_int is not None and diff_int != "-":
             Path(diff_int).touch()
         valid_values = [0, 1, 2]
-        result = self._validate("sub_phase", dtype in valid_values, result, f"dtype is not a valid value (expects: {valid_values}, got: {dtype})")
+        result = self._validate("sub_phase", dtype == "-" or dtype in valid_values, result, f"dtype is not a valid value (expects: {valid_values}, got: {dtype})")
         valid_values = [0, 1] + [None]
-        result = self._validate("sub_phase", mode in valid_values, result, f"mode is not a valid value (expects: {valid_values}, got: {mode})")
+        result = self._validate("sub_phase", mode == "-" or mode in valid_values, result, f"mode is not a valid value (expects: {valid_values}, got: {mode})")
         if self._wraps is not None:
             result = self._wraps.sub_phase(*supplied_args)
 
@@ -1326,9 +1329,9 @@ class PyGammaTestProxy(object):
         if sim_unw is not None and sim_unw != "-":
             Path(sim_unw).touch()
         valid_values = [0, 1] + [None]
-        result = self._validate("phase_sim", ph_flag in valid_values, result, f"ph_flag is not a valid value (expects: {valid_values}, got: {ph_flag})")
+        result = self._validate("phase_sim", ph_flag == "-" or ph_flag in valid_values, result, f"ph_flag is not a valid value (expects: {valid_values}, got: {ph_flag})")
         valid_values = [0, 1] + [None]
-        result = self._validate("phase_sim", bflag in valid_values, result, f"bflag is not a valid value (expects: {valid_values}, got: {bflag})")
+        result = self._validate("phase_sim", bflag == "-" or bflag in valid_values, result, f"bflag is not a valid value (expects: {valid_values}, got: {bflag})")
         if definition is not None:
             result = self._validate("phase_sim", definition == "-" or Path(definition).exists(), result, f"definition path does not exist ({definition})")
         if delta_t is not None:
@@ -1338,7 +1341,7 @@ class PyGammaTestProxy(object):
         if SLC2R_par is not None:
             result = self._validate("phase_sim", SLC2R_par == "-" or Path(SLC2R_par).exists(), result, f"SLC2R_par path does not exist ({SLC2R_par})")
         valid_values = [0, 1] + [None]
-        result = self._validate("phase_sim", ph_mode in valid_values, result, f"ph_mode is not a valid value (expects: {valid_values}, got: {ph_mode})")
+        result = self._validate("phase_sim", ph_mode == "-" or ph_mode in valid_values, result, f"ph_mode is not a valid value (expects: {valid_values}, got: {ph_mode})")
         if self._wraps is not None:
             result = self._wraps.phase_sim(*supplied_args)
 
@@ -1488,11 +1491,11 @@ class PyGammaTestProxy(object):
         if interf is not None and interf != "-":
             Path(interf).touch()
         valid_values = [1, 0] + [None]
-        result = self._validate("WSS_intf", sps_flg in valid_values, result, f"sps_flg is not a valid value (expects: {valid_values}, got: {sps_flg})")
+        result = self._validate("WSS_intf", sps_flg == "-" or sps_flg in valid_values, result, f"sps_flg is not a valid value (expects: {valid_values}, got: {sps_flg})")
         valid_values = [1, 0] + [None]
-        result = self._validate("WSS_intf", azf_flg in valid_values, result, f"azf_flg is not a valid value (expects: {valid_values}, got: {azf_flg})")
+        result = self._validate("WSS_intf", azf_flg == "-" or azf_flg in valid_values, result, f"azf_flg is not a valid value (expects: {valid_values}, got: {azf_flg})")
         valid_values = [0, 1] + [None]
-        result = self._validate("WSS_intf", m_flg in valid_values, result, f"m_flg is not a valid value (expects: {valid_values}, got: {m_flg})")
+        result = self._validate("WSS_intf", m_flg == "-" or m_flg in valid_values, result, f"m_flg is not a valid value (expects: {valid_values}, got: {m_flg})")
         if self._wraps is not None:
             result = self._wraps.WSS_intf(*supplied_args)
 
@@ -1548,11 +1551,11 @@ class PyGammaTestProxy(object):
         if lookup_table is not None:
             result = self._validate("offset_list_fitm", lookup_table == "-" or Path(lookup_table).exists(), result, f"lookup_table path does not exist ({lookup_table})")
         valid_values = [1, 2] + [None]
-        result = self._validate("offset_list_fitm", lt_type in valid_values, result, f"lt_type is not a valid value (expects: {valid_values}, got: {lt_type})")
+        result = self._validate("offset_list_fitm", lt_type == "-" or lt_type in valid_values, result, f"lt_type is not a valid value (expects: {valid_values}, got: {lt_type})")
         valid_values = [1, 2, 3] + [None]
-        result = self._validate("offset_list_fitm", type1 in valid_values, result, f"type1 is not a valid value (expects: {valid_values}, got: {type1})")
+        result = self._validate("offset_list_fitm", type1 == "-" or type1 in valid_values, result, f"type1 is not a valid value (expects: {valid_values}, got: {type1})")
         valid_values = [1, 2, 3] + [None]
-        result = self._validate("offset_list_fitm", type2 in valid_values, result, f"type2 is not a valid value (expects: {valid_values}, got: {type2})")
+        result = self._validate("offset_list_fitm", type2 == "-" or type2 in valid_values, result, f"type2 is not a valid value (expects: {valid_values}, got: {type2})")
         if coffsets is not None and coffsets != "-":
             Path(coffsets).touch()
         if self._wraps is not None:
@@ -1610,7 +1613,7 @@ class PyGammaTestProxy(object):
         if MLI_DEM_par is not None and MLI_DEM_par != "-":
             Path(MLI_DEM_par).touch()
         valid_values = [0, 1] + [None]
-        result = self._validate("multi_look_geo", dtype in valid_values, result, f"dtype is not a valid value (expects: {valid_values}, got: {dtype})")
+        result = self._validate("multi_look_geo", dtype == "-" or dtype in valid_values, result, f"dtype is not a valid value (expects: {valid_values}, got: {dtype})")
         if self._wraps is not None:
             result = self._wraps.multi_look_geo(*supplied_args)
 
@@ -1694,7 +1697,7 @@ class PyGammaTestProxy(object):
         if dv_z is not None and dv_z != "-":
             Path(dv_z).touch()
         valid_values = [0, 1, 2] + [None]
-        result = self._validate("dispmap_vec2", mode in valid_values, result, f"mode is not a valid value (expects: {valid_values}, got: {mode})")
+        result = self._validate("dispmap_vec2", mode == "-" or mode in valid_values, result, f"mode is not a valid value (expects: {valid_values}, got: {mode})")
         if self._wraps is not None:
             result = self._wraps.dispmap_vec2(*supplied_args)
 
@@ -1756,11 +1759,11 @@ class PyGammaTestProxy(object):
         if offsets is not None and offsets != "-":
             Path(offsets).touch()
         valid_values = [0, 1] + [None]
-        result = self._validate("offset_pwr_list", int_filt in valid_values, result, f"int_filt is not a valid value (expects: {valid_values}, got: {int_filt})")
+        result = self._validate("offset_pwr_list", int_filt == "-" or int_filt in valid_values, result, f"int_filt is not a valid value (expects: {valid_values}, got: {int_filt})")
         valid_values = [0, 1] + [None]
-        result = self._validate("offset_pwr_list", pflag in valid_values, result, f"pflag is not a valid value (expects: {valid_values}, got: {pflag})")
+        result = self._validate("offset_pwr_list", pflag == "-" or pflag in valid_values, result, f"pflag is not a valid value (expects: {valid_values}, got: {pflag})")
         valid_values = [0, 1, 2, 3] + [None]
-        result = self._validate("offset_pwr_list", pltflg in valid_values, result, f"pltflg is not a valid value (expects: {valid_values}, got: {pltflg})")
+        result = self._validate("offset_pwr_list", pltflg == "-" or pltflg in valid_values, result, f"pltflg is not a valid value (expects: {valid_values}, got: {pltflg})")
         if ccs is not None and ccs != "-":
             Path(ccs).touch()
         if self._wraps is not None:
@@ -1786,9 +1789,9 @@ class PyGammaTestProxy(object):
         if data_out is not None and data_out != "-":
             Path(data_out).touch()
         valid_values = [0, 1, 2, 3, 4] + [None]
-        result = self._validate("geocode", interp_mode in valid_values, result, f"interp_mode is not a valid value (expects: {valid_values}, got: {interp_mode})")
+        result = self._validate("geocode", interp_mode == "-" or interp_mode in valid_values, result, f"interp_mode is not a valid value (expects: {valid_values}, got: {interp_mode})")
         valid_values = [0, 1, 2, 3, 4, 5, 6] + [None]
-        result = self._validate("geocode", dtype in valid_values, result, f"dtype is not a valid value (expects: {valid_values}, got: {dtype})")
+        result = self._validate("geocode", dtype == "-" or dtype in valid_values, result, f"dtype is not a valid value (expects: {valid_values}, got: {dtype})")
         if self._wraps is not None:
             result = self._wraps.geocode(*supplied_args)
 
@@ -1838,7 +1841,7 @@ class PyGammaTestProxy(object):
         if data_xyz is not None and data_xyz != "-":
             Path(data_xyz).touch()
         valid_values = [0, 1] + [None]
-        result = self._validate("data2xyz", dflg in valid_values, result, f"dflg is not a valid value (expects: {valid_values}, got: {dflg})")
+        result = self._validate("data2xyz", dflg == "-" or dflg in valid_values, result, f"dflg is not a valid value (expects: {valid_values}, got: {dflg})")
         if self._wraps is not None:
             result = self._wraps.data2xyz(*supplied_args)
 
@@ -1936,7 +1939,7 @@ class PyGammaTestProxy(object):
         if SLC_par is not None:
             result = self._validate("create_dem_par", SLC_par == "-" or Path(SLC_par).exists(), result, f"SLC_par path does not exist ({SLC_par})")
         valid_values = [0, 1] + [None]
-        result = self._validate("create_dem_par", iflg in valid_values, result, f"iflg is not a valid value (expects: {valid_values}, got: {iflg})")
+        result = self._validate("create_dem_par", iflg == "-" or iflg in valid_values, result, f"iflg is not a valid value (expects: {valid_values}, got: {iflg})")
         if self._wraps is not None:
             result = self._wraps.create_dem_par(*supplied_args)
 
@@ -1964,7 +1967,7 @@ class PyGammaTestProxy(object):
         if DEM_Z is not None and DEM_Z != "-":
             Path(DEM_Z).touch()
         valid_values = [0, 1] + [None]
-        result = self._validate("dem_x_y_z", format_flag in valid_values, result, f"format_flag is not a valid value (expects: {valid_values}, got: {format_flag})")
+        result = self._validate("dem_x_y_z", format_flag == "-" or format_flag in valid_values, result, f"format_flag is not a valid value (expects: {valid_values}, got: {format_flag})")
         if self._wraps is not None:
             result = self._wraps.dem_x_y_z(*supplied_args)
 
@@ -2042,7 +2045,7 @@ class PyGammaTestProxy(object):
         if mag is not None and mag != "-":
             Path(mag).touch()
         valid_values = [0, 1] + [None]
-        result = self._validate("dem_gradient", type in valid_values, result, f"type is not a valid value (expects: {valid_values}, got: {type})")
+        result = self._validate("dem_gradient", type == "-" or type in valid_values, result, f"type is not a valid value (expects: {valid_values}, got: {type})")
         if self._wraps is not None:
             result = self._wraps.dem_gradient(*supplied_args)
 
@@ -2072,9 +2075,9 @@ class PyGammaTestProxy(object):
         if offsets is not None and offsets != "-":
             Path(offsets).touch()
         valid_values = [0, 1] + [None]
-        result = self._validate("offset_pwr_trackingm", pflag in valid_values, result, f"pflag is not a valid value (expects: {valid_values}, got: {pflag})")
+        result = self._validate("offset_pwr_trackingm", pflag == "-" or pflag in valid_values, result, f"pflag is not a valid value (expects: {valid_values}, got: {pflag})")
         valid_values = [0, 1, 2, 3] + [None]
-        result = self._validate("offset_pwr_trackingm", pltflg in valid_values, result, f"pltflg is not a valid value (expects: {valid_values}, got: {pltflg})")
+        result = self._validate("offset_pwr_trackingm", pltflg == "-" or pltflg in valid_values, result, f"pltflg is not a valid value (expects: {valid_values}, got: {pltflg})")
         if ccs is not None and ccs != "-":
             Path(ccs).touch()
         if self._wraps is not None:
@@ -2098,7 +2101,7 @@ class PyGammaTestProxy(object):
         if MLI_2 is not None:
             result = self._validate("init_offsetm", MLI_2 == "-" or Path(MLI_2).exists(), result, f"MLI_2 path does not exist ({MLI_2})")
         valid_values = [0, 1] + [None]
-        result = self._validate("init_offsetm", cflag in valid_values, result, f"cflag is not a valid value (expects: {valid_values}, got: {cflag})")
+        result = self._validate("init_offsetm", cflag == "-" or cflag in valid_values, result, f"cflag is not a valid value (expects: {valid_values}, got: {cflag})")
         if self._wraps is not None:
             result = self._wraps.init_offsetm(*supplied_args)
 
@@ -2144,7 +2147,7 @@ class PyGammaTestProxy(object):
         if ls_map is not None and ls_map != "-":
             Path(ls_map).touch()
         valid_values = [0, 1, 2, 3] + [None]
-        result = self._validate("gc_map_fd", ls_mode in valid_values, result, f"ls_mode is not a valid value (expects: {valid_values}, got: {ls_mode})")
+        result = self._validate("gc_map_fd", ls_mode == "-" or ls_mode in valid_values, result, f"ls_mode is not a valid value (expects: {valid_values}, got: {ls_mode})")
         if self._wraps is not None:
             result = self._wraps.gc_map_fd(*supplied_args)
 
@@ -2180,7 +2183,7 @@ class PyGammaTestProxy(object):
         if int_mode is not None:
             result = self._validate("phase_sim_orb", int_mode == "-" or Path(int_mode).exists(), result, f"int_mode path does not exist ({int_mode})")
         valid_values = [0, 1] + [None]
-        result = self._validate("phase_sim_orb", ph_mode in valid_values, result, f"ph_mode is not a valid value (expects: {valid_values}, got: {ph_mode})")
+        result = self._validate("phase_sim_orb", ph_mode == "-" or ph_mode in valid_values, result, f"ph_mode is not a valid value (expects: {valid_values}, got: {ph_mode})")
         if self._wraps is not None:
             result = self._wraps.phase_sim_orb(*supplied_args)
 
@@ -2294,9 +2297,9 @@ class PyGammaTestProxy(object):
         if coffsets is not None and coffsets != "-":
             Path(coffsets).touch()
         valid_values = [0, 1, 2] + [None]
-        result = self._validate("offset_trackingm", mode in valid_values, result, f"mode is not a valid value (expects: {valid_values}, got: {mode})")
+        result = self._validate("offset_trackingm", mode == "-" or mode in valid_values, result, f"mode is not a valid value (expects: {valid_values}, got: {mode})")
         valid_values = [0, 1] + [None]
-        result = self._validate("offset_trackingm", poly_flag in valid_values, result, f"poly_flag is not a valid value (expects: {valid_values}, got: {poly_flag})")
+        result = self._validate("offset_trackingm", poly_flag == "-" or poly_flag in valid_values, result, f"poly_flag is not a valid value (expects: {valid_values}, got: {poly_flag})")
         if self._wraps is not None:
             result = self._wraps.offset_trackingm(*supplied_args)
 
@@ -2388,9 +2391,9 @@ class PyGammaTestProxy(object):
         if offsets is not None and offsets != "-":
             Path(offsets).touch()
         valid_values = [0, 1] + [None]
-        result = self._validate("offset_pwrm", pflag in valid_values, result, f"pflag is not a valid value (expects: {valid_values}, got: {pflag})")
+        result = self._validate("offset_pwrm", pflag == "-" or pflag in valid_values, result, f"pflag is not a valid value (expects: {valid_values}, got: {pflag})")
         valid_values = [0, 1, 2, 3] + [None]
-        result = self._validate("offset_pwrm", pltflg in valid_values, result, f"pltflg is not a valid value (expects: {valid_values}, got: {pltflg})")
+        result = self._validate("offset_pwrm", pltflg == "-" or pltflg in valid_values, result, f"pltflg is not a valid value (expects: {valid_values}, got: {pltflg})")
         if ccs is not None and ccs != "-":
             Path(ccs).touch()
         if self._wraps is not None:
@@ -2448,7 +2451,7 @@ class PyGammaTestProxy(object):
         if coffsets is not None and coffsets != "-":
             Path(coffsets).touch()
         valid_values = [0, 1] + [None]
-        result = self._validate("offset_fitm", interact_mode in valid_values, result, f"interact_mode is not a valid value (expects: {valid_values}, got: {interact_mode})")
+        result = self._validate("offset_fitm", interact_mode == "-" or interact_mode in valid_values, result, f"interact_mode is not a valid value (expects: {valid_values}, got: {interact_mode})")
         if self._wraps is not None:
             result = self._wraps.offset_fitm(*supplied_args)
 
@@ -2510,7 +2513,7 @@ class PyGammaTestProxy(object):
         if north is not None and north != "-":
             Path(north).touch()
         valid_values = [0, 1] + [None]
-        result = self._validate("dem_coord", dtype in valid_values, result, f"dtype is not a valid value (expects: {valid_values}, got: {dtype})")
+        result = self._validate("dem_coord", dtype == "-" or dtype in valid_values, result, f"dtype is not a valid value (expects: {valid_values}, got: {dtype})")
         if self._wraps is not None:
             result = self._wraps.dem_coord(*supplied_args)
 
@@ -2532,9 +2535,9 @@ class PyGammaTestProxy(object):
         if data_out is not None and data_out != "-":
             Path(data_out).touch()
         valid_values = [0, 1, 2, 3, 4, 5, 6, 7] + [None]
-        result = self._validate("rotate_image", interp_mode in valid_values, result, f"interp_mode is not a valid value (expects: {valid_values}, got: {interp_mode})")
+        result = self._validate("rotate_image", interp_mode == "-" or interp_mode in valid_values, result, f"interp_mode is not a valid value (expects: {valid_values}, got: {interp_mode})")
         valid_values = [0, 1, 2, 3, 4, 5] + [None]
-        result = self._validate("rotate_image", dtype in valid_values, result, f"dtype is not a valid value (expects: {valid_values}, got: {dtype})")
+        result = self._validate("rotate_image", dtype == "-" or dtype in valid_values, result, f"dtype is not a valid value (expects: {valid_values}, got: {dtype})")
         if self._wraps is not None:
             result = self._wraps.rotate_image(*supplied_args)
 
@@ -2558,9 +2561,9 @@ class PyGammaTestProxy(object):
         if data_out is not None and data_out != "-":
             Path(data_out).touch()
         valid_values = [0, 1, 2, 3, 4, 5] + [None]
-        result = self._validate("geocode_back", dtype in valid_values, result, f"dtype is not a valid value (expects: {valid_values}, got: {dtype})")
+        result = self._validate("geocode_back", dtype == "-" or dtype in valid_values, result, f"dtype is not a valid value (expects: {valid_values}, got: {dtype})")
         valid_values = [0, 1] + [None]
-        result = self._validate("geocode_back", e_flag in valid_values, result, f"e_flag is not a valid value (expects: {valid_values}, got: {e_flag})")
+        result = self._validate("geocode_back", e_flag == "-" or e_flag in valid_values, result, f"e_flag is not a valid value (expects: {valid_values}, got: {e_flag})")
         if self._wraps is not None:
             result = self._wraps.geocode_back(*supplied_args)
 
@@ -2604,7 +2607,7 @@ class PyGammaTestProxy(object):
         if data_out is not None and data_out != "-":
             Path(data_out).touch()
         valid_values = [0, 1, 2, 3, 4, 5] + [None]
-        result = self._validate("resamp_image", dtype in valid_values, result, f"dtype is not a valid value (expects: {valid_values}, got: {dtype})")
+        result = self._validate("resamp_image", dtype == "-" or dtype in valid_values, result, f"dtype is not a valid value (expects: {valid_values}, got: {dtype})")
         if self._wraps is not None:
             result = self._wraps.resamp_image(*supplied_args)
 
@@ -2632,9 +2635,9 @@ class PyGammaTestProxy(object):
         if pix_size is not None and pix_size != "-":
             Path(pix_size).touch()
         valid_values = [0, 1]
-        result = self._validate("pol2rec", dtype in valid_values, result, f"dtype is not a valid value (expects: {valid_values}, got: {dtype})")
+        result = self._validate("pol2rec", dtype == "-" or dtype in valid_values, result, f"dtype is not a valid value (expects: {valid_values}, got: {dtype})")
         valid_values = [0, 1] + [None]
-        result = self._validate("pol2rec", mode in valid_values, result, f"mode is not a valid value (expects: {valid_values}, got: {mode})")
+        result = self._validate("pol2rec", mode == "-" or mode in valid_values, result, f"mode is not a valid value (expects: {valid_values}, got: {mode})")
         if self._wraps is not None:
             result = self._wraps.pol2rec(*supplied_args)
 
@@ -2844,9 +2847,9 @@ class PyGammaTestProxy(object):
         if SLC is not None and SLC != "-":
             Path(SLC).touch()
         valid_values = [0, 1] + [None]
-        result = self._validate("az_proc", SLC_format in valid_values, result, f"SLC_format is not a valid value (expects: {valid_values}, got: {SLC_format})")
+        result = self._validate("az_proc", SLC_format == "-" or SLC_format in valid_values, result, f"SLC_format is not a valid value (expects: {valid_values}, got: {SLC_format})")
         valid_values = [0, 1] + [None]
-        result = self._validate("az_proc", SLC_type in valid_values, result, f"SLC_type is not a valid value (expects: {valid_values}, got: {SLC_type})")
+        result = self._validate("az_proc", SLC_type == "-" or SLC_type in valid_values, result, f"SLC_type is not a valid value (expects: {valid_values}, got: {SLC_type})")
         if self._wraps is not None:
             result = self._wraps.az_proc(*supplied_args)
 
@@ -2916,9 +2919,9 @@ class PyGammaTestProxy(object):
         if SAR_data is not None:
             result = self._validate("azsp_SLC", SAR_data == "-" or Path(SAR_data).exists(), result, f"SAR_data path does not exist ({SAR_data})")
         valid_values = [0, 1] + [None]
-        result = self._validate("azsp_SLC", data_format in valid_values, result, f"data_format is not a valid value (expects: {valid_values}, got: {data_format})")
+        result = self._validate("azsp_SLC", data_format == "-" or data_format in valid_values, result, f"data_format is not a valid value (expects: {valid_values}, got: {data_format})")
         valid_values = [0, 1] + [None]
-        result = self._validate("azsp_SLC", pltflg in valid_values, result, f"pltflg is not a valid value (expects: {valid_values}, got: {pltflg})")
+        result = self._validate("azsp_SLC", pltflg == "-" or pltflg in valid_values, result, f"pltflg is not a valid value (expects: {valid_values}, got: {pltflg})")
         if self._wraps is not None:
             result = self._wraps.azsp_SLC(*supplied_args)
 
@@ -3012,9 +3015,9 @@ class PyGammaTestProxy(object):
         if raw_out is not None and raw_out != "-":
             Path(raw_out).touch()
         valid_values = [0, 1] + [None]
-        result = self._validate("PALSAR_proc", TX_POL in valid_values, result, f"TX_POL is not a valid value (expects: {valid_values}, got: {TX_POL})")
+        result = self._validate("PALSAR_proc", TX_POL == "-" or TX_POL in valid_values, result, f"TX_POL is not a valid value (expects: {valid_values}, got: {TX_POL})")
         valid_values = [0, 1] + [None]
-        result = self._validate("PALSAR_proc", RX_POL in valid_values, result, f"RX_POL is not a valid value (expects: {valid_values}, got: {RX_POL})")
+        result = self._validate("PALSAR_proc", RX_POL == "-" or RX_POL in valid_values, result, f"RX_POL is not a valid value (expects: {valid_values}, got: {RX_POL})")
         if self._wraps is not None:
             result = self._wraps.PALSAR_proc(*supplied_args)
 
@@ -3040,7 +3043,7 @@ class PyGammaTestProxy(object):
         if range_spec is not None and range_spec != "-":
             Path(range_spec).touch()
         valid_values = [0, 1] + [None]
-        result = self._validate("rspec_real", pltflg in valid_values, result, f"pltflg is not a valid value (expects: {valid_values}, got: {pltflg})")
+        result = self._validate("rspec_real", pltflg == "-" or pltflg in valid_values, result, f"pltflg is not a valid value (expects: {valid_values}, got: {pltflg})")
         if self._wraps is not None:
             result = self._wraps.rspec_real(*supplied_args)
 
@@ -3066,7 +3069,7 @@ class PyGammaTestProxy(object):
         if range_spec is not None and range_spec != "-":
             Path(range_spec).touch()
         valid_values = [0, 1] + [None]
-        result = self._validate("rspec_IQ", pltflg in valid_values, result, f"pltflg is not a valid value (expects: {valid_values}, got: {pltflg})")
+        result = self._validate("rspec_IQ", pltflg == "-" or pltflg in valid_values, result, f"pltflg is not a valid value (expects: {valid_values}, got: {pltflg})")
         if self._wraps is not None:
             result = self._wraps.rspec_IQ(*supplied_args)
 
@@ -3090,15 +3093,15 @@ class PyGammaTestProxy(object):
         if SLC is not None:
             result = self._validate("af", SLC == "-" or Path(SLC).exists(), result, f"SLC path does not exist ({SLC})")
         valid_values = [0, 1] + [None]
-        result = self._validate("af", update_flg in valid_values, result, f"update_flg is not a valid value (expects: {valid_values}, got: {update_flg})")
+        result = self._validate("af", update_flg == "-" or update_flg in valid_values, result, f"update_flg is not a valid value (expects: {valid_values}, got: {update_flg})")
         valid_values = [0, 1] + [None]
-        result = self._validate("af", a1_flg in valid_values, result, f"a1_flg is not a valid value (expects: {valid_values}, got: {a1_flg})")
+        result = self._validate("af", a1_flg == "-" or a1_flg in valid_values, result, f"a1_flg is not a valid value (expects: {valid_values}, got: {a1_flg})")
         valid_values = [0, 1] + [None]
-        result = self._validate("af", b0_flg in valid_values, result, f"b0_flg is not a valid value (expects: {valid_values}, got: {b0_flg})")
+        result = self._validate("af", b0_flg == "-" or b0_flg in valid_values, result, f"b0_flg is not a valid value (expects: {valid_values}, got: {b0_flg})")
         if offsets is not None and offsets != "-":
             Path(offsets).touch()
         valid_values = [0, 1] + [None]
-        result = self._validate("af", dac_flg in valid_values, result, f"dac_flg is not a valid value (expects: {valid_values}, got: {dac_flg})")
+        result = self._validate("af", dac_flg == "-" or dac_flg in valid_values, result, f"dac_flg is not a valid value (expects: {valid_values}, got: {dac_flg})")
         if self._wraps is not None:
             result = self._wraps.af(*supplied_args)
 
@@ -3204,7 +3207,7 @@ class PyGammaTestProxy(object):
         if signal_data is not None:
             result = self._validate("dop_ambig", signal_data == "-" or Path(signal_data).exists(), result, f"signal_data path does not exist ({signal_data})")
         valid_values = [1, 2] + [None]
-        result = self._validate("dop_ambig", algorithm in valid_values, result, f"algorithm is not a valid value (expects: {valid_values}, got: {algorithm})")
+        result = self._validate("dop_ambig", algorithm == "-" or algorithm in valid_values, result, f"algorithm is not a valid value (expects: {valid_values}, got: {algorithm})")
         if output_plot is not None and output_plot != "-":
             Path(output_plot).touch()
         if self._wraps is not None:
@@ -3336,7 +3339,7 @@ class PyGammaTestProxy(object):
         if rc_data is not None and rc_data != "-":
             Path(rc_data).touch()
         valid_values = [0, 1] + [None]
-        result = self._validate("pre_rc", RFI_filt in valid_values, result, f"RFI_filt is not a valid value (expects: {valid_values}, got: {RFI_filt})")
+        result = self._validate("pre_rc", RFI_filt == "-" or RFI_filt in valid_values, result, f"RFI_filt is not a valid value (expects: {valid_values}, got: {RFI_filt})")
         if self._wraps is not None:
             result = self._wraps.pre_rc(*supplied_args)
 
@@ -3460,7 +3463,7 @@ class PyGammaTestProxy(object):
         if raw is not None and raw != "-":
             Path(raw).touch()
         valid_values = [0, 1] + [None]
-        result = self._validate("ERS_ENVISAT_proc", swst_flg in valid_values, result, f"swst_flg is not a valid value (expects: {valid_values}, got: {swst_flg})")
+        result = self._validate("ERS_ENVISAT_proc", swst_flg == "-" or swst_flg in valid_values, result, f"swst_flg is not a valid value (expects: {valid_values}, got: {swst_flg})")
         if self._wraps is not None:
             result = self._wraps.ERS_ENVISAT_proc(*supplied_args)
 
@@ -3486,7 +3489,7 @@ class PyGammaTestProxy(object):
         if MLI is not None and MLI != "-":
             Path(MLI).touch()
         valid_values = [0, 1] + [None]
-        result = self._validate("multi_SLC", slc_format in valid_values, result, f"slc_format is not a valid value (expects: {valid_values}, got: {slc_format})")
+        result = self._validate("multi_SLC", slc_format == "-" or slc_format in valid_values, result, f"slc_format is not a valid value (expects: {valid_values}, got: {slc_format})")
         if self._wraps is not None:
             result = self._wraps.multi_SLC(*supplied_args)
 
@@ -3690,9 +3693,9 @@ class PyGammaTestProxy(object):
         if doppler is not None and doppler != "-":
             Path(doppler).touch()
         valid_values = [0, 1, 2] + [None]
-        result = self._validate("doppler", ambig_flag in valid_values, result, f"ambig_flag is not a valid value (expects: {valid_values}, got: {ambig_flag})")
+        result = self._validate("doppler", ambig_flag == "-" or ambig_flag in valid_values, result, f"ambig_flag is not a valid value (expects: {valid_values}, got: {ambig_flag})")
         valid_values = [0, 1] + [None]
-        result = self._validate("doppler", pltflg in valid_values, result, f"pltflg is not a valid value (expects: {valid_values}, got: {pltflg})")
+        result = self._validate("doppler", pltflg == "-" or pltflg in valid_values, result, f"pltflg is not a valid value (expects: {valid_values}, got: {pltflg})")
         if self._wraps is not None:
             result = self._wraps.doppler(*supplied_args)
 
@@ -3864,9 +3867,9 @@ class PyGammaTestProxy(object):
         if az_plot is not None and az_plot != "-":
             Path(az_plot).touch()
         valid_values = [0, 1]
-        result = self._validate("ptarg", data_format in valid_values, result, f"data_format is not a valid value (expects: {valid_values}, got: {data_format})")
+        result = self._validate("ptarg", data_format == "-" or data_format in valid_values, result, f"data_format is not a valid value (expects: {valid_values}, got: {data_format})")
         valid_values = [0, 1, 2] + [None]
-        result = self._validate("ptarg", pltflg in valid_values, result, f"pltflg is not a valid value (expects: {valid_values}, got: {pltflg})")
+        result = self._validate("ptarg", pltflg == "-" or pltflg in valid_values, result, f"pltflg is not a valid value (expects: {valid_values}, got: {pltflg})")
         if self._wraps is not None:
             result = self._wraps.ptarg(*supplied_args)
 
@@ -3892,7 +3895,7 @@ class PyGammaTestProxy(object):
         if GRD_image is not None and GRD_image != "-":
             Path(GRD_image).touch()
         valid_values = [0, 1] + [None]
-        result = self._validate("multi_GRD_SLC", interp_mode in valid_values, result, f"interp_mode is not a valid value (expects: {valid_values}, got: {interp_mode})")
+        result = self._validate("multi_GRD_SLC", interp_mode == "-" or interp_mode in valid_values, result, f"interp_mode is not a valid value (expects: {valid_values}, got: {interp_mode})")
         if self._wraps is not None:
             result = self._wraps.multi_GRD_SLC(*supplied_args)
 
@@ -3960,7 +3963,7 @@ class PyGammaTestProxy(object):
         if spectrum is not None and spectrum != "-":
             Path(spectrum).touch()
         valid_values = [0, 1] + [None]
-        result = self._validate("azsp_IQ", pltflg in valid_values, result, f"pltflg is not a valid value (expects: {valid_values}, got: {pltflg})")
+        result = self._validate("azsp_IQ", pltflg == "-" or pltflg in valid_values, result, f"pltflg is not a valid value (expects: {valid_values}, got: {pltflg})")
         if self._wraps is not None:
             result = self._wraps.azsp_IQ(*supplied_args)
 
@@ -3982,7 +3985,7 @@ class PyGammaTestProxy(object):
         if PROC_par is not None and PROC_par != "-":
             Path(PROC_par).touch()
         valid_values = [0, 1] + [None]
-        result = self._validate("ERS_proc_ACRES", type in valid_values, result, f"type is not a valid value (expects: {valid_values}, got: {type})")
+        result = self._validate("ERS_proc_ACRES", type == "-" or type in valid_values, result, f"type is not a valid value (expects: {valid_values}, got: {type})")
         if self._wraps is not None:
             result = self._wraps.ERS_proc_ACRES(*supplied_args)
 
@@ -4032,7 +4035,7 @@ class PyGammaTestProxy(object):
         if autofocus is not None and autofocus != "-":
             Path(autofocus).touch()
         valid_values = [0, 1] + [None]
-        result = self._validate("autof", dop_ambig in valid_values, result, f"dop_ambig is not a valid value (expects: {valid_values}, got: {dop_ambig})")
+        result = self._validate("autof", dop_ambig == "-" or dop_ambig in valid_values, result, f"dop_ambig is not a valid value (expects: {valid_values}, got: {dop_ambig})")
         if self._wraps is not None:
             result = self._wraps.autof(*supplied_args)
 
@@ -4058,7 +4061,7 @@ class PyGammaTestProxy(object):
         if RAW_out is not None and RAW_out != "-":
             Path(RAW_out).touch()
         valid_values = [0, 1] + [None]
-        result = self._validate("cat_raw", fill in valid_values, result, f"fill is not a valid value (expects: {valid_values}, got: {fill})")
+        result = self._validate("cat_raw", fill == "-" or fill in valid_values, result, f"fill is not a valid value (expects: {valid_values}, got: {fill})")
         if self._wraps is not None:
             result = self._wraps.cat_raw(*supplied_args)
 
@@ -4234,7 +4237,7 @@ class PyGammaTestProxy(object):
         if pwr is not None:
             result = self._validate("rasdt_cmap", pwr == "-" or Path(pwr).exists(), result, f"pwr path does not exist ({pwr})")
         valid_values = [0, 1] + [None]
-        result = self._validate("rasdt_cmap", mflg in valid_values, result, f"mflg is not a valid value (expects: {valid_values}, got: {mflg})")
+        result = self._validate("rasdt_cmap", mflg == "-" or mflg in valid_values, result, f"mflg is not a valid value (expects: {valid_values}, got: {mflg})")
         if rasf is not None and rasf != "-":
             Path(rasf).touch()
         if self._wraps is not None:
@@ -4300,9 +4303,9 @@ class PyGammaTestProxy(object):
         if d_out is not None and d_out != "-":
             Path(d_out).touch()
         valid_values = [0, 1, 2, 3]
-        result = self._validate("cpx_math", mode in valid_values, result, f"mode is not a valid value (expects: {valid_values}, got: {mode})")
+        result = self._validate("cpx_math", mode == "-" or mode in valid_values, result, f"mode is not a valid value (expects: {valid_values}, got: {mode})")
         valid_values = [0, 1] + [None]
-        result = self._validate("cpx_math", zflg in valid_values, result, f"zflg is not a valid value (expects: {valid_values}, got: {zflg})")
+        result = self._validate("cpx_math", zflg == "-" or zflg in valid_values, result, f"zflg is not a valid value (expects: {valid_values}, got: {zflg})")
         if self._wraps is not None:
             result = self._wraps.cpx_math(*supplied_args)
 
@@ -4342,7 +4345,7 @@ class PyGammaTestProxy(object):
         if PAR_out is not None and PAR_out != "-":
             Path(PAR_out).touch()
         valid_values = [0, 1] + [None]
-        result = self._validate("set_value", new_key in valid_values, result, f"new_key is not a valid value (expects: {valid_values}, got: {new_key})")
+        result = self._validate("set_value", new_key == "-" or new_key in valid_values, result, f"new_key is not a valid value (expects: {valid_values}, got: {new_key})")
         if self._wraps is not None:
             result = self._wraps.set_value(*supplied_args)
 
@@ -4364,7 +4367,7 @@ class PyGammaTestProxy(object):
         if real is not None and real != "-":
             Path(real).touch()
         valid_values = [0, 1, 2, 3, 4]
-        result = self._validate("cpx_to_real", type in valid_values, result, f"type is not a valid value (expects: {valid_values}, got: {type})")
+        result = self._validate("cpx_to_real", type == "-" or type in valid_values, result, f"type is not a valid value (expects: {valid_values}, got: {type})")
         if self._wraps is not None:
             result = self._wraps.cpx_to_real(*supplied_args)
 
@@ -4552,7 +4555,7 @@ class PyGammaTestProxy(object):
         if data is not None:
             result = self._validate("data2geotiff", data == "-" or Path(data).exists(), result, f"data path does not exist ({data})")
         valid_values = [0, 1, 2, 3, 4, 5]
-        result = self._validate("data2geotiff", type in valid_values, result, f"type is not a valid value (expects: {valid_values}, got: {type})")
+        result = self._validate("data2geotiff", type == "-" or type in valid_values, result, f"type is not a valid value (expects: {valid_values}, got: {type})")
         if GeoTIFF is not None and GeoTIFF != "-":
             Path(GeoTIFF).touch()
         if self._wraps is not None:
@@ -4676,7 +4679,7 @@ class PyGammaTestProxy(object):
         if d_out is not None and d_out != "-":
             Path(d_out).touch()
         valid_values = [0, 1, 2, 3, 4, 5, 6]
-        result = self._validate("vec_math", mode in valid_values, result, f"mode is not a valid value (expects: {valid_values}, got: {mode})")
+        result = self._validate("vec_math", mode == "-" or mode in valid_values, result, f"mode is not a valid value (expects: {valid_values}, got: {mode})")
         if self._wraps is not None:
             result = self._wraps.vec_math(*supplied_args)
 
@@ -4696,7 +4699,7 @@ class PyGammaTestProxy(object):
         if cpx is not None:
             result = self._validate("dismph_fft", cpx == "-" or Path(cpx).exists(), result, f"cpx path does not exist ({cpx})")
         valid_values = [0, 1] + [None]
-        result = self._validate("dismph_fft", data_type in valid_values, result, f"data_type is not a valid value (expects: {valid_values}, got: {data_type})")
+        result = self._validate("dismph_fft", data_type == "-" or data_type in valid_values, result, f"data_type is not a valid value (expects: {valid_values}, got: {data_type})")
         if self._wraps is not None:
             result = self._wraps.dismph_fft(*supplied_args)
 
@@ -4870,7 +4873,7 @@ class PyGammaTestProxy(object):
         if ras_out is not None and ras_out != "-":
             Path(ras_out).touch()
         valid_values = [0, 1] + [None]
-        result = self._validate("ras2ras", force24 in valid_values, result, f"force24 is not a valid value (expects: {valid_values}, got: {force24})")
+        result = self._validate("ras2ras", force24 == "-" or force24 in valid_values, result, f"force24 is not a valid value (expects: {valid_values}, got: {force24})")
         if self._wraps is not None:
             result = self._wraps.ras2ras(*supplied_args)
 
@@ -4896,7 +4899,7 @@ class PyGammaTestProxy(object):
         if rasf is not None and rasf != "-":
             Path(rasf).touch()
         valid_values = [0, 1, 2] + [None]
-        result = self._validate("ras24_float", color_model in valid_values, result, f"color_model is not a valid value (expects: {valid_values}, got: {color_model})")
+        result = self._validate("ras24_float", color_model == "-" or color_model in valid_values, result, f"color_model is not a valid value (expects: {valid_values}, got: {color_model})")
         if self._wraps is not None:
             result = self._wraps.ras24_float(*supplied_args)
 
@@ -4956,9 +4959,9 @@ class PyGammaTestProxy(object):
         if d_out is not None and d_out != "-":
             Path(d_out).touch()
         valid_values = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
-        result = self._validate("float_math", mode in valid_values, result, f"mode is not a valid value (expects: {valid_values}, got: {mode})")
+        result = self._validate("float_math", mode == "-" or mode in valid_values, result, f"mode is not a valid value (expects: {valid_values}, got: {mode})")
         valid_values = [0, 1] + [None]
-        result = self._validate("float_math", zflg in valid_values, result, f"zflg is not a valid value (expects: {valid_values}, got: {zflg})")
+        result = self._validate("float_math", zflg == "-" or zflg in valid_values, result, f"zflg is not a valid value (expects: {valid_values}, got: {zflg})")
         if self._wraps is not None:
             result = self._wraps.float_math(*supplied_args)
 
@@ -4980,7 +4983,7 @@ class PyGammaTestProxy(object):
         if dout is not None and dout != "-":
             Path(dout).touch()
         valid_values = [0, 1, 2]
-        result = self._validate("cpd", dtype in valid_values, result, f"dtype is not a valid value (expects: {valid_values}, got: {dtype})")
+        result = self._validate("cpd", dtype == "-" or dtype in valid_values, result, f"dtype is not a valid value (expects: {valid_values}, got: {dtype})")
         if self._wraps is not None:
             result = self._wraps.cpd(*supplied_args)
 
@@ -5020,7 +5023,7 @@ class PyGammaTestProxy(object):
         if cpx is not None:
             result = self._validate("dismph", cpx == "-" or Path(cpx).exists(), result, f"cpx path does not exist ({cpx})")
         valid_values = [0, 1] + [None]
-        result = self._validate("dismph", dtype in valid_values, result, f"dtype is not a valid value (expects: {valid_values}, got: {dtype})")
+        result = self._validate("dismph", dtype == "-" or dtype in valid_values, result, f"dtype is not a valid value (expects: {valid_values}, got: {dtype})")
         if self._wraps is not None:
             result = self._wraps.dismph(*supplied_args)
 
@@ -5042,9 +5045,9 @@ class PyGammaTestProxy(object):
         if rasf is not None and rasf != "-":
             Path(rasf).touch()
         valid_values = [0, 1] + [None]
-        result = self._validate("rasshd", dtype in valid_values, result, f"dtype is not a valid value (expects: {valid_values}, got: {dtype})")
+        result = self._validate("rasshd", dtype == "-" or dtype in valid_values, result, f"dtype is not a valid value (expects: {valid_values}, got: {dtype})")
         valid_values = [0, 1] + [None]
-        result = self._validate("rasshd", zero_flag in valid_values, result, f"zero_flag is not a valid value (expects: {valid_values}, got: {zero_flag})")
+        result = self._validate("rasshd", zero_flag == "-" or zero_flag in valid_values, result, f"zero_flag is not a valid value (expects: {valid_values}, got: {zero_flag})")
         if self._wraps is not None:
             result = self._wraps.rasshd(*supplied_args)
 
@@ -5066,7 +5069,7 @@ class PyGammaTestProxy(object):
         if cpx2 is not None:
             result = self._validate("dis2mph", cpx2 == "-" or Path(cpx2).exists(), result, f"cpx2 path does not exist ({cpx2})")
         valid_values = [0, 1] + [None]
-        result = self._validate("dis2mph", dtype in valid_values, result, f"dtype is not a valid value (expects: {valid_values}, got: {dtype})")
+        result = self._validate("dis2mph", dtype == "-" or dtype in valid_values, result, f"dtype is not a valid value (expects: {valid_values}, got: {dtype})")
         if self._wraps is not None:
             result = self._wraps.dis2mph(*supplied_args)
 
@@ -5088,7 +5091,7 @@ class PyGammaTestProxy(object):
         if SLC2 is not None:
             result = self._validate("dis2SLC", SLC2 == "-" or Path(SLC2).exists(), result, f"SLC2 path does not exist ({SLC2})")
         valid_values = [0, 1] + [None]
-        result = self._validate("dis2SLC", data_type in valid_values, result, f"data_type is not a valid value (expects: {valid_values}, got: {data_type})")
+        result = self._validate("dis2SLC", data_type == "-" or data_type in valid_values, result, f"data_type is not a valid value (expects: {valid_values}, got: {data_type})")
         if self._wraps is not None:
             result = self._wraps.dis2SLC(*supplied_args)
 
@@ -5110,7 +5113,7 @@ class PyGammaTestProxy(object):
         if rasf is not None and rasf != "-":
             Path(rasf).touch()
         valid_values = [0, 1, 2] + [None]
-        result = self._validate("raspwr", data_type in valid_values, result, f"data_type is not a valid value (expects: {valid_values}, got: {data_type})")
+        result = self._validate("raspwr", data_type == "-" or data_type in valid_values, result, f"data_type is not a valid value (expects: {valid_values}, got: {data_type})")
         if self._wraps is not None:
             result = self._wraps.raspwr(*supplied_args)
 
@@ -5130,7 +5133,7 @@ class PyGammaTestProxy(object):
         if SLC is not None:
             result = self._validate("disSLC", SLC == "-" or Path(SLC).exists(), result, f"SLC path does not exist ({SLC})")
         valid_values = [0, 1] + [None]
-        result = self._validate("disSLC", data_type in valid_values, result, f"data_type is not a valid value (expects: {valid_values}, got: {data_type})")
+        result = self._validate("disSLC", data_type == "-" or data_type in valid_values, result, f"data_type is not a valid value (expects: {valid_values}, got: {data_type})")
         if self._wraps is not None:
             result = self._wraps.disSLC(*supplied_args)
 
@@ -5148,7 +5151,7 @@ class PyGammaTestProxy(object):
             self.call_count["ras8_colormap"] = 1
 
         valid_values = [0, 1, 2, 3]
-        result = self._validate("ras8_colormap", model in valid_values, result, f"model is not a valid value (expects: {valid_values}, got: {model})")
+        result = self._validate("ras8_colormap", model == "-" or model in valid_values, result, f"model is not a valid value (expects: {valid_values}, got: {model})")
         if cm is not None and cm != "-":
             Path(cm).touch()
         if cm_ras is not None and cm_ras != "-":
@@ -5194,7 +5197,7 @@ class PyGammaTestProxy(object):
         if cpt is not None:
             result = self._validate("ras_cpt", cpt == "-" or Path(cpt).exists(), result, f"cpt path does not exist ({cpt})")
         valid_values = [0, 1, 2] + [None]
-        result = self._validate("ras_cpt", color_model in valid_values, result, f"color_model is not a valid value (expects: {valid_values}, got: {color_model})")
+        result = self._validate("ras_cpt", color_model == "-" or color_model in valid_values, result, f"color_model is not a valid value (expects: {valid_values}, got: {color_model})")
         if rasf is not None and rasf != "-":
             Path(rasf).touch()
         if self._wraps is not None:
@@ -5326,7 +5329,7 @@ class PyGammaTestProxy(object):
         if geoid_par is not None:
             result = self._validate("kml_plan", geoid_par == "-" or Path(geoid_par).exists(), result, f"geoid_par path does not exist ({geoid_par})")
         valid_values = [0, 1, 2] + [None]
-        result = self._validate("kml_plan", flight_path in valid_values, result, f"flight_path is not a valid value (expects: {valid_values}, got: {flight_path})")
+        result = self._validate("kml_plan", flight_path == "-" or flight_path in valid_values, result, f"flight_path is not a valid value (expects: {valid_values}, got: {flight_path})")
         if pt_list is not None:
             result = self._validate("kml_plan", pt_list == "-" or Path(pt_list).exists(), result, f"pt_list path does not exist ({pt_list})")
         if self._wraps is not None:
@@ -5370,7 +5373,7 @@ class PyGammaTestProxy(object):
         if cpx is not None:
             result = self._validate("dismph_pk", cpx == "-" or Path(cpx).exists(), result, f"cpx path does not exist ({cpx})")
         valid_values = [0, 1] + [None]
-        result = self._validate("dismph_pk", data_type in valid_values, result, f"data_type is not a valid value (expects: {valid_values}, got: {data_type})")
+        result = self._validate("dismph_pk", data_type == "-" or data_type in valid_values, result, f"data_type is not a valid value (expects: {valid_values}, got: {data_type})")
         if self._wraps is not None:
             result = self._wraps.dismph_pk(*supplied_args)
 
@@ -5392,9 +5395,9 @@ class PyGammaTestProxy(object):
         if rasf is not None and rasf != "-":
             Path(rasf).touch()
         valid_values = [0, 1] + [None]
-        result = self._validate("ras_dB", abs_flag in valid_values, result, f"abs_flag is not a valid value (expects: {valid_values}, got: {abs_flag})")
+        result = self._validate("ras_dB", abs_flag == "-" or abs_flag in valid_values, result, f"abs_flag is not a valid value (expects: {valid_values}, got: {abs_flag})")
         valid_values = [1, 2, 3] + [None]
-        result = self._validate("ras_dB", channel in valid_values, result, f"channel is not a valid value (expects: {valid_values}, got: {channel})")
+        result = self._validate("ras_dB", channel == "-" or channel in valid_values, result, f"channel is not a valid value (expects: {valid_values}, got: {channel})")
         if self._wraps is not None:
             result = self._wraps.ras_dB(*supplied_args)
 
@@ -5418,7 +5421,7 @@ class PyGammaTestProxy(object):
         if t_data is not None:
             result = self._validate("thres_data", t_data == "-" or Path(t_data).exists(), result, f"t_data path does not exist ({t_data})")
         valid_values = [0, 1, 2] + [None]
-        result = self._validate("thres_data", dtype in valid_values, result, f"dtype is not a valid value (expects: {valid_values}, got: {dtype})")
+        result = self._validate("thres_data", dtype == "-" or dtype in valid_values, result, f"dtype is not a valid value (expects: {valid_values}, got: {dtype})")
         if self._wraps is not None:
             result = self._wraps.thres_data(*supplied_args)
 
@@ -5544,7 +5547,7 @@ class PyGammaTestProxy(object):
         if rasf is not None and rasf != "-":
             Path(rasf).touch()
         valid_values = [1, 2, 3] + [None]
-        result = self._validate("ras_linear", channel in valid_values, result, f"channel is not a valid value (expects: {valid_values}, got: {channel})")
+        result = self._validate("ras_linear", channel == "-" or channel in valid_values, result, f"channel is not a valid value (expects: {valid_values}, got: {channel})")
         if self._wraps is not None:
             result = self._wraps.ras_linear(*supplied_args)
 
@@ -5608,7 +5611,7 @@ class PyGammaTestProxy(object):
         if pwr2 is not None:
             result = self._validate("dis2pwr", pwr2 == "-" or Path(pwr2).exists(), result, f"pwr2 path does not exist ({pwr2})")
         valid_values = [0, 1] + [None]
-        result = self._validate("dis2pwr", dtype in valid_values, result, f"dtype is not a valid value (expects: {valid_values}, got: {dtype})")
+        result = self._validate("dis2pwr", dtype == "-" or dtype in valid_values, result, f"dtype is not a valid value (expects: {valid_values}, got: {dtype})")
         if self._wraps is not None:
             result = self._wraps.dis2pwr(*supplied_args)
 
@@ -5628,7 +5631,7 @@ class PyGammaTestProxy(object):
         if pwr is not None:
             result = self._validate("dispwr", pwr == "-" or Path(pwr).exists(), result, f"pwr path does not exist ({pwr})")
         valid_values = [0, 1] + [None]
-        result = self._validate("dispwr", data_type in valid_values, result, f"data_type is not a valid value (expects: {valid_values}, got: {data_type})")
+        result = self._validate("dispwr", data_type == "-" or data_type in valid_values, result, f"data_type is not a valid value (expects: {valid_values}, got: {data_type})")
         if self._wraps is not None:
             result = self._wraps.dispwr(*supplied_args)
 
@@ -5648,7 +5651,7 @@ class PyGammaTestProxy(object):
         if SLC is not None:
             result = self._validate("rasSLC", SLC == "-" or Path(SLC).exists(), result, f"SLC path does not exist ({SLC})")
         valid_values = [0, 1] + [None]
-        result = self._validate("rasSLC", data_type in valid_values, result, f"data_type is not a valid value (expects: {valid_values}, got: {data_type})")
+        result = self._validate("rasSLC", data_type == "-" or data_type in valid_values, result, f"data_type is not a valid value (expects: {valid_values}, got: {data_type})")
         if rasf is not None and rasf != "-":
             Path(rasf).touch()
         if self._wraps is not None:
@@ -5730,7 +5733,7 @@ class PyGammaTestProxy(object):
         if rasf is not None and rasf != "-":
             Path(rasf).touch()
         valid_values = [0, 1, 2, 3] + [None]
-        result = self._validate("ras8_color_scale", color_model in valid_values, result, f"color_model is not a valid value (expects: {valid_values}, got: {color_model})")
+        result = self._validate("ras8_color_scale", color_model == "-" or color_model in valid_values, result, f"color_model is not a valid value (expects: {valid_values}, got: {color_model})")
         if self._wraps is not None:
             result = self._wraps.ras8_color_scale(*supplied_args)
 
@@ -5752,7 +5755,7 @@ class PyGammaTestProxy(object):
         if rasf is not None and rasf != "-":
             Path(rasf).touch()
         valid_values = [0, 1] + [None]
-        result = self._validate("rasmph", data_type in valid_values, result, f"data_type is not a valid value (expects: {valid_values}, got: {data_type})")
+        result = self._validate("rasmph", data_type == "-" or data_type in valid_values, result, f"data_type is not a valid value (expects: {valid_values}, got: {data_type})")
         if self._wraps is not None:
             result = self._wraps.rasmph(*supplied_args)
 
@@ -5830,7 +5833,7 @@ class PyGammaTestProxy(object):
         if DEM is not None:
             result = self._validate("disshd", DEM == "-" or Path(DEM).exists(), result, f"DEM path does not exist ({DEM})")
         valid_values = [0, 1] + [None]
-        result = self._validate("disshd", data_type in valid_values, result, f"data_type is not a valid value (expects: {valid_values}, got: {data_type})")
+        result = self._validate("disshd", data_type == "-" or data_type in valid_values, result, f"data_type is not a valid value (expects: {valid_values}, got: {data_type})")
         if self._wraps is not None:
             result = self._wraps.disshd(*supplied_args)
 
@@ -5874,7 +5877,7 @@ class PyGammaTestProxy(object):
         if rasf is not None and rasf != "-":
             Path(rasf).touch()
         valid_values = [0, 1, 2, 3, 4] + [None]
-        result = self._validate("ras8_float", color_model in valid_values, result, f"color_model is not a valid value (expects: {valid_values}, got: {color_model})")
+        result = self._validate("ras8_float", color_model == "-" or color_model in valid_values, result, f"color_model is not a valid value (expects: {valid_values}, got: {color_model})")
         if self._wraps is not None:
             result = self._wraps.ras8_float(*supplied_args)
 
@@ -5914,7 +5917,7 @@ class PyGammaTestProxy(object):
         if output is not None and output != "-":
             Path(output).touch()
         valid_values = [0, 1, 2, 3, 4, 5] + [None]
-        result = self._validate("create_array", dtype in valid_values, result, f"dtype is not a valid value (expects: {valid_values}, got: {dtype})")
+        result = self._validate("create_array", dtype == "-" or dtype in valid_values, result, f"dtype is not a valid value (expects: {valid_values}, got: {dtype})")
         if self._wraps is not None:
             result = self._wraps.create_array(*supplied_args)
 
@@ -5954,7 +5957,7 @@ class PyGammaTestProxy(object):
         if data is not None:
             result = self._validate("data2tiff", data == "-" or Path(data).exists(), result, f"data path does not exist ({data})")
         valid_values = [0, 1, 2, 3, 4, 5]
-        result = self._validate("data2tiff", type in valid_values, result, f"type is not a valid value (expects: {valid_values}, got: {type})")
+        result = self._validate("data2tiff", type == "-" or type in valid_values, result, f"type is not a valid value (expects: {valid_values}, got: {type})")
         if TIFF is not None and TIFF != "-":
             Path(TIFF).touch()
         if self._wraps is not None:
@@ -5978,9 +5981,9 @@ class PyGammaTestProxy(object):
         if shade is not None and shade != "-":
             Path(shade).touch()
         valid_values = [0, 1] + [None]
-        result = self._validate("mapshd", dtype in valid_values, result, f"dtype is not a valid value (expects: {valid_values}, got: {dtype})")
+        result = self._validate("mapshd", dtype == "-" or dtype in valid_values, result, f"dtype is not a valid value (expects: {valid_values}, got: {dtype})")
         valid_values = [0, 1] + [None]
-        result = self._validate("mapshd", zero_flag in valid_values, result, f"zero_flag is not a valid value (expects: {valid_values}, got: {zero_flag})")
+        result = self._validate("mapshd", zero_flag == "-" or zero_flag in valid_values, result, f"zero_flag is not a valid value (expects: {valid_values}, got: {zero_flag})")
         if self._wraps is not None:
             result = self._wraps.mapshd(*supplied_args)
 
@@ -6002,7 +6005,7 @@ class PyGammaTestProxy(object):
         if kml is not None and kml != "-":
             Path(kml).touch()
         valid_values = [0, 1, 2] + [None]
-        result = self._validate("kml_pt", color_model in valid_values, result, f"color_model is not a valid value (expects: {valid_values}, got: {color_model})")
+        result = self._validate("kml_pt", color_model == "-" or color_model in valid_values, result, f"color_model is not a valid value (expects: {valid_values}, got: {color_model})")
         if self._wraps is not None:
             result = self._wraps.kml_pt(*supplied_args)
 
@@ -6022,7 +6025,7 @@ class PyGammaTestProxy(object):
         if vec is not None:
             result = self._validate("vec_to_real", vec == "-" or Path(vec).exists(), result, f"vec path does not exist ({vec})")
         valid_values = [1, 2, 3]
-        result = self._validate("vec_to_real", index in valid_values, result, f"index is not a valid value (expects: {valid_values}, got: {index})")
+        result = self._validate("vec_to_real", index == "-" or index in valid_values, result, f"index is not a valid value (expects: {valid_values}, got: {index})")
         if cmp is not None and cmp != "-":
             Path(cmp).touch()
         if self._wraps is not None:
@@ -6066,7 +6069,7 @@ class PyGammaTestProxy(object):
         if outfile is not None and outfile != "-":
             Path(outfile).touch()
         valid_values = [2, 4, 8]
-        result = self._validate("swap_bytes", swap_type in valid_values, result, f"swap_type is not a valid value (expects: {valid_values}, got: {swap_type})")
+        result = self._validate("swap_bytes", swap_type == "-" or swap_type in valid_values, result, f"swap_type is not a valid value (expects: {valid_values}, got: {swap_type})")
         if self._wraps is not None:
             result = self._wraps.swap_bytes(*supplied_args)
 
@@ -6132,7 +6135,7 @@ class PyGammaTestProxy(object):
         if svg is not None and svg != "-":
             Path(svg).touch()
         valid_values = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10] + [None]
-        result = self._validate("svg_poly", thick in valid_values, result, f"thick is not a valid value (expects: {valid_values}, got: {thick})")
+        result = self._validate("svg_poly", thick == "-" or thick in valid_values, result, f"thick is not a valid value (expects: {valid_values}, got: {thick})")
         if self._wraps is not None:
             result = self._wraps.svg_poly(*supplied_args)
 
@@ -6174,7 +6177,7 @@ class PyGammaTestProxy(object):
         if cpt is not None:
             result = self._validate("ras_cpt_scale", cpt == "-" or Path(cpt).exists(), result, f"cpt path does not exist ({cpt})")
         valid_values = [0, 1, 2] + [None]
-        result = self._validate("ras_cpt_scale", color_model in valid_values, result, f"color_model is not a valid value (expects: {valid_values}, got: {color_model})")
+        result = self._validate("ras_cpt_scale", color_model == "-" or color_model in valid_values, result, f"color_model is not a valid value (expects: {valid_values}, got: {color_model})")
         if self._wraps is not None:
             result = self._wraps.ras_cpt_scale(*supplied_args)
 
@@ -6236,11 +6239,11 @@ class PyGammaTestProxy(object):
         if f_out is not None and f_out != "-":
             Path(f_out).touch()
         valid_values = [0, 1, 2] + [None]
-        result = self._validate("replace_values", rpl_flg in valid_values, result, f"rpl_flg is not a valid value (expects: {valid_values}, got: {rpl_flg})")
+        result = self._validate("replace_values", rpl_flg == "-" or rpl_flg in valid_values, result, f"rpl_flg is not a valid value (expects: {valid_values}, got: {rpl_flg})")
         valid_values = [2, 4] + [None]
-        result = self._validate("replace_values", dtype in valid_values, result, f"dtype is not a valid value (expects: {valid_values}, got: {dtype})")
+        result = self._validate("replace_values", dtype == "-" or dtype in valid_values, result, f"dtype is not a valid value (expects: {valid_values}, got: {dtype})")
         valid_values = [0, 1] + [None]
-        result = self._validate("replace_values", zflg in valid_values, result, f"zflg is not a valid value (expects: {valid_values}, got: {zflg})")
+        result = self._validate("replace_values", zflg == "-" or zflg in valid_values, result, f"zflg is not a valid value (expects: {valid_values}, got: {zflg})")
         if self._wraps is not None:
             result = self._wraps.replace_values(*supplied_args)
 
@@ -6356,11 +6359,11 @@ class PyGammaTestProxy(object):
         if SLCR_tab is not None:
             result = self._validate("ScanSAR_full_aperture_SLC", SLCR_tab == "-" or Path(SLCR_tab).exists(), result, f"SLCR_tab path does not exist ({SLCR_tab})")
         valid_values = [0, 1] + [None]
-        result = self._validate("ScanSAR_full_aperture_SLC", vmode in valid_values, result, f"vmode is not a valid value (expects: {valid_values}, got: {vmode})")
+        result = self._validate("ScanSAR_full_aperture_SLC", vmode == "-" or vmode in valid_values, result, f"vmode is not a valid value (expects: {valid_values}, got: {vmode})")
         valid_values = [0, 1] + [None]
-        result = self._validate("ScanSAR_full_aperture_SLC", wflg in valid_values, result, f"wflg is not a valid value (expects: {valid_values}, got: {wflg})")
+        result = self._validate("ScanSAR_full_aperture_SLC", wflg == "-" or wflg in valid_values, result, f"wflg is not a valid value (expects: {valid_values}, got: {wflg})")
         valid_values = [0, 1] + [None]
-        result = self._validate("ScanSAR_full_aperture_SLC", imode in valid_values, result, f"imode is not a valid value (expects: {valid_values}, got: {imode})")
+        result = self._validate("ScanSAR_full_aperture_SLC", imode == "-" or imode in valid_values, result, f"imode is not a valid value (expects: {valid_values}, got: {imode})")
         if self._wraps is not None:
             result = self._wraps.ScanSAR_full_aperture_SLC(*supplied_args)
 
@@ -6388,9 +6391,9 @@ class PyGammaTestProxy(object):
         if OFF_par is not None:
             result = self._validate("init_offset", OFF_par == "-" or Path(OFF_par).exists(), result, f"OFF_par path does not exist ({OFF_par})")
         valid_values = [0, 1] + [None]
-        result = self._validate("init_offset", cflag in valid_values, result, f"cflag is not a valid value (expects: {valid_values}, got: {cflag})")
+        result = self._validate("init_offset", cflag == "-" or cflag in valid_values, result, f"cflag is not a valid value (expects: {valid_values}, got: {cflag})")
         valid_values = [0, 1] + [None]
-        result = self._validate("init_offset", deramp in valid_values, result, f"deramp is not a valid value (expects: {valid_values}, got: {deramp})")
+        result = self._validate("init_offset", deramp == "-" or deramp in valid_values, result, f"deramp is not a valid value (expects: {valid_values}, got: {deramp})")
         if self._wraps is not None:
             result = self._wraps.init_offset(*supplied_args)
 
@@ -6460,7 +6463,7 @@ class PyGammaTestProxy(object):
         if out_file is not None and out_file != "-":
             Path(out_file).touch()
         valid_values = [0, 1, 2] + [None]
-        result = self._validate("SR_to_GRD", interp_mode in valid_values, result, f"interp_mode is not a valid value (expects: {valid_values}, got: {interp_mode})")
+        result = self._validate("SR_to_GRD", interp_mode == "-" or interp_mode in valid_values, result, f"interp_mode is not a valid value (expects: {valid_values}, got: {interp_mode})")
         if self._wraps is not None:
             result = self._wraps.SR_to_GRD(*supplied_args)
 
@@ -6508,7 +6511,7 @@ class PyGammaTestProxy(object):
         if coffsets is not None and coffsets != "-":
             Path(coffsets).touch()
         valid_values = [0, 1] + [None]
-        result = self._validate("offset_fit", interact_flag in valid_values, result, f"interact_flag is not a valid value (expects: {valid_values}, got: {interact_flag})")
+        result = self._validate("offset_fit", interact_flag == "-" or interact_flag in valid_values, result, f"interact_flag is not a valid value (expects: {valid_values}, got: {interact_flag})")
         if self._wraps is not None:
             result = self._wraps.offset_fit(*supplied_args)
 
@@ -6580,7 +6583,7 @@ class PyGammaTestProxy(object):
         if SLC_MLI_par is not None and SLC_MLI_par != "-":
             Path(SLC_MLI_par).touch()
         valid_values = [0, 1, 2] + [None]
-        result = self._validate("par_MSP", image_format in valid_values, result, f"image_format is not a valid value (expects: {valid_values}, got: {image_format})")
+        result = self._validate("par_MSP", image_format == "-" or image_format in valid_values, result, f"image_format is not a valid value (expects: {valid_values}, got: {image_format})")
         if self._wraps is not None:
             result = self._wraps.par_MSP(*supplied_args)
 
@@ -6618,13 +6621,13 @@ class PyGammaTestProxy(object):
         if offsets is not None and offsets != "-":
             Path(offsets).touch()
         valid_values = [0, 1] + [None]
-        result = self._validate("offset_pwr_tracking2", deramp in valid_values, result, f"deramp is not a valid value (expects: {valid_values}, got: {deramp})")
+        result = self._validate("offset_pwr_tracking2", deramp == "-" or deramp in valid_values, result, f"deramp is not a valid value (expects: {valid_values}, got: {deramp})")
         valid_values = [0, 1] + [None]
-        result = self._validate("offset_pwr_tracking2", int_filt in valid_values, result, f"int_filt is not a valid value (expects: {valid_values}, got: {int_filt})")
+        result = self._validate("offset_pwr_tracking2", int_filt == "-" or int_filt in valid_values, result, f"int_filt is not a valid value (expects: {valid_values}, got: {int_filt})")
         valid_values = [0, 1] + [None]
-        result = self._validate("offset_pwr_tracking2", pflag in valid_values, result, f"pflag is not a valid value (expects: {valid_values}, got: {pflag})")
+        result = self._validate("offset_pwr_tracking2", pflag == "-" or pflag in valid_values, result, f"pflag is not a valid value (expects: {valid_values}, got: {pflag})")
         valid_values = [0, 1, 2, 3] + [None]
-        result = self._validate("offset_pwr_tracking2", pltflg in valid_values, result, f"pltflg is not a valid value (expects: {valid_values}, got: {pltflg})")
+        result = self._validate("offset_pwr_tracking2", pltflg == "-" or pltflg in valid_values, result, f"pltflg is not a valid value (expects: {valid_values}, got: {pltflg})")
         if ccs is not None and ccs != "-":
             Path(ccs).touch()
         if self._wraps is not None:
@@ -6656,9 +6659,9 @@ class PyGammaTestProxy(object):
         if disp_val is not None and disp_val != "-":
             Path(disp_val).touch()
         valid_values = [0, 1, 2] + [None]
-        result = self._validate("offset_tracking", mode in valid_values, result, f"mode is not a valid value (expects: {valid_values}, got: {mode})")
+        result = self._validate("offset_tracking", mode == "-" or mode in valid_values, result, f"mode is not a valid value (expects: {valid_values}, got: {mode})")
         valid_values = [0, 1] + [None]
-        result = self._validate("offset_tracking", poly_flag in valid_values, result, f"poly_flag is not a valid value (expects: {valid_values}, got: {poly_flag})")
+        result = self._validate("offset_tracking", poly_flag == "-" or poly_flag in valid_values, result, f"poly_flag is not a valid value (expects: {valid_values}, got: {poly_flag})")
         if self._wraps is not None:
             result = self._wraps.offset_tracking(*supplied_args)
 
@@ -6692,7 +6695,7 @@ class PyGammaTestProxy(object):
         if SLC2R_par is not None and SLC2R_par != "-":
             Path(SLC2R_par).touch()
         valid_values = [0, 1] + [None]
-        result = self._validate("SLC_interp_ScanSAR", mode in valid_values, result, f"mode is not a valid value (expects: {valid_values}, got: {mode})")
+        result = self._validate("SLC_interp_ScanSAR", mode == "-" or mode in valid_values, result, f"mode is not a valid value (expects: {valid_values}, got: {mode})")
         if self._wraps is not None:
             result = self._wraps.SLC_interp_ScanSAR(*supplied_args)
 
@@ -6714,7 +6717,7 @@ class PyGammaTestProxy(object):
         if d2 is not None:
             result = self._validate("error_stat", d2 == "-" or Path(d2).exists(), result, f"d2 path does not exist ({d2})")
         valid_values = [0, 1]
-        result = self._validate("error_stat", dtype in valid_values, result, f"dtype is not a valid value (expects: {valid_values}, got: {dtype})")
+        result = self._validate("error_stat", dtype == "-" or dtype in valid_values, result, f"dtype is not a valid value (expects: {valid_values}, got: {dtype})")
         if self._wraps is not None:
             result = self._wraps.error_stat(*supplied_args)
 
@@ -6816,9 +6819,9 @@ class PyGammaTestProxy(object):
         if SLC2_tab is not None:
             result = self._validate("SLC_deramp_S1_TOPS", SLC2_tab == "-" or Path(SLC2_tab).exists(), result, f"SLC2_tab path does not exist ({SLC2_tab})")
         valid_values = [0, 1]
-        result = self._validate("SLC_deramp_S1_TOPS", mode in valid_values, result, f"mode is not a valid value (expects: {valid_values}, got: {mode})")
+        result = self._validate("SLC_deramp_S1_TOPS", mode == "-" or mode in valid_values, result, f"mode is not a valid value (expects: {valid_values}, got: {mode})")
         valid_values = [0, 1]
-        result = self._validate("SLC_deramp_S1_TOPS", phflg in valid_values, result, f"phflg is not a valid value (expects: {valid_values}, got: {phflg})")
+        result = self._validate("SLC_deramp_S1_TOPS", phflg == "-" or phflg in valid_values, result, f"phflg is not a valid value (expects: {valid_values}, got: {phflg})")
         if self._wraps is not None:
             result = self._wraps.SLC_deramp_S1_TOPS(*supplied_args)
 
@@ -7088,7 +7091,7 @@ class PyGammaTestProxy(object):
         if pcal is not None and pcal != "-":
             Path(pcal).touch()
         valid_values = [0, 1, 2, 3] + [None]
-        result = self._validate("ptarg_cal_MLI", pltflg in valid_values, result, f"pltflg is not a valid value (expects: {valid_values}, got: {pltflg})")
+        result = self._validate("ptarg_cal_MLI", pltflg == "-" or pltflg in valid_values, result, f"pltflg is not a valid value (expects: {valid_values}, got: {pltflg})")
         if self._wraps is not None:
             result = self._wraps.ptarg_cal_MLI(*supplied_args)
 
@@ -7198,7 +7201,7 @@ class PyGammaTestProxy(object):
         if RCM_dir is not None:
             result = self._validate("par_RCM_GRD", RCM_dir == "-" or Path(RCM_dir).exists(), result, f"RCM_dir path does not exist ({RCM_dir})")
         valid_values = [0, 1, 2, 3]
-        result = self._validate("par_RCM_GRD", radcal in valid_values, result, f"radcal is not a valid value (expects: {valid_values}, got: {radcal})")
+        result = self._validate("par_RCM_GRD", radcal == "-" or radcal in valid_values, result, f"radcal is not a valid value (expects: {valid_values}, got: {radcal})")
         if MLI_par is not None and MLI_par != "-":
             Path(MLI_par).touch()
         if MLI is not None and MLI != "-":
@@ -7242,13 +7245,13 @@ class PyGammaTestProxy(object):
         if offsets is not None and offsets != "-":
             Path(offsets).touch()
         valid_values = [0, 1] + [None]
-        result = self._validate("offset_pwr_tracking", deramp in valid_values, result, f"deramp is not a valid value (expects: {valid_values}, got: {deramp})")
+        result = self._validate("offset_pwr_tracking", deramp == "-" or deramp in valid_values, result, f"deramp is not a valid value (expects: {valid_values}, got: {deramp})")
         valid_values = [0, 1] + [None]
-        result = self._validate("offset_pwr_tracking", int_filt in valid_values, result, f"int_filt is not a valid value (expects: {valid_values}, got: {int_filt})")
+        result = self._validate("offset_pwr_tracking", int_filt == "-" or int_filt in valid_values, result, f"int_filt is not a valid value (expects: {valid_values}, got: {int_filt})")
         valid_values = [0, 1] + [None]
-        result = self._validate("offset_pwr_tracking", pflag in valid_values, result, f"pflag is not a valid value (expects: {valid_values}, got: {pflag})")
+        result = self._validate("offset_pwr_tracking", pflag == "-" or pflag in valid_values, result, f"pflag is not a valid value (expects: {valid_values}, got: {pflag})")
         valid_values = [0, 1, 2, 3] + [None]
-        result = self._validate("offset_pwr_tracking", pltflg in valid_values, result, f"pltflg is not a valid value (expects: {valid_values}, got: {pltflg})")
+        result = self._validate("offset_pwr_tracking", pltflg == "-" or pltflg in valid_values, result, f"pltflg is not a valid value (expects: {valid_values}, got: {pltflg})")
         if ccs is not None and ccs != "-":
             Path(ccs).touch()
         if self._wraps is not None:
@@ -7342,7 +7345,7 @@ class PyGammaTestProxy(object):
         if MLI_tab is not None and MLI_tab != "-":
             Path(MLI_tab).touch()
         valid_values = [0, 1] + [None]
-        result = self._validate("ScanSAR_burst_MLI", bflg in valid_values, result, f"bflg is not a valid value (expects: {valid_values}, got: {bflg})")
+        result = self._validate("ScanSAR_burst_MLI", bflg == "-" or bflg in valid_values, result, f"bflg is not a valid value (expects: {valid_values}, got: {bflg})")
         if SLCR_tab is not None:
             result = self._validate("ScanSAR_burst_MLI", SLCR_tab == "-" or Path(SLCR_tab).exists(), result, f"SLCR_tab path does not exist ({SLCR_tab})")
         if self._wraps is not None:
@@ -7400,7 +7403,7 @@ class PyGammaTestProxy(object):
         if OFF_par2 is not None:
             result = self._validate("SLC_interp_map", OFF_par2 == "-" or Path(OFF_par2).exists(), result, f"OFF_par2 path does not exist ({OFF_par2})")
         valid_values = [0, 1] + [None]
-        result = self._validate("SLC_interp_map", mode in valid_values, result, f"mode is not a valid value (expects: {valid_values}, got: {mode})")
+        result = self._validate("SLC_interp_map", mode == "-" or mode in valid_values, result, f"mode is not a valid value (expects: {valid_values}, got: {mode})")
         if self._wraps is not None:
             result = self._wraps.SLC_interp_map(*supplied_args)
 
@@ -7448,7 +7451,7 @@ class PyGammaTestProxy(object):
         if SLC_filt is not None and SLC_filt != "-":
             Path(SLC_filt).touch()
         valid_values = [0, 1, 2, 3] + [None]
-        result = self._validate("SLC_adf", mode in valid_values, result, f"mode is not a valid value (expects: {valid_values}, got: {mode})")
+        result = self._validate("SLC_adf", mode == "-" or mode in valid_values, result, f"mode is not a valid value (expects: {valid_values}, got: {mode})")
         if self._wraps is not None:
             result = self._wraps.SLC_adf(*supplied_args)
 
@@ -7612,7 +7615,7 @@ class PyGammaTestProxy(object):
         if RCM_dir is not None:
             result = self._validate("par_RCM_SLC_ScanSAR", RCM_dir == "-" or Path(RCM_dir).exists(), result, f"RCM_dir path does not exist ({RCM_dir})")
         valid_values = [0, 1, 2, 3]
-        result = self._validate("par_RCM_SLC_ScanSAR", radcal in valid_values, result, f"radcal is not a valid value (expects: {valid_values}, got: {radcal})")
+        result = self._validate("par_RCM_SLC_ScanSAR", radcal == "-" or radcal in valid_values, result, f"radcal is not a valid value (expects: {valid_values}, got: {radcal})")
         if root_name is not None and root_name != "-":
             Path(root_name).touch()
         if SLC_tab is not None and SLC_tab != "-":
@@ -7752,7 +7755,7 @@ class PyGammaTestProxy(object):
         if RCM_dir is not None:
             result = self._validate("par_RCM_GRC", RCM_dir == "-" or Path(RCM_dir).exists(), result, f"RCM_dir path does not exist ({RCM_dir})")
         valid_values = [0, 1, 2, 3]
-        result = self._validate("par_RCM_GRC", radcal in valid_values, result, f"radcal is not a valid value (expects: {valid_values}, got: {radcal})")
+        result = self._validate("par_RCM_GRC", radcal == "-" or radcal in valid_values, result, f"radcal is not a valid value (expects: {valid_values}, got: {radcal})")
         if SLC_par is not None and SLC_par != "-":
             Path(SLC_par).touch()
         if SLC is not None and SLC != "-":
@@ -7844,9 +7847,9 @@ class PyGammaTestProxy(object):
         if SLC is not None:
             result = self._validate("af_SLC", SLC == "-" or Path(SLC).exists(), result, f"SLC path does not exist ({SLC})")
         valid_values = [0, 1] + [None]
-        result = self._validate("af_SLC", a1_flg in valid_values, result, f"a1_flg is not a valid value (expects: {valid_values}, got: {a1_flg})")
+        result = self._validate("af_SLC", a1_flg == "-" or a1_flg in valid_values, result, f"a1_flg is not a valid value (expects: {valid_values}, got: {a1_flg})")
         valid_values = [0, 1] + [None]
-        result = self._validate("af_SLC", b0_flg in valid_values, result, f"b0_flg is not a valid value (expects: {valid_values}, got: {b0_flg})")
+        result = self._validate("af_SLC", b0_flg == "-" or b0_flg in valid_values, result, f"b0_flg is not a valid value (expects: {valid_values}, got: {b0_flg})")
         if offsets is not None and offsets != "-":
             Path(offsets).touch()
         if self._wraps is not None:
@@ -7894,7 +7897,7 @@ class PyGammaTestProxy(object):
         if data_out is not None and data_out != "-":
             Path(data_out).touch()
         valid_values = [0, 1] + [None]
-        result = self._validate("fill_gaps", dtype in valid_values, result, f"dtype is not a valid value (expects: {valid_values}, got: {dtype})")
+        result = self._validate("fill_gaps", dtype == "-" or dtype in valid_values, result, f"dtype is not a valid value (expects: {valid_values}, got: {dtype})")
         if ds_data is not None and ds_data != "-":
             Path(ds_data).touch()
         if self._wraps is not None:
@@ -7946,7 +7949,7 @@ class PyGammaTestProxy(object):
         if out_file is not None and out_file != "-":
             Path(out_file).touch()
         valid_values = [0, 1, 2] + [None]
-        result = self._validate("GRD_to_SR", interp_mode in valid_values, result, f"interp_mode is not a valid value (expects: {valid_values}, got: {interp_mode})")
+        result = self._validate("GRD_to_SR", interp_mode == "-" or interp_mode in valid_values, result, f"interp_mode is not a valid value (expects: {valid_values}, got: {interp_mode})")
         if self._wraps is not None:
             result = self._wraps.GRD_to_SR(*supplied_args)
 
@@ -7972,7 +7975,7 @@ class PyGammaTestProxy(object):
         if MLI_par is not None and MLI_par != "-":
             Path(MLI_par).touch()
         valid_values = [0, 1] + [None]
-        result = self._validate("multi_look2", wflg in valid_values, result, f"wflg is not a valid value (expects: {valid_values}, got: {wflg})")
+        result = self._validate("multi_look2", wflg == "-" or wflg in valid_values, result, f"wflg is not a valid value (expects: {valid_values}, got: {wflg})")
         if self._wraps is not None:
             result = self._wraps.multi_look2(*supplied_args)
 
@@ -8036,7 +8039,7 @@ class PyGammaTestProxy(object):
         if outfile is not None and outfile != "-":
             Path(outfile).touch()
         valid_values = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]
-        result = self._validate("dcomp_sirc_quad", parameter in valid_values, result, f"parameter is not a valid value (expects: {valid_values}, got: {parameter})")
+        result = self._validate("dcomp_sirc_quad", parameter == "-" or parameter in valid_values, result, f"parameter is not a valid value (expects: {valid_values}, got: {parameter})")
         if self._wraps is not None:
             result = self._wraps.dcomp_sirc_quad(*supplied_args)
 
@@ -8060,7 +8063,7 @@ class PyGammaTestProxy(object):
         if BURST_tab is not None:
             result = self._validate("SLC_copy_ScanSAR", BURST_tab == "-" or Path(BURST_tab).exists(), result, f"BURST_tab path does not exist ({BURST_tab})")
         valid_values = [0, 1] + [None]
-        result = self._validate("SLC_copy_ScanSAR", dtype in valid_values, result, f"dtype is not a valid value (expects: {valid_values}, got: {dtype})")
+        result = self._validate("SLC_copy_ScanSAR", dtype == "-" or dtype in valid_values, result, f"dtype is not a valid value (expects: {valid_values}, got: {dtype})")
         if self._wraps is not None:
             result = self._wraps.SLC_copy_ScanSAR(*supplied_args)
 
@@ -8088,7 +8091,7 @@ class PyGammaTestProxy(object):
         if SLC is not None and SLC != "-":
             Path(SLC).touch()
         valid_values = [0, 1] + [None]
-        result = self._validate("par_RISAT_SLC", cal_flg in valid_values, result, f"cal_flg is not a valid value (expects: {valid_values}, got: {cal_flg})")
+        result = self._validate("par_RISAT_SLC", cal_flg == "-" or cal_flg in valid_values, result, f"cal_flg is not a valid value (expects: {valid_values}, got: {cal_flg})")
         if self._wraps is not None:
             result = self._wraps.par_RISAT_SLC(*supplied_args)
 
@@ -8160,13 +8163,13 @@ class PyGammaTestProxy(object):
         if interf is not None and interf != "-":
             Path(interf).touch()
         valid_values = [1, 0] + [None]
-        result = self._validate("SLC_intf", sps_flg in valid_values, result, f"sps_flg is not a valid value (expects: {valid_values}, got: {sps_flg})")
+        result = self._validate("SLC_intf", sps_flg == "-" or sps_flg in valid_values, result, f"sps_flg is not a valid value (expects: {valid_values}, got: {sps_flg})")
         valid_values = [1, 0] + [None]
-        result = self._validate("SLC_intf", azf_flg in valid_values, result, f"azf_flg is not a valid value (expects: {valid_values}, got: {azf_flg})")
+        result = self._validate("SLC_intf", azf_flg == "-" or azf_flg in valid_values, result, f"azf_flg is not a valid value (expects: {valid_values}, got: {azf_flg})")
         valid_values = [0, 1] + [None]
-        result = self._validate("SLC_intf", rp1_flg in valid_values, result, f"rp1_flg is not a valid value (expects: {valid_values}, got: {rp1_flg})")
+        result = self._validate("SLC_intf", rp1_flg == "-" or rp1_flg in valid_values, result, f"rp1_flg is not a valid value (expects: {valid_values}, got: {rp1_flg})")
         valid_values = [0, 1] + [None]
-        result = self._validate("SLC_intf", rp2_flg in valid_values, result, f"rp2_flg is not a valid value (expects: {valid_values}, got: {rp2_flg})")
+        result = self._validate("SLC_intf", rp2_flg == "-" or rp2_flg in valid_values, result, f"rp2_flg is not a valid value (expects: {valid_values}, got: {rp2_flg})")
         if self._wraps is not None:
             result = self._wraps.SLC_intf(*supplied_args)
 
@@ -8196,7 +8199,7 @@ class PyGammaTestProxy(object):
         if pcal is not None and pcal != "-":
             Path(pcal).touch()
         valid_values = [0, 1, 2, 3] + [None]
-        result = self._validate("ptarg_cal_SLC", pltflg in valid_values, result, f"pltflg is not a valid value (expects: {valid_values}, got: {pltflg})")
+        result = self._validate("ptarg_cal_SLC", pltflg == "-" or pltflg in valid_values, result, f"pltflg is not a valid value (expects: {valid_values}, got: {pltflg})")
         if c_image is not None and c_image != "-":
             Path(c_image).touch()
         if self._wraps is not None:
@@ -8230,7 +8233,7 @@ class PyGammaTestProxy(object):
         if SLCb_par is not None and SLCb_par != "-":
             Path(SLCb_par).touch()
         valid_values = [0, 1] + [None]
-        result = self._validate("sbi_filt", iwflg in valid_values, result, f"iwflg is not a valid value (expects: {valid_values}, got: {iwflg})")
+        result = self._validate("sbi_filt", iwflg == "-" or iwflg in valid_values, result, f"iwflg is not a valid value (expects: {valid_values}, got: {iwflg})")
         if self._wraps is not None:
             result = self._wraps.sbi_filt(*supplied_args)
 
@@ -8280,7 +8283,7 @@ class PyGammaTestProxy(object):
         if MLI_par is not None and MLI_par != "-":
             Path(MLI_par).touch()
         valid_values = [0, 1] + [None]
-        result = self._validate("multi_look_ScanSAR", bflg in valid_values, result, f"bflg is not a valid value (expects: {valid_values}, got: {bflg})")
+        result = self._validate("multi_look_ScanSAR", bflg == "-" or bflg in valid_values, result, f"bflg is not a valid value (expects: {valid_values}, got: {bflg})")
         if SLCR_tab is not None:
             result = self._validate("multi_look_ScanSAR", SLCR_tab == "-" or Path(SLCR_tab).exists(), result, f"SLCR_tab path does not exist ({SLCR_tab})")
         if self._wraps is not None:
@@ -8308,7 +8311,7 @@ class PyGammaTestProxy(object):
         if SLC is not None and SLC != "-":
             Path(SLC).touch()
         valid_values = [0, 1] + [None]
-        result = self._validate("par_ASNARO2", reramp in valid_values, result, f"reramp is not a valid value (expects: {valid_values}, got: {reramp})")
+        result = self._validate("par_ASNARO2", reramp == "-" or reramp in valid_values, result, f"reramp is not a valid value (expects: {valid_values}, got: {reramp})")
         if self._wraps is not None:
             result = self._wraps.par_ASNARO2(*supplied_args)
 
@@ -8354,7 +8357,7 @@ class PyGammaTestProxy(object):
         if mask is not None:
             result = self._validate("mask_data", mask == "-" or Path(mask).exists(), result, f"mask path does not exist ({mask})")
         valid_values = [0, 1] + [None]
-        result = self._validate("mask_data", dtype in valid_values, result, f"dtype is not a valid value (expects: {valid_values}, got: {dtype})")
+        result = self._validate("mask_data", dtype == "-" or dtype in valid_values, result, f"dtype is not a valid value (expects: {valid_values}, got: {dtype})")
         if self._wraps is not None:
             result = self._wraps.mask_data(*supplied_args)
 
@@ -8400,9 +8403,9 @@ class PyGammaTestProxy(object):
         if root_name is not None and root_name != "-":
             Path(root_name).touch()
         valid_values = [0, 1, 2] + [None]
-        result = self._validate("ScanSAR_burst_overlap", mode in valid_values, result, f"mode is not a valid value (expects: {valid_values}, got: {mode})")
+        result = self._validate("ScanSAR_burst_overlap", mode == "-" or mode in valid_values, result, f"mode is not a valid value (expects: {valid_values}, got: {mode})")
         valid_values = [0, 1] + [None]
-        result = self._validate("ScanSAR_burst_overlap", bflg in valid_values, result, f"bflg is not a valid value (expects: {valid_values}, got: {bflg})")
+        result = self._validate("ScanSAR_burst_overlap", bflg == "-" or bflg in valid_values, result, f"bflg is not a valid value (expects: {valid_values}, got: {bflg})")
         if SLCR_tab is not None:
             result = self._validate("ScanSAR_burst_overlap", SLCR_tab == "-" or Path(SLCR_tab).exists(), result, f"SLCR_tab path does not exist ({SLCR_tab})")
         if self._wraps is not None:
@@ -8444,11 +8447,11 @@ class PyGammaTestProxy(object):
         if data_out is not None and data_out != "-":
             Path(data_out).touch()
         valid_values = [0, 1, 2, 3] + [None]
-        result = self._validate("interp_ad", w_mode in valid_values, result, f"w_mode is not a valid value (expects: {valid_values}, got: {w_mode})")
+        result = self._validate("interp_ad", w_mode == "-" or w_mode in valid_values, result, f"w_mode is not a valid value (expects: {valid_values}, got: {w_mode})")
         valid_values = [0, 1, 2, 3, 4] + [None]
-        result = self._validate("interp_ad", dtype in valid_values, result, f"dtype is not a valid value (expects: {valid_values}, got: {dtype})")
+        result = self._validate("interp_ad", dtype == "-" or dtype in valid_values, result, f"dtype is not a valid value (expects: {valid_values}, got: {dtype})")
         valid_values = [0, 1] + [None]
-        result = self._validate("interp_ad", cp_data in valid_values, result, f"cp_data is not a valid value (expects: {valid_values}, got: {cp_data})")
+        result = self._validate("interp_ad", cp_data == "-" or cp_data in valid_values, result, f"cp_data is not a valid value (expects: {valid_values}, got: {cp_data})")
         if self._wraps is not None:
             result = self._wraps.interp_ad(*supplied_args)
 
@@ -8476,7 +8479,7 @@ class PyGammaTestProxy(object):
         if GRD is not None and GRD != "-":
             Path(GRD).touch()
         valid_values = [0, 1] + [None]
-        result = self._validate("par_RISAT_GRD", cal_flg in valid_values, result, f"cal_flg is not a valid value (expects: {valid_values}, got: {cal_flg})")
+        result = self._validate("par_RISAT_GRD", cal_flg == "-" or cal_flg in valid_values, result, f"cal_flg is not a valid value (expects: {valid_values}, got: {cal_flg})")
         if self._wraps is not None:
             result = self._wraps.par_RISAT_GRD(*supplied_args)
 
@@ -8546,7 +8549,7 @@ class PyGammaTestProxy(object):
         if SLC_par is not None and SLC_par != "-":
             Path(SLC_par).touch()
         valid_values = [0, 1] + [None]
-        result = self._validate("SLC_mosaic_S1_TOPS", bflg in valid_values, result, f"bflg is not a valid value (expects: {valid_values}, got: {bflg})")
+        result = self._validate("SLC_mosaic_S1_TOPS", bflg == "-" or bflg in valid_values, result, f"bflg is not a valid value (expects: {valid_values}, got: {bflg})")
         if SLCR_tab is not None:
             result = self._validate("SLC_mosaic_S1_TOPS", SLCR_tab == "-" or Path(SLCR_tab).exists(), result, f"SLCR_tab path does not exist ({SLCR_tab})")
         if self._wraps is not None:
@@ -8598,7 +8601,7 @@ class PyGammaTestProxy(object):
         if data_par_out is not None and data_par_out != "-":
             Path(data_par_out).touch()
         valid_values = [0, 1] + [None]
-        result = self._validate("mosaic_WB", sc_flg in valid_values, result, f"sc_flg is not a valid value (expects: {valid_values}, got: {sc_flg})")
+        result = self._validate("mosaic_WB", sc_flg == "-" or sc_flg in valid_values, result, f"sc_flg is not a valid value (expects: {valid_values}, got: {sc_flg})")
         if self._wraps is not None:
             result = self._wraps.mosaic_WB(*supplied_args)
 
@@ -8622,7 +8625,7 @@ class PyGammaTestProxy(object):
         if MLI_par is not None and MLI_par != "-":
             Path(MLI_par).touch()
         valid_values = [0, 1, 2] + [None]
-        result = self._validate("ScanSAR_burst_to_mosaic", mflg in valid_values, result, f"mflg is not a valid value (expects: {valid_values}, got: {mflg})")
+        result = self._validate("ScanSAR_burst_to_mosaic", mflg == "-" or mflg in valid_values, result, f"mflg is not a valid value (expects: {valid_values}, got: {mflg})")
         if self._wraps is not None:
             result = self._wraps.ScanSAR_burst_to_mosaic(*supplied_args)
 
@@ -8648,7 +8651,7 @@ class PyGammaTestProxy(object):
         if SLC_MLI_out is not None and SLC_MLI_out != "-":
             Path(SLC_MLI_out).touch()
         valid_values = [0, 2] + [None]
-        result = self._validate("par_UAVSAR_SLC", image_format in valid_values, result, f"image_format is not a valid value (expects: {valid_values}, got: {image_format})")
+        result = self._validate("par_UAVSAR_SLC", image_format == "-" or image_format in valid_values, result, f"image_format is not a valid value (expects: {valid_values}, got: {image_format})")
         if DOP is not None:
             result = self._validate("par_UAVSAR_SLC", DOP == "-" or Path(DOP).exists(), result, f"DOP path does not exist ({DOP})")
         if self._wraps is not None:
@@ -8678,11 +8681,11 @@ class PyGammaTestProxy(object):
         if SLC_out_par is not None and SLC_out_par != "-":
             Path(SLC_out_par).touch()
         valid_values = [0, 1] + [None]
-        result = self._validate("ScanSAR_burst_copy", drflg in valid_values, result, f"drflg is not a valid value (expects: {valid_values}, got: {drflg})")
+        result = self._validate("ScanSAR_burst_copy", drflg == "-" or drflg in valid_values, result, f"drflg is not a valid value (expects: {valid_values}, got: {drflg})")
         if SLC_par2 is not None and SLC_par2 != "-":
             Path(SLC_par2).touch()
         valid_values = [0, 1] + [None]
-        result = self._validate("ScanSAR_burst_copy", dtype in valid_values, result, f"dtype is not a valid value (expects: {valid_values}, got: {dtype})")
+        result = self._validate("ScanSAR_burst_copy", dtype == "-" or dtype in valid_values, result, f"dtype is not a valid value (expects: {valid_values}, got: {dtype})")
         if self._wraps is not None:
             result = self._wraps.ScanSAR_burst_copy(*supplied_args)
 
@@ -8800,7 +8803,7 @@ class PyGammaTestProxy(object):
         if interf is not None:
             result = self._validate("base_init", interf == "-" or Path(interf).exists(), result, f"interf path does not exist ({interf})")
         valid_values = [0, 1, 2, 3, 4] + [None]
-        result = self._validate("base_init", mflag in valid_values, result, f"mflag is not a valid value (expects: {valid_values}, got: {mflag})")
+        result = self._validate("base_init", mflag == "-" or mflag in valid_values, result, f"mflag is not a valid value (expects: {valid_values}, got: {mflag})")
         if self._wraps is not None:
             result = self._wraps.base_init(*supplied_args)
 
@@ -8866,7 +8869,7 @@ class PyGammaTestProxy(object):
         if OFF_par is not None and OFF_par != "-" and not Path(OFF_par).exists():
             Path(OFF_par).touch()
         valid_values = [0, 1] + [None]
-        result = self._validate("init_offset_orbit", cflag in valid_values, result, f"cflag is not a valid value (expects: {valid_values}, got: {cflag})")
+        result = self._validate("init_offset_orbit", cflag == "-" or cflag in valid_values, result, f"cflag is not a valid value (expects: {valid_values}, got: {cflag})")
         if self._wraps is not None:
             result = self._wraps.init_offset_orbit(*supplied_args)
 
@@ -8898,9 +8901,9 @@ class PyGammaTestProxy(object):
         if MLI_2 is not None and MLI_2 != "-":
             Path(MLI_2).touch()
         valid_values = [0, 1] + [None]
-        result = self._validate("interf_SLC", rfilt in valid_values, result, f"rfilt is not a valid value (expects: {valid_values}, got: {rfilt})")
+        result = self._validate("interf_SLC", rfilt == "-" or rfilt in valid_values, result, f"rfilt is not a valid value (expects: {valid_values}, got: {rfilt})")
         valid_values = [0, 1] + [None]
-        result = self._validate("interf_SLC", azfilt in valid_values, result, f"azfilt is not a valid value (expects: {valid_values}, got: {azfilt})")
+        result = self._validate("interf_SLC", azfilt == "-" or azfilt in valid_values, result, f"azfilt is not a valid value (expects: {valid_values}, got: {azfilt})")
         if self._wraps is not None:
             result = self._wraps.interf_SLC(*supplied_args)
 
@@ -8930,9 +8933,9 @@ class PyGammaTestProxy(object):
         if MLI3_par is not None and MLI3_par != "-":
             Path(MLI3_par).touch()
         valid_values = [0, 1] + [None]
-        result = self._validate("MLI_cat", mflg in valid_values, result, f"mflg is not a valid value (expects: {valid_values}, got: {mflg})")
+        result = self._validate("MLI_cat", mflg == "-" or mflg in valid_values, result, f"mflg is not a valid value (expects: {valid_values}, got: {mflg})")
         valid_values = [0, 1] + [None]
-        result = self._validate("MLI_cat", extrapol in valid_values, result, f"extrapol is not a valid value (expects: {valid_values}, got: {extrapol})")
+        result = self._validate("MLI_cat", extrapol == "-" or extrapol in valid_values, result, f"extrapol is not a valid value (expects: {valid_values}, got: {extrapol})")
         if self._wraps is not None:
             result = self._wraps.MLI_cat(*supplied_args)
 
@@ -8952,7 +8955,7 @@ class PyGammaTestProxy(object):
         if RCM_dir is not None:
             result = self._validate("par_RCM_SLC", RCM_dir == "-" or Path(RCM_dir).exists(), result, f"RCM_dir path does not exist ({RCM_dir})")
         valid_values = [0, 1, 2, 3]
-        result = self._validate("par_RCM_SLC", radcal in valid_values, result, f"radcal is not a valid value (expects: {valid_values}, got: {radcal})")
+        result = self._validate("par_RCM_SLC", radcal == "-" or radcal in valid_values, result, f"radcal is not a valid value (expects: {valid_values}, got: {radcal})")
         if SLC_par is not None and SLC_par != "-":
             Path(SLC_par).touch()
         if SLC is not None and SLC != "-":
@@ -9004,7 +9007,7 @@ class PyGammaTestProxy(object):
         if TOPS_par is not None and TOPS_par != "-":
             Path(TOPS_par).touch()
         valid_values = [0, 1] + [None]
-        result = self._validate("par_TX_ScanSAR", bwflg in valid_values, result, f"bwflg is not a valid value (expects: {valid_values}, got: {bwflg})")
+        result = self._validate("par_TX_ScanSAR", bwflg == "-" or bwflg in valid_values, result, f"bwflg is not a valid value (expects: {valid_values}, got: {bwflg})")
         if self._wraps is not None:
             result = self._wraps.par_TX_ScanSAR(*supplied_args)
 
@@ -9026,7 +9029,7 @@ class PyGammaTestProxy(object):
         if ave is not None and ave != "-":
             Path(ave).touch()
         valid_values = [0, 1] + [None]
-        result = self._validate("ave_image", zflag in valid_values, result, f"zflag is not a valid value (expects: {valid_values}, got: {zflag})")
+        result = self._validate("ave_image", zflag == "-" or zflag in valid_values, result, f"zflag is not a valid value (expects: {valid_values}, got: {zflag})")
         if self._wraps is not None:
             result = self._wraps.ave_image(*supplied_args)
 
@@ -9120,7 +9123,7 @@ class PyGammaTestProxy(object):
         if slc is not None and slc != "-":
             Path(slc).touch()
         valid_values = [0, 1] + [None]
-        result = self._validate("par_ICEYE_SLC", dtype in valid_values, result, f"dtype is not a valid value (expects: {valid_values}, got: {dtype})")
+        result = self._validate("par_ICEYE_SLC", dtype == "-" or dtype in valid_values, result, f"dtype is not a valid value (expects: {valid_values}, got: {dtype})")
         if self._wraps is not None:
             result = self._wraps.par_ICEYE_SLC(*supplied_args)
 
@@ -9154,7 +9157,7 @@ class PyGammaTestProxy(object):
         if offsets is not None and offsets != "-":
             Path(offsets).touch()
         valid_values = [0, 1] + [None]
-        result = self._validate("offset_SLC_tracking", pflag in valid_values, result, f"pflag is not a valid value (expects: {valid_values}, got: {pflag})")
+        result = self._validate("offset_SLC_tracking", pflag == "-" or pflag in valid_values, result, f"pflag is not a valid value (expects: {valid_values}, got: {pflag})")
         if self._wraps is not None:
             result = self._wraps.offset_SLC_tracking(*supplied_args)
 
@@ -9242,7 +9245,7 @@ class PyGammaTestProxy(object):
         if SLC_ovr_par is not None and SLC_ovr_par != "-":
             Path(SLC_ovr_par).touch()
         valid_values = [0, 1] + [None]
-        result = self._validate("SLC_ovr", mode in valid_values, result, f"mode is not a valid value (expects: {valid_values}, got: {mode})")
+        result = self._validate("SLC_ovr", mode == "-" or mode in valid_values, result, f"mode is not a valid value (expects: {valid_values}, got: {mode})")
         if self._wraps is not None:
             result = self._wraps.SLC_ovr(*supplied_args)
 
@@ -9286,9 +9289,9 @@ class PyGammaTestProxy(object):
         if unw is not None and unw != "-":
             Path(unw).touch()
         valid_values = [0, 1] + [None]
-        result = self._validate("mcf", tri_mode in valid_values, result, f"tri_mode is not a valid value (expects: {valid_values}, got: {tri_mode})")
+        result = self._validate("mcf", tri_mode == "-" or tri_mode in valid_values, result, f"tri_mode is not a valid value (expects: {valid_values}, got: {tri_mode})")
         valid_values = [0, 1] + [None]
-        result = self._validate("mcf", init_flag in valid_values, result, f"init_flag is not a valid value (expects: {valid_values}, got: {init_flag})")
+        result = self._validate("mcf", init_flag == "-" or init_flag in valid_values, result, f"init_flag is not a valid value (expects: {valid_values}, got: {init_flag})")
         if self._wraps is not None:
             result = self._wraps.mcf(*supplied_args)
 
@@ -9342,7 +9345,7 @@ class PyGammaTestProxy(object):
         if SLC2R_par is not None and SLC2R_par != "-":
             Path(SLC2R_par).touch()
         valid_values = [0, 1] + [None]
-        result = self._validate("SLC_interp", mode in valid_values, result, f"mode is not a valid value (expects: {valid_values}, got: {mode})")
+        result = self._validate("SLC_interp", mode == "-" or mode in valid_values, result, f"mode is not a valid value (expects: {valid_values}, got: {mode})")
         if self._wraps is not None:
             result = self._wraps.SLC_interp(*supplied_args)
 
@@ -9374,7 +9377,7 @@ class PyGammaTestProxy(object):
         if TOPS_par is not None and TOPS_par != "-":
             Path(TOPS_par).touch()
         valid_values = [0, 1] + [None]
-        result = self._validate("par_S1_SLC", dtype in valid_values, result, f"dtype is not a valid value (expects: {valid_values}, got: {dtype})")
+        result = self._validate("par_S1_SLC", dtype == "-" or dtype in valid_values, result, f"dtype is not a valid value (expects: {valid_values}, got: {dtype})")
         if self._wraps is not None:
             result = self._wraps.par_S1_SLC(*supplied_args)
 
@@ -9482,7 +9485,7 @@ class PyGammaTestProxy(object):
         if spectrum is not None and spectrum != "-":
             Path(spectrum).touch()
         valid_values = [0, 1] + [None]
-        result = self._validate("az_spec_SLC", pltflg in valid_values, result, f"pltflg is not a valid value (expects: {valid_values}, got: {pltflg})")
+        result = self._validate("az_spec_SLC", pltflg == "-" or pltflg in valid_values, result, f"pltflg is not a valid value (expects: {valid_values}, got: {pltflg})")
         if self._wraps is not None:
             result = self._wraps.az_spec_SLC(*supplied_args)
 
@@ -9508,9 +9511,9 @@ class PyGammaTestProxy(object):
         if SLC_par_out is not None and SLC_par_out != "-":
             Path(SLC_par_out).touch()
         valid_values = [1, 2, 3, 4] + [None]
-        result = self._validate("SLC_copy", fcase in valid_values, result, f"fcase is not a valid value (expects: {valid_values}, got: {fcase})")
+        result = self._validate("SLC_copy", fcase == "-" or fcase in valid_values, result, f"fcase is not a valid value (expects: {valid_values}, got: {fcase})")
         valid_values = [0, 1, 2] + [None]
-        result = self._validate("SLC_copy", swap in valid_values, result, f"swap is not a valid value (expects: {valid_values}, got: {swap})")
+        result = self._validate("SLC_copy", swap == "-" or swap in valid_values, result, f"swap is not a valid value (expects: {valid_values}, got: {swap})")
         if self._wraps is not None:
             result = self._wraps.SLC_copy(*supplied_args)
 
@@ -9534,7 +9537,7 @@ class PyGammaTestProxy(object):
         if azi is not None and azi != "-":
             Path(azi).touch()
         valid_values = [0, 1]
-        result = self._validate("az_integrate", cflg in valid_values, result, f"cflg is not a valid value (expects: {valid_values}, got: {cflg})")
+        result = self._validate("az_integrate", cflg == "-" or cflg in valid_values, result, f"cflg is not a valid value (expects: {valid_values}, got: {cflg})")
         if self._wraps is not None:
             result = self._wraps.az_integrate(*supplied_args)
 
@@ -9566,13 +9569,13 @@ class PyGammaTestProxy(object):
         if SLC3_par is not None and SLC3_par != "-":
             Path(SLC3_par).touch()
         valid_values = [0, 1] + [None]
-        result = self._validate("SLC_cat", dopflg in valid_values, result, f"dopflg is not a valid value (expects: {valid_values}, got: {dopflg})")
+        result = self._validate("SLC_cat", dopflg == "-" or dopflg in valid_values, result, f"dopflg is not a valid value (expects: {valid_values}, got: {dopflg})")
         valid_values = [0, 1] + [None]
-        result = self._validate("SLC_cat", iflg in valid_values, result, f"iflg is not a valid value (expects: {valid_values}, got: {iflg})")
+        result = self._validate("SLC_cat", iflg == "-" or iflg in valid_values, result, f"iflg is not a valid value (expects: {valid_values}, got: {iflg})")
         valid_values = [0, 1] + [None]
-        result = self._validate("SLC_cat", phflg in valid_values, result, f"phflg is not a valid value (expects: {valid_values}, got: {phflg})")
+        result = self._validate("SLC_cat", phflg == "-" or phflg in valid_values, result, f"phflg is not a valid value (expects: {valid_values}, got: {phflg})")
         valid_values = [0, 1] + [None]
-        result = self._validate("SLC_cat", gainflg in valid_values, result, f"gainflg is not a valid value (expects: {valid_values}, got: {gainflg})")
+        result = self._validate("SLC_cat", gainflg == "-" or gainflg in valid_values, result, f"gainflg is not a valid value (expects: {valid_values}, got: {gainflg})")
         if self._wraps is not None:
             result = self._wraps.SLC_cat(*supplied_args)
 
@@ -9598,7 +9601,7 @@ class PyGammaTestProxy(object):
         if SLC is not None and SLC != "-":
             Path(SLC).touch()
         valid_values = [0, 1] + [None]
-        result = self._validate("par_NovaSAR_SLC", dtype in valid_values, result, f"dtype is not a valid value (expects: {valid_values}, got: {dtype})")
+        result = self._validate("par_NovaSAR_SLC", dtype == "-" or dtype in valid_values, result, f"dtype is not a valid value (expects: {valid_values}, got: {dtype})")
         if self._wraps is not None:
             result = self._wraps.par_NovaSAR_SLC(*supplied_args)
 
@@ -9646,7 +9649,7 @@ class PyGammaTestProxy(object):
         if SLC_par2 is not None and SLC_par2 != "-":
             Path(SLC_par2).touch()
         valid_values = [0, 1]
-        result = self._validate("SLC_deramp", mode in valid_values, result, f"mode is not a valid value (expects: {valid_values}, got: {mode})")
+        result = self._validate("SLC_deramp", mode == "-" or mode in valid_values, result, f"mode is not a valid value (expects: {valid_values}, got: {mode})")
         if dop_ph is not None and dop_ph != "-":
             Path(dop_ph).touch()
         if self._wraps is not None:
@@ -9716,9 +9719,9 @@ class PyGammaTestProxy(object):
         if OFF_par is not None and OFF_par != "-" and not Path(OFF_par).exists():
             Path(OFF_par).touch()
         valid_values = [1, 2] + [None]
-        result = self._validate("create_offset", algorithm in valid_values, result, f"algorithm is not a valid value (expects: {valid_values}, got: {algorithm})")
+        result = self._validate("create_offset", algorithm == "-" or algorithm in valid_values, result, f"algorithm is not a valid value (expects: {valid_values}, got: {algorithm})")
         valid_values = [0, 1] + [None]
-        result = self._validate("create_offset", iflg in valid_values, result, f"iflg is not a valid value (expects: {valid_values}, got: {iflg})")
+        result = self._validate("create_offset", iflg == "-" or iflg in valid_values, result, f"iflg is not a valid value (expects: {valid_values}, got: {iflg})")
         if self._wraps is not None:
             result = self._wraps.create_offset(*supplied_args)
 
@@ -9744,7 +9747,7 @@ class PyGammaTestProxy(object):
         if MLI_out_par is not None and MLI_out_par != "-":
             Path(MLI_out_par).touch()
         valid_values = [0, 1] + [None]
-        result = self._validate("multi_look_MLI", e_flag in valid_values, result, f"e_flag is not a valid value (expects: {valid_values}, got: {e_flag})")
+        result = self._validate("multi_look_MLI", e_flag == "-" or e_flag in valid_values, result, f"e_flag is not a valid value (expects: {valid_values}, got: {e_flag})")
         if self._wraps is not None:
             result = self._wraps.multi_look_MLI(*supplied_args)
 
@@ -9806,7 +9809,7 @@ class PyGammaTestProxy(object):
         if cc is not None and cc != "-":
             Path(cc).touch()
         valid_values = [0, 1] + [None]
-        result = self._validate("SLC_intf2", wflg in valid_values, result, f"wflg is not a valid value (expects: {valid_values}, got: {wflg})")
+        result = self._validate("SLC_intf2", wflg == "-" or wflg in valid_values, result, f"wflg is not a valid value (expects: {valid_values}, got: {wflg})")
         if self._wraps is not None:
             result = self._wraps.SLC_intf2(*supplied_args)
 
@@ -9864,13 +9867,13 @@ class PyGammaTestProxy(object):
         if offsets is not None and offsets != "-":
             Path(offsets).touch()
         valid_values = [0, 1] + [None]
-        result = self._validate("offset_pwr", deramp in valid_values, result, f"deramp is not a valid value (expects: {valid_values}, got: {deramp})")
+        result = self._validate("offset_pwr", deramp == "-" or deramp in valid_values, result, f"deramp is not a valid value (expects: {valid_values}, got: {deramp})")
         valid_values = [0, 1] + [None]
-        result = self._validate("offset_pwr", int_filt in valid_values, result, f"int_filt is not a valid value (expects: {valid_values}, got: {int_filt})")
+        result = self._validate("offset_pwr", int_filt == "-" or int_filt in valid_values, result, f"int_filt is not a valid value (expects: {valid_values}, got: {int_filt})")
         valid_values = [0, 1] + [None]
-        result = self._validate("offset_pwr", pflag in valid_values, result, f"pflag is not a valid value (expects: {valid_values}, got: {pflag})")
+        result = self._validate("offset_pwr", pflag == "-" or pflag in valid_values, result, f"pflag is not a valid value (expects: {valid_values}, got: {pflag})")
         valid_values = [0, 1, 2, 3] + [None]
-        result = self._validate("offset_pwr", pltflg in valid_values, result, f"pltflg is not a valid value (expects: {valid_values}, got: {pltflg})")
+        result = self._validate("offset_pwr", pltflg == "-" or pltflg in valid_values, result, f"pltflg is not a valid value (expects: {valid_values}, got: {pltflg})")
         if ccs is not None and ccs != "-":
             Path(ccs).touch()
         if self._wraps is not None:
@@ -9940,7 +9943,7 @@ class PyGammaTestProxy(object):
         if SLC_par is not None and SLC_par != "-":
             Path(SLC_par).touch()
         valid_values = [1, 2, 3]
-        result = self._validate("par_KC_PALSAR_slr", pls_mode in valid_values, result, f"pls_mode is not a valid value (expects: {valid_values}, got: {pls_mode})")
+        result = self._validate("par_KC_PALSAR_slr", pls_mode == "-" or pls_mode in valid_values, result, f"pls_mode is not a valid value (expects: {valid_values}, got: {pls_mode})")
         if KC_data is not None:
             result = self._validate("par_KC_PALSAR_slr", KC_data == "-" or Path(KC_data).exists(), result, f"KC_data path does not exist ({KC_data})")
         if pwr is not None and pwr != "-":
@@ -9976,7 +9979,7 @@ class PyGammaTestProxy(object):
         if ptr_par is not None and ptr_par != "-":
             Path(ptr_par).touch()
         valid_values = [0, 1, 2, 3] + [None]
-        result = self._validate("ptarg_SLC", pltflg in valid_values, result, f"pltflg is not a valid value (expects: {valid_values}, got: {pltflg})")
+        result = self._validate("ptarg_SLC", pltflg == "-" or pltflg in valid_values, result, f"pltflg is not a valid value (expects: {valid_values}, got: {pltflg})")
         if self._wraps is not None:
             result = self._wraps.ptarg_SLC(*supplied_args)
 
@@ -10178,9 +10181,9 @@ class PyGammaTestProxy(object):
         if data_out is not None and data_out != "-":
             Path(data_out).touch()
         valid_values = [0, 1, 2] + [None]
-        result = self._validate("fspf", dtype in valid_values, result, f"dtype is not a valid value (expects: {valid_values}, got: {dtype})")
+        result = self._validate("fspf", dtype == "-" or dtype in valid_values, result, f"dtype is not a valid value (expects: {valid_values}, got: {dtype})")
         valid_values = [0, 1, 2, 3, 4, 5] + [None]
-        result = self._validate("fspf", spf_type in valid_values, result, f"spf_type is not a valid value (expects: {valid_values}, got: {spf_type})")
+        result = self._validate("fspf", spf_type == "-" or spf_type in valid_values, result, f"spf_type is not a valid value (expects: {valid_values}, got: {spf_type})")
         if self._wraps is not None:
             result = self._wraps.fspf(*supplied_args)
 
@@ -10206,7 +10209,7 @@ class PyGammaTestProxy(object):
         if CSLC_PAR is not None and CSLC_PAR != "-":
             Path(CSLC_PAR).touch()
         valid_values = [1, 2, 3, 4] + [None]
-        result = self._validate("radcal_SLC", fcase in valid_values, result, f"fcase is not a valid value (expects: {valid_values}, got: {fcase})")
+        result = self._validate("radcal_SLC", fcase == "-" or fcase in valid_values, result, f"fcase is not a valid value (expects: {valid_values}, got: {fcase})")
         if pix_area is not None and pix_area != "-":
             Path(pix_area).touch()
         if self._wraps is not None:
@@ -10248,7 +10251,7 @@ class PyGammaTestProxy(object):
         if f_out is not None and f_out != "-":
             Path(f_out).touch()
         valid_values = [0, 1] + [None]
-        result = self._validate("product_cpx", conjg_flg in valid_values, result, f"conjg_flg is not a valid value (expects: {valid_values}, got: {conjg_flg})")
+        result = self._validate("product_cpx", conjg_flg == "-" or conjg_flg in valid_values, result, f"conjg_flg is not a valid value (expects: {valid_values}, got: {conjg_flg})")
         if self._wraps is not None:
             result = self._wraps.product_cpx(*supplied_args)
 
@@ -10290,9 +10293,9 @@ class PyGammaTestProxy(object):
         if dout is not None and dout != "-":
             Path(dout).touch()
         valid_values = [0, 1, 2] + [None]
-        result = self._validate("average_filter", wflg in valid_values, result, f"wflg is not a valid value (expects: {valid_values}, got: {wflg})")
+        result = self._validate("average_filter", wflg == "-" or wflg in valid_values, result, f"wflg is not a valid value (expects: {valid_values}, got: {wflg})")
         valid_values = [0, 1] + [None]
-        result = self._validate("average_filter", zflg in valid_values, result, f"zflg is not a valid value (expects: {valid_values}, got: {zflg})")
+        result = self._validate("average_filter", zflg == "-" or zflg in valid_values, result, f"zflg is not a valid value (expects: {valid_values}, got: {zflg})")
         if self._wraps is not None:
             result = self._wraps.average_filter(*supplied_args)
 
@@ -10316,7 +10319,7 @@ class PyGammaTestProxy(object):
         if file_out is not None and file_out != "-":
             Path(file_out).touch()
         valid_values = [0, 1, 2, 3]
-        result = self._validate("mask_class", format_flag in valid_values, result, f"format_flag is not a valid value (expects: {valid_values}, got: {format_flag})")
+        result = self._validate("mask_class", format_flag == "-" or format_flag in valid_values, result, f"format_flag is not a valid value (expects: {valid_values}, got: {format_flag})")
         if self._wraps is not None:
             result = self._wraps.mask_class(*supplied_args)
 
@@ -10360,7 +10363,7 @@ class PyGammaTestProxy(object):
         if data_out is not None and data_out != "-":
             Path(data_out).touch()
         valid_values = [0, 1] + [None]
-        result = self._validate("linear_to_dB", inverse_flag in valid_values, result, f"inverse_flag is not a valid value (expects: {valid_values}, got: {inverse_flag})")
+        result = self._validate("linear_to_dB", inverse_flag == "-" or inverse_flag in valid_values, result, f"inverse_flag is not a valid value (expects: {valid_values}, got: {inverse_flag})")
         if self._wraps is not None:
             result = self._wraps.linear_to_dB(*supplied_args)
 
@@ -10386,9 +10389,9 @@ class PyGammaTestProxy(object):
         if stat is not None and stat != "-":
             Path(stat).touch()
         valid_values = [0, 1] + [None]
-        result = self._validate("histogram", mode in valid_values, result, f"mode is not a valid value (expects: {valid_values}, got: {mode})")
+        result = self._validate("histogram", mode == "-" or mode in valid_values, result, f"mode is not a valid value (expects: {valid_values}, got: {mode})")
         valid_values = [0, 1] + [None]
-        result = self._validate("histogram", lin_log in valid_values, result, f"lin_log is not a valid value (expects: {valid_values}, got: {lin_log})")
+        result = self._validate("histogram", lin_log == "-" or lin_log in valid_values, result, f"lin_log is not a valid value (expects: {valid_values}, got: {lin_log})")
         if self._wraps is not None:
             result = self._wraps.histogram(*supplied_args)
 
@@ -10532,7 +10535,7 @@ class PyGammaTestProxy(object):
         if im_out is not None and im_out != "-":
             Path(im_out).touch()
         valid_values = [0, 1, 2, 3, 4]
-        result = self._validate("multi_stat", mode in valid_values, result, f"mode is not a valid value (expects: {valid_values}, got: {mode})")
+        result = self._validate("multi_stat", mode == "-" or mode in valid_values, result, f"mode is not a valid value (expects: {valid_values}, got: {mode})")
         if self._wraps is not None:
             result = self._wraps.multi_stat(*supplied_args)
 
@@ -10552,7 +10555,7 @@ class PyGammaTestProxy(object):
         if data1 is not None:
             result = self._validate("trigo", data1 == "-" or Path(data1).exists(), result, f"data1 path does not exist ({data1})")
         valid_values = [1]
-        result = self._validate("trigo", func in valid_values, result, f"func is not a valid value (expects: {valid_values}, got: {func})")
+        result = self._validate("trigo", func == "-" or func in valid_values, result, f"func is not a valid value (expects: {valid_values}, got: {func})")
         if data2 is not None and data2 != "-":
             Path(data2).touch()
         if self._wraps is not None:
@@ -10574,9 +10577,9 @@ class PyGammaTestProxy(object):
         if data_tab is not None:
             result = self._validate("temp_filt", data_tab == "-" or Path(data_tab).exists(), result, f"data_tab path does not exist ({data_tab})")
         valid_values = [0, 1, 2] + [None]
-        result = self._validate("temp_filt", wt_flag in valid_values, result, f"wt_flag is not a valid value (expects: {valid_values}, got: {wt_flag})")
+        result = self._validate("temp_filt", wt_flag == "-" or wt_flag in valid_values, result, f"wt_flag is not a valid value (expects: {valid_values}, got: {wt_flag})")
         valid_values = [0, 1] + [None]
-        result = self._validate("temp_filt", zero_flag in valid_values, result, f"zero_flag is not a valid value (expects: {valid_values}, got: {zero_flag})")
+        result = self._validate("temp_filt", zero_flag == "-" or zero_flag in valid_values, result, f"zero_flag is not a valid value (expects: {valid_values}, got: {zero_flag})")
         if self._wraps is not None:
             result = self._wraps.temp_filt(*supplied_args)
 
@@ -10622,7 +10625,7 @@ class PyGammaTestProxy(object):
         if ras_out is not None and ras_out != "-":
             Path(ras_out).touch()
         valid_values = [0, 1] + [None]
-        result = self._validate("ras_to_rgb", null_flag in valid_values, result, f"null_flag is not a valid value (expects: {valid_values}, got: {null_flag})")
+        result = self._validate("ras_to_rgb", null_flag == "-" or null_flag in valid_values, result, f"null_flag is not a valid value (expects: {valid_values}, got: {null_flag})")
         if self._wraps is not None:
             result = self._wraps.ras_to_rgb(*supplied_args)
 
@@ -10712,7 +10715,7 @@ class PyGammaTestProxy(object):
         if file_out is not None and file_out != "-":
             Path(file_out).touch()
         valid_values = [0] + [None]
-        result = self._validate("hsi_color_scale", nval in valid_values, result, f"nval is not a valid value (expects: {valid_values}, got: {nval})")
+        result = self._validate("hsi_color_scale", nval == "-" or nval in valid_values, result, f"nval is not a valid value (expects: {valid_values}, got: {nval})")
         if self._wraps is not None:
             result = self._wraps.hsi_color_scale(*supplied_args)
 
@@ -10878,7 +10881,7 @@ class PyGammaTestProxy(object):
         if product is not None and product != "-":
             Path(product).touch()
         valid_values = [0, 1, 2] + [None]
-        result = self._validate("product", wgt_flag in valid_values, result, f"wgt_flag is not a valid value (expects: {valid_values}, got: {wgt_flag})")
+        result = self._validate("product", wgt_flag == "-" or wgt_flag in valid_values, result, f"wgt_flag is not a valid value (expects: {valid_values}, got: {wgt_flag})")
         if self._wraps is not None:
             result = self._wraps.product(*supplied_args)
 
@@ -11006,11 +11009,11 @@ class PyGammaTestProxy(object):
         if data_out is not None and data_out != "-":
             Path(data_out).touch()
         valid_values = [0, 1, 2, 3, 4, 5]
-        result = self._validate("frame", dtype in valid_values, result, f"dtype is not a valid value (expects: {valid_values}, got: {dtype})")
+        result = self._validate("frame", dtype == "-" or dtype in valid_values, result, f"dtype is not a valid value (expects: {valid_values}, got: {dtype})")
         valid_values = [0, 1] + [None]
-        result = self._validate("frame", null_flag in valid_values, result, f"null_flag is not a valid value (expects: {valid_values}, got: {null_flag})")
+        result = self._validate("frame", null_flag == "-" or null_flag in valid_values, result, f"null_flag is not a valid value (expects: {valid_values}, got: {null_flag})")
         valid_values = [0, 1] + [None]
-        result = self._validate("frame", all_flag in valid_values, result, f"all_flag is not a valid value (expects: {valid_values}, got: {all_flag})")
+        result = self._validate("frame", all_flag == "-" or all_flag in valid_values, result, f"all_flag is not a valid value (expects: {valid_values}, got: {all_flag})")
         if self._wraps is not None:
             result = self._wraps.frame(*supplied_args)
 
@@ -11082,7 +11085,7 @@ class PyGammaTestProxy(object):
         if f_out is not None and f_out != "-":
             Path(f_out).touch()
         valid_values = [0, 1] + [None]
-        result = self._validate("lin_comb", zero_flag in valid_values, result, f"zero_flag is not a valid value (expects: {valid_values}, got: {zero_flag})")
+        result = self._validate("lin_comb", zero_flag == "-" or zero_flag in valid_values, result, f"zero_flag is not a valid value (expects: {valid_values}, got: {zero_flag})")
         if self._wraps is not None:
             result = self._wraps.lin_comb(*supplied_args)
 
@@ -11110,7 +11113,7 @@ class PyGammaTestProxy(object):
         if ras_out is not None and ras_out != "-":
             Path(ras_out).touch()
         valid_values = [0, 1] + [None]
-        result = self._validate("multi_class_mapping", color_flag in valid_values, result, f"color_flag is not a valid value (expects: {valid_values}, got: {color_flag})")
+        result = self._validate("multi_class_mapping", color_flag == "-" or color_flag in valid_values, result, f"color_flag is not a valid value (expects: {valid_values}, got: {color_flag})")
         if self._wraps is not None:
             result = self._wraps.multi_class_mapping(*supplied_args)
 
@@ -11132,7 +11135,7 @@ class PyGammaTestProxy(object):
         if report is not None and report != "-":
             Path(report).touch()
         valid_values = [0, 1] + [None]
-        result = self._validate("takecut", pr_flag in valid_values, result, f"pr_flag is not a valid value (expects: {valid_values}, got: {pr_flag})")
+        result = self._validate("takecut", pr_flag == "-" or pr_flag in valid_values, result, f"pr_flag is not a valid value (expects: {valid_values}, got: {pr_flag})")
         if self._wraps is not None:
             result = self._wraps.takecut(*supplied_args)
 
@@ -11178,9 +11181,9 @@ class PyGammaTestProxy(object):
         if stdev is not None and stdev != "-":
             Path(stdev).touch()
         valid_values = [0, 1, 2] + [None]
-        result = self._validate("temp_lin_var", wt_flag in valid_values, result, f"wt_flag is not a valid value (expects: {valid_values}, got: {wt_flag})")
+        result = self._validate("temp_lin_var", wt_flag == "-" or wt_flag in valid_values, result, f"wt_flag is not a valid value (expects: {valid_values}, got: {wt_flag})")
         valid_values = [0, 1] + [None]
-        result = self._validate("temp_lin_var", zero_flag in valid_values, result, f"zero_flag is not a valid value (expects: {valid_values}, got: {zero_flag})")
+        result = self._validate("temp_lin_var", zero_flag == "-" or zero_flag in valid_values, result, f"zero_flag is not a valid value (expects: {valid_values}, got: {zero_flag})")
         if self._wraps is not None:
             result = self._wraps.temp_lin_var(*supplied_args)
 
@@ -11202,7 +11205,7 @@ class PyGammaTestProxy(object):
         if ave is not None and ave != "-":
             Path(ave).touch()
         valid_values = [0, 1] + [None]
-        result = self._validate("ave_cpx", zflag in valid_values, result, f"zflag is not a valid value (expects: {valid_values}, got: {zflag})")
+        result = self._validate("ave_cpx", zflag == "-" or zflag in valid_values, result, f"zflag is not a valid value (expects: {valid_values}, got: {zflag})")
         if self._wraps is not None:
             result = self._wraps.ave_cpx(*supplied_args)
 
@@ -11226,7 +11229,7 @@ class PyGammaTestProxy(object):
         if mask_out is not None and mask_out != "-":
             Path(mask_out).touch()
         valid_values = [0, 1, 2]
-        result = self._validate("mask_op", mode in valid_values, result, f"mode is not a valid value (expects: {valid_values}, got: {mode})")
+        result = self._validate("mask_op", mode == "-" or mode in valid_values, result, f"mode is not a valid value (expects: {valid_values}, got: {mode})")
         if self._wraps is not None:
             result = self._wraps.mask_op(*supplied_args)
 
@@ -11262,7 +11265,7 @@ class PyGammaTestProxy(object):
         if CP is not None and CP != "-":
             Path(CP).touch()
         valid_values = [0, 1]
-        result = self._validate("quad2cp", TX_pol in valid_values, result, f"TX_pol is not a valid value (expects: {valid_values}, got: {TX_pol})")
+        result = self._validate("quad2cp", TX_pol == "-" or TX_pol in valid_values, result, f"TX_pol is not a valid value (expects: {valid_values}, got: {TX_pol})")
         if self._wraps is not None:
             result = self._wraps.quad2cp(*supplied_args)
 
@@ -11324,9 +11327,9 @@ class PyGammaTestProxy(object):
         if pt_list is not None:
             result = self._validate("drawthat", pt_list == "-" or Path(pt_list).exists(), result, f"pt_list path does not exist ({pt_list})")
         valid_values = [0, 1, 2] + [None]
-        result = self._validate("drawthat", mode in valid_values, result, f"mode is not a valid value (expects: {valid_values}, got: {mode})")
+        result = self._validate("drawthat", mode == "-" or mode in valid_values, result, f"mode is not a valid value (expects: {valid_values}, got: {mode})")
         valid_values = [0, 1] + [None]
-        result = self._validate("drawthat", zflg in valid_values, result, f"zflg is not a valid value (expects: {valid_values}, got: {zflg})")
+        result = self._validate("drawthat", zflg == "-" or zflg in valid_values, result, f"zflg is not a valid value (expects: {valid_values}, got: {zflg})")
         if self._wraps is not None:
             result = self._wraps.drawthat(*supplied_args)
 
@@ -11376,7 +11379,7 @@ class PyGammaTestProxy(object):
         if data_tab is not None:
             result = self._validate("temp_filt_ad", data_tab == "-" or Path(data_tab).exists(), result, f"data_tab path does not exist ({data_tab})")
         valid_values = [0, 1] + [None]
-        result = self._validate("temp_filt_ad", zero_flag in valid_values, result, f"zero_flag is not a valid value (expects: {valid_values}, got: {zero_flag})")
+        result = self._validate("temp_filt_ad", zero_flag == "-" or zero_flag in valid_values, result, f"zero_flag is not a valid value (expects: {valid_values}, got: {zero_flag})")
         if self._wraps is not None:
             result = self._wraps.temp_filt_ad(*supplied_args)
 
@@ -11398,13 +11401,13 @@ class PyGammaTestProxy(object):
         if data_out is not None and data_out != "-":
             Path(data_out).touch()
         valid_values = [0, 1, 2] + [None]
-        result = self._validate("bm3d", dtype in valid_values, result, f"dtype is not a valid value (expects: {valid_values}, got: {dtype})")
+        result = self._validate("bm3d", dtype == "-" or dtype in valid_values, result, f"dtype is not a valid value (expects: {valid_values}, got: {dtype})")
         valid_values = [0, 1, 2, 3, 4, 5, 6] + [None]
-        result = self._validate("bm3d", profile in valid_values, result, f"profile is not a valid value (expects: {valid_values}, got: {profile})")
+        result = self._validate("bm3d", profile == "-" or profile in valid_values, result, f"profile is not a valid value (expects: {valid_values}, got: {profile})")
         valid_values = [0, 1] + [None]
-        result = self._validate("bm3d", d_max in valid_values, result, f"d_max is not a valid value (expects: {valid_values}, got: {d_max})")
+        result = self._validate("bm3d", d_max == "-" or d_max in valid_values, result, f"d_max is not a valid value (expects: {valid_values}, got: {d_max})")
         valid_values = [0, 1] + [None]
-        result = self._validate("bm3d", t1d in valid_values, result, f"t1d is not a valid value (expects: {valid_values}, got: {t1d})")
+        result = self._validate("bm3d", t1d == "-" or t1d in valid_values, result, f"t1d is not a valid value (expects: {valid_values}, got: {t1d})")
         if self._wraps is not None:
             result = self._wraps.bm3d(*supplied_args)
 
@@ -11572,7 +11575,7 @@ class PyGammaTestProxy(object):
         if ratio is not None and ratio != "-":
             Path(ratio).touch()
         valid_values = [0, 1, 2] + [None]
-        result = self._validate("ratio", wgt_flag in valid_values, result, f"wgt_flag is not a valid value (expects: {valid_values}, got: {wgt_flag})")
+        result = self._validate("ratio", wgt_flag == "-" or wgt_flag in valid_values, result, f"wgt_flag is not a valid value (expects: {valid_values}, got: {wgt_flag})")
         if self._wraps is not None:
             result = self._wraps.ratio(*supplied_args)
 
@@ -11602,7 +11605,7 @@ class PyGammaTestProxy(object):
         if cc_ad is not None and cc_ad != "-":
             Path(cc_ad).touch()
         valid_values = [0, 1] + [None]
-        result = self._validate("cc_ad", wgt_flag in valid_values, result, f"wgt_flag is not a valid value (expects: {valid_values}, got: {wgt_flag})")
+        result = self._validate("cc_ad", wgt_flag == "-" or wgt_flag in valid_values, result, f"wgt_flag is not a valid value (expects: {valid_values}, got: {wgt_flag})")
         if self._wraps is not None:
             result = self._wraps.cc_ad(*supplied_args)
 
@@ -11624,7 +11627,7 @@ class PyGammaTestProxy(object):
         if ras_out is not None and ras_out != "-":
             Path(ras_out).touch()
         valid_values = [0, 1] + [None]
-        result = self._validate("ras_ras", force24 in valid_values, result, f"force24 is not a valid value (expects: {valid_values}, got: {force24})")
+        result = self._validate("ras_ras", force24 == "-" or force24 in valid_values, result, f"force24 is not a valid value (expects: {valid_values}, got: {force24})")
         if self._wraps is not None:
             result = self._wraps.ras_ras(*supplied_args)
 
@@ -11648,7 +11651,7 @@ class PyGammaTestProxy(object):
         if f_out is not None and f_out != "-":
             Path(f_out).touch()
         valid_values = [0, 1] + [None]
-        result = self._validate("lin_comb_cpx", zero_flag in valid_values, result, f"zero_flag is not a valid value (expects: {valid_values}, got: {zero_flag})")
+        result = self._validate("lin_comb_cpx", zero_flag == "-" or zero_flag in valid_values, result, f"zero_flag is not a valid value (expects: {valid_values}, got: {zero_flag})")
         if self._wraps is not None:
             result = self._wraps.lin_comb_cpx(*supplied_args)
 
@@ -11670,7 +11673,7 @@ class PyGammaTestProxy(object):
         if dout is not None and dout != "-":
             Path(dout).touch()
         valid_values = [0, 1] + [None]
-        result = self._validate("median_filter", zflg in valid_values, result, f"zflg is not a valid value (expects: {valid_values}, got: {zflg})")
+        result = self._validate("median_filter", zflg == "-" or zflg in valid_values, result, f"zflg is not a valid value (expects: {valid_values}, got: {zflg})")
         if self._wraps is not None:
             result = self._wraps.median_filter(*supplied_args)
 
@@ -11738,9 +11741,9 @@ class PyGammaTestProxy(object):
         if stdev is not None and stdev != "-":
             Path(stdev).touch()
         valid_values = [0, 1, 2] + [None]
-        result = self._validate("temp_log_var", wt_flag in valid_values, result, f"wt_flag is not a valid value (expects: {valid_values}, got: {wt_flag})")
+        result = self._validate("temp_log_var", wt_flag == "-" or wt_flag in valid_values, result, f"wt_flag is not a valid value (expects: {valid_values}, got: {wt_flag})")
         valid_values = [0, 1] + [None]
-        result = self._validate("temp_log_var", zero_flag in valid_values, result, f"zero_flag is not a valid value (expects: {valid_values}, got: {zero_flag})")
+        result = self._validate("temp_log_var", zero_flag == "-" or zero_flag in valid_values, result, f"zero_flag is not a valid value (expects: {valid_values}, got: {zero_flag})")
         if self._wraps is not None:
             result = self._wraps.temp_log_var(*supplied_args)
 
@@ -11766,7 +11769,7 @@ class PyGammaTestProxy(object):
         if ras_out is not None and ras_out != "-":
             Path(ras_out).touch()
         valid_values = [0, 1] + [None]
-        result = self._validate("ras_to_hsi", cflg in valid_values, result, f"cflg is not a valid value (expects: {valid_values}, got: {cflg})")
+        result = self._validate("ras_to_hsi", cflg == "-" or cflg in valid_values, result, f"cflg is not a valid value (expects: {valid_values}, got: {cflg})")
         if self._wraps is not None:
             result = self._wraps.ras_to_hsi(*supplied_args)
 
@@ -11788,13 +11791,13 @@ class PyGammaTestProxy(object):
         if data_out is not None and data_out != "-":
             Path(data_out).touch()
         valid_values = [0, 1] + [None]
-        result = self._validate("edge_detection", dtype in valid_values, result, f"dtype is not a valid value (expects: {valid_values}, got: {dtype})")
+        result = self._validate("edge_detection", dtype == "-" or dtype in valid_values, result, f"dtype is not a valid value (expects: {valid_values}, got: {dtype})")
         valid_values = [0, 1, 2] + [None]
-        result = self._validate("edge_detection", op_flg in valid_values, result, f"op_flg is not a valid value (expects: {valid_values}, got: {op_flg})")
+        result = self._validate("edge_detection", op_flg == "-" or op_flg in valid_values, result, f"op_flg is not a valid value (expects: {valid_values}, got: {op_flg})")
         if seg_out is not None and seg_out != "-":
             Path(seg_out).touch()
         valid_values = [0, 1] + [None]
-        result = self._validate("edge_detection", line_filt in valid_values, result, f"line_filt is not a valid value (expects: {valid_values}, got: {line_filt})")
+        result = self._validate("edge_detection", line_filt == "-" or line_filt in valid_values, result, f"line_filt is not a valid value (expects: {valid_values}, got: {line_filt})")
         if self._wraps is not None:
             result = self._wraps.edge_detection(*supplied_args)
 
@@ -11816,9 +11819,9 @@ class PyGammaTestProxy(object):
         if texture is not None and texture != "-":
             Path(texture).touch()
         valid_values = [0, 1] + [None]
-        result = self._validate("texture", type in valid_values, result, f"type is not a valid value (expects: {valid_values}, got: {type})")
+        result = self._validate("texture", type == "-" or type in valid_values, result, f"type is not a valid value (expects: {valid_values}, got: {type})")
         valid_values = [0, 1, 2] + [None]
-        result = self._validate("texture", weights_flag in valid_values, result, f"weights_flag is not a valid value (expects: {valid_values}, got: {weights_flag})")
+        result = self._validate("texture", weights_flag == "-" or weights_flag in valid_values, result, f"weights_flag is not a valid value (expects: {valid_values}, got: {weights_flag})")
         if data_in_mean is not None:
             result = self._validate("texture", data_in_mean == "-" or Path(data_in_mean).exists(), result, f"data_in_mean path does not exist ({data_in_mean})")
         if self._wraps is not None:
@@ -11872,7 +11875,7 @@ class PyGammaTestProxy(object):
         if f_out is not None and f_out != "-":
             Path(f_out).touch()
         valid_values = [0, 1] + [None]
-        result = self._validate("lin_comb_ref", zflag in valid_values, result, f"zflag is not a valid value (expects: {valid_values}, got: {zflag})")
+        result = self._validate("lin_comb_ref", zflag == "-" or zflag in valid_values, result, f"zflag is not a valid value (expects: {valid_values}, got: {zflag})")
         if self._wraps is not None:
             result = self._wraps.lin_comb_ref(*supplied_args)
 

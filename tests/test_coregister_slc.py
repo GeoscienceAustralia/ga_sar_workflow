@@ -8,7 +8,7 @@ from PIL import Image
 from tests.py_gamma_test_proxy import PyGammaTestProxy
 
 import insar.coregister_slc
-from insar.coregister_slc import CoregisterSlc
+from insar.coregister_slc import CoregisterSlc, CoregisterSlcException
 from insar.project import ProcConfig, IfgFileNames, DEMFileNames
 
 
@@ -16,50 +16,91 @@ def get_test_context():
     temp_dir = tempfile.TemporaryDirectory()
     data_dir = Path(temp_dir.name) / '20151127'
 
-    pgp = PyGammaTestProxy()
-    pgp = mock.Mock(spec=PyGammaTestProxy, wraps=pgp)
+    pgp = PyGammaTestProxy(exception_type=CoregisterSlcException)
+    pgmock = mock.Mock(spec=PyGammaTestProxy, wraps=pgp)
 
     # Make offset_fit return parseable stdout as required for coregister_slc to function
-    def offset_fit_sideffect(offs: str, ccp: str, OFF_par: str, coffs: str, coffsets: str, thres, npoly, interact_flag):
+    def offset_fit_se(*args, **kwargs):
+        result = pgp.offset_fit(*args, **kwargs)
+        OFF_par = args[2]
         shutil.copyfile(data_dir / 'offset_fit.start', OFF_par)
-        return 0, 'final model fit std. dev. (samples) range:   0.3699  azimuth:   0.1943', ''
+        return result[0], 'final model fit std. dev. (samples) range:   0.3699  azimuth:   0.1943', ''
 
     # raspwr needs to create a dummy bmp
-    def raspwr_sideffect(pwr: str, width, start, nlines, pixavr, pixavaz, scale, exp, LR, rasf: str, data_type = None, hdrz = None):
+    def raspwr_se(*args, **kwargs):
+        rasf = args[9]
         slave_gamma0_eqa = data_dir / rasf
         Image.new('RGB', size=(50, 50), color=(155, 0, 0)).save(slave_gamma0_eqa)
-        return 0, '', ''
+        return pgp.raspwr(*args, **kwargs)
 
-    pgp.raspwr.side_effect = raspwr_sideffect
-    pgp.raspwr.return_value = 0, '', ''
+    def image_stat_se(*args, **kwargs):
+        result = pgp.image_stat(*args, **kwargs)
+        report = args[6]
 
-    pgp.offset_fit.side_effect = offset_fit_sideffect
-    pgp.offset_fit.return_value = (0, 'final model fit std. dev. (samples) range:   0.3699  azimuth:   0.1943', '')
+        with open(report, 'w') as file:
+            file.write('mean:             42.0\n')
+            file.write('stdev:            3.0\n')
+            file.write('fraction_valid:   1.0\n')
+
+        return result
+
+    def SLC_copy_se(*args, **kwargs):
+        result = pgp.SLC_copy(*args, **kwargs)
+        SLC_in, SLC_par_in, SLC_out, SLC_par_out = args[:4]
+        shutil.copyfile(SLC_in, SLC_out)
+        shutil.copyfile(SLC_par_in, SLC_par_out)
+        return result
+
+    pgmock.raspwr.side_effect = raspwr_se
+    pgmock.raspwr.return_value = 0, '', ''
+
+    pgmock.offset_fit.side_effect = offset_fit_se
+    pgmock.offset_fit.return_value = (0, 'final model fit std. dev. (samples) range:   0.3699  azimuth:   0.1943', '')
+
+    pgmock.image_stat.side_effect = image_stat_se
+    pgmock.image_stat.return_value = 0, '', ''
+
+    pgmock.SLC_copy.side_effect = SLC_copy_se
+    pgmock.SLC_copy.return_value = 0, '', ''
 
     # Copy test data
     shutil.copytree(Path(__file__).parent.absolute() / 'data' / '20151127', data_dir)
 
+    with open(Path(__file__).parent.absolute() / 'data' / '20151127' / 'gamma.proc', 'r') as fileobj:
+        proc_config = ProcConfig.from_file(fileobj)
+
     data = {
-        'proc': None,  # FIXME: We need to get a valid gamma proc file
+        'proc': proc_config,
         'slc_master': data_dir / '20151127_VV.slc',
         'slc_slave': data_dir / '20151127_VV.slc',  # if slave/master are the same... everything should still run i assume? just useless outputs?
         'slave_mli': data_dir / '20151127_VV_8rlks.mli',
         'range_looks': 1,
         'azimuth_looks': 1,
-        'ellip_pix_sigma0': data_dir / 'TODO_ellip_pix_sigma0',
-        'dem_pix_gamma0': data_dir / '20151127_VV_8rlks_rdc_pix_gamma0',
+        'ellip_pix_sigma0': data_dir / 'TODO_ellip_pix.sigma0',
+        'dem_pix_gamma0': data_dir / '20151127_VV_8rlks_rdc_pix.gamma0',
         'r_dem_master_mli': data_dir / 'r20151127_VV_8rlks.mli',  # FIXME: Pretty sure this isn't right (but can't find any DEM runs with an mli)
         'rdc_dem': data_dir / '20151127_VV_8rlks_rdc.dem',
         'eqa_dem_par': data_dir / '20180127_VV_8rlks_eqa.dem.par',  # HACK: This is from a totally different scene
         'dem_lt_fine': data_dir / '20151127_VV_8rlks_eqa_to_rdc.lt',
     }
 
-    return pgp, data, temp_dir
+    # Create dummy data inputs (config/par/etc files don't need to be touched, as we provide real test files for those)
+    touch_exts = ['.slc', '.mli', '.dem', '.gamma0', '.sigma0', '.lt']
+
+    for k,v in data.items():
+        if any([str(v).endswith(ext) for ext in touch_exts]):
+            Path(v).touch()
+
+    for p in data_dir.iterdir():
+        if p.name.endswith('.par'):
+            Path(p.parent / p.stem).touch()
+
+    return pgp, pgmock, data, temp_dir
 
 
 def test_valid_data(monkeypatch):
-    pgp, data, temp_dir = get_test_context()
-    monkeypatch.setattr(insar.coregister_slc, 'pg', pgp)
+    pgp, pgmock, data, temp_dir = get_test_context()
+    monkeypatch.setattr(insar.coregister_slc, 'pg', pgmock)
 
     with temp_dir as temp_path:
         coreg = CoregisterSlc(
@@ -72,21 +113,24 @@ def test_valid_data(monkeypatch):
         coreg.main()
 
         # Assert no failure status for any gamma call
-        # assert()
+        assert(pgp.error_count == 0)
 
         # Assert outputs exist
-        #assert(Path(f"{coreg.master_slave_prefix}.ovr_results").exists())
+        assert(coreg.r_slave_slc.exists())
+
+        slave_gamma0 = coreg.out_dir / f"{coreg.slave_mli.stem}.gamma0"
+        slave_gamma0_eqa = coreg.out_dir / f"{coreg.slave_mli.stem}_eqa.gamma0"
+        assert(slave_gamma0.exists())
+        assert(slave_gamma0_eqa.exists())
 
         # Assert quick-look images exist
-        slave_png = coreg.out_dir.joinpath(f"{coreg.slave_gamma0_eqa.name}.png")
+        slave_png = coreg.out_dir / f"{slave_gamma0_eqa.name}.png"
         assert(slave_png.exists())
-
-        # TODO: Assert commands/stats in pgp
 
 
 def test_set_tab_files(monkeypatch):
-    pgp, data, temp_dir = get_test_context()
-    monkeypatch.setattr(insar.coregister_slc, 'pg', pgp)
+    pgp, pgmock, data, temp_dir = get_test_context()
+    monkeypatch.setattr(insar.coregister_slc, 'pg', pgmock)
 
     with temp_dir as temp_path:
         coreg = CoregisterSlc(
@@ -108,8 +152,8 @@ def test_set_tab_files(monkeypatch):
 
 
 def test_get_lookup(monkeypatch):
-    pgp, data, temp_dir = get_test_context()
-    monkeypatch.setattr(insar.coregister_slc, 'pg', pgp)
+    pgp, pgmock, data, temp_dir = get_test_context()
+    monkeypatch.setattr(insar.coregister_slc, 'pg', pgmock)
 
     with temp_dir as temp_path:
         coreg = CoregisterSlc(
@@ -130,8 +174,8 @@ def test_get_lookup(monkeypatch):
 
 
 def test_resample_full(monkeypatch):
-    pgp, data, temp_dir = get_test_context()
-    monkeypatch.setattr(insar.coregister_slc, 'pg', pgp)
+    pgp, pgmock, data, temp_dir = get_test_context()
+    monkeypatch.setattr(insar.coregister_slc, 'pg', pgmock)
 
     with temp_dir as temp_path:
         coreg = CoregisterSlc(
@@ -139,7 +183,12 @@ def test_resample_full(monkeypatch):
             Path(temp_path)
         )
 
+        # Pre-work before resample (coarse coreg is enough)
         coreg.set_tab_files()
+        coreg.get_lookup()
+        coreg.reduce_offset()
+        coreg.coarse_registration()
+
         coreg.resample_full()
 
         assert(Path(coreg.r_slave_slc_tab).exists())
@@ -148,8 +197,8 @@ def test_resample_full(monkeypatch):
 
 
 def test_multi_look(monkeypatch):
-    pgp, data, temp_dir = get_test_context()
-    monkeypatch.setattr(insar.coregister_slc, 'pg', pgp)
+    pgp, pgmock, data, temp_dir = get_test_context()
+    monkeypatch.setattr(insar.coregister_slc, 'pg', pgmock)
 
     with temp_dir as temp_path:
         coreg = CoregisterSlc(
@@ -157,6 +206,13 @@ def test_multi_look(monkeypatch):
             Path(temp_path)
         )
 
+        # Pre-work before multi_look (coarse coreg is enough)
+        coreg.set_tab_files()
+        coreg.get_lookup()
+        coreg.reduce_offset()
+        coreg.coarse_registration()
+        coreg.resample_full()
+        
         coreg.multi_look()
 
         assert(Path(coreg.r_slave_mli).exists())
@@ -164,8 +220,8 @@ def test_multi_look(monkeypatch):
 
 
 def test_generate_normalised_backscatter(monkeypatch):
-    pgp, data, temp_dir = get_test_context()
-    monkeypatch.setattr(insar.coregister_slc, 'pg', pgp)
+    pgp, pgmock, data, temp_dir = get_test_context()
+    monkeypatch.setattr(insar.coregister_slc, 'pg', pgmock)
 
     with temp_dir as temp_path:
         coreg = CoregisterSlc(
@@ -173,6 +229,14 @@ def test_generate_normalised_backscatter(monkeypatch):
             Path(temp_path)
         )
 
+        # Pre-work before backscatter (coarse coreg is enough)
+        coreg.set_tab_files()
+        coreg.get_lookup()
+        coreg.reduce_offset()
+        coreg.coarse_registration()
+        coreg.resample_full()
+        coreg.multi_look()
+        
         coreg.generate_normalised_backscatter()
 
         slave_gamma0 = coreg.out_dir / f"{coreg.slave_mli.stem}.gamma0"

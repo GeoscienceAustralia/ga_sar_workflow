@@ -1163,11 +1163,6 @@ class CoregisterSlc:
                     _LOG.info(f"{IWid} {i} 0.00000 0.00000 0.00000 ({cc_mean} {cc_stdev} {cc_fraction}) {weight}")
                     slave_ovr_res.write(f"{IWid} {i} 0.00000 0.00000 0.00000 ({cc_mean} {cc_stdev} {cc_fraction}) {weight}\n")
 
-                # TODO: Redundant code... remove? or was this intentional in bash and they've forgotten to do something with it?
-                # if samples > 0:
-                #    average = sum / sum_weight
-                # else:
-                #    average = 0.0
 
             # Compute average
             average = sum / sum_weight if samples > 0 else 0.0

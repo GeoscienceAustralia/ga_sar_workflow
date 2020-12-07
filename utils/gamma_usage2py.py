@@ -168,10 +168,13 @@ if __name__ == '__main__':
             '',
             '    def __init__(self, path):',
             '        with open(path, \'r\') as file:',
-            '            lines = file.read().splitlines()[2:]  # Skip header lines',
+            '            lines = file.read().splitlines()[1:]  # Skip header lines',
             '',
             '            for line in lines:',
             '                value_id = line.split(\':\')[0]',
+            '                if len(value_id.strip()) == 0:',
+            '                    continue',
+            '',
             '                value_data = line[len(value_id)+2:].strip()',
             '',
             '                self.values[value_id] = value_data',
@@ -296,7 +299,7 @@ if __name__ == '__main__':
 
                         writeline('\n'.join(indent(2, [
                             f'valid_values = {repr(valid_values)}' + (' + [None]' if param['optional'] else ''),
-                            f'result = self._validate("{program}", {argname} in valid_values, result, f"{argname} is not a valid value (expects: {{valid_values}}, got: {{{argname}}})")',
+                            f'result = self._validate("{program}", {argname} == "-" or {argname} in valid_values, result, f"{argname} is not a valid value (expects: {{valid_values}}, got: {{{argname}}})")',
                         ])))
 
                 writeline('\n'.join(indent(2, [

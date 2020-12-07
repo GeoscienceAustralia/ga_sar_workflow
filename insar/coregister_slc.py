@@ -935,7 +935,7 @@ class CoregisterSlc:
                     1,  # intensity cross-correlation
                     1,
                     1,
-                    0,  # non-interactive mode
+                    0   # non-interactive mode
                 )
 
                 # SLC_intf $mas_IWi_slc.{i}.2 $r_slave_IWi_slc.{i}.2 $mas_IWi_par.{i}.2 $mas_IWi_par.{i}.2 $off2 $int2 1 1 0 - 0 0

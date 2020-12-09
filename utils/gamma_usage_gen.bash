@@ -1,4 +1,6 @@
 #!/bin/bash
+# This script simply creates a .txt file with the CLI help output for every gamma command
+# into the ./gamma_usage directory - for use by gamma_usage2py.py - intended to run on gadi
 
 mkdir ./gamma_usage/{DIFF,DISP,ISP,LAT,MSP}
 

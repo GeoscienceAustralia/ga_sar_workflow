@@ -88,16 +88,21 @@ def _usage2decl(module, program, file):
                     try:
                         positional_argname = all_args[last_arg]
                         argname = positional_argname
-                    except:
+                    except Exception:
+                        # Ignore failures indexing all_args, we don't handle variable sized arguments which
+                        # some programs have at the tail of the arguments.
+                        # (eg: input0 ... inputN at the end of some programs)
                         pass
+
+                    is_opt = last_arg >= len(required_args)
 
                     params[argname] = {
                         "desc": "",
-                        "optional": last_arg
-                        >= len(required_args),  # argname in optional_args
+                        "optional": is_opt,
                     }
 
-                desc = line[len(argname) + 2 :].lstrip()
+                desc_starts = len(argname) + 2
+                desc = line[desc_starts:].lstrip()
 
                 is_inoutfile = desc.startswith("(input/output)")
                 is_infile = desc.startswith("(input)") or is_inoutfile
@@ -281,6 +286,9 @@ if __name__ == "__main__":
             ],
         )
 
+        def clean_arg_name(name):
+            return name.replace("-", "_").replace("/", "_").replace("\\", "_")
+
         for module, programs in decls.items():
             for program, decl in programs.items():
 
@@ -290,9 +298,7 @@ if __name__ == "__main__":
                     if args != "":
                         args += ", "
 
-                    argname = (
-                        argname.replace("-", "_").replace("/", "_").replace("\\", "_")
-                    )  # fmt: off
+                    argname = clean_arg_name(argname)
                     argname = "definition" if argname == "def" else argname
 
                     args += argname
@@ -319,9 +325,7 @@ if __name__ == "__main__":
                 # validate args, ensure input files exist, touch output files, etc
                 # # TODO: maybe generate stdout where appropriate?
                 for argname, param in decl["params"].items():
-                    argname = (
-                        argname.replace("-", "_").replace("/", "_").replace("\\", "_")
-                    )
+                    argname = clean_arg_name(argname)
                     argname = "definition" if argname == "def" else argname
 
                     # TODO: assert required args are not None, and allow optionals to be none

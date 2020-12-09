@@ -1,7 +1,13 @@
 """
-This is just a script to convert gamma CLI help files into a PyGamma test proxy object for testing/validation.
+This is just a script to convert gamma CLI help files into a PyGamma test
+proxy object for testing/validation.
 
-See generated file insar/tests/py_gamma_test_proxy.py for output.
+The expected input path is the "gamma_usage" directory generated from the
+`gamma_usage_gen.bash` script in the utils directory.
+
+And the generated file is put into a hard-coded output directory ~/GA/py_gamma_test_proxy.py
+
+See generated file insar/tests/py_gamma_test_proxy.py for latest generated output.
 """
 
 from collections import OrderedDict
@@ -135,7 +141,7 @@ def _usage2decl(module, program, file):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
-        description="Convert gamma CLI help files into a PyGamma test proxy object for testing/validation."
+        description="Convert gamma CLI help files into a PyGamma test proxy object for testing/validation generated at ~/GA/py_gamma_test_proxy.py"
     )
     parser.add_argument(
         "path",

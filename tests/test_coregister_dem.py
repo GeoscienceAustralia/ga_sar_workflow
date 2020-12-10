@@ -80,6 +80,9 @@ def get_test_context():
     # Copy test data
     shutil.copytree(Path(__file__).parent.absolute() / 'data' / '20151127', data_dir)
 
+    # Note: The filenames below aren't necessarily representative of a valid scene at the moment...
+    # this isn't inherently a problem, as the unit tests don't test for file naming conventions of
+    # input data (input data is outside the control of our code / not something we can test).
     data = {
         'rlks': 8,
         'alks': 8,

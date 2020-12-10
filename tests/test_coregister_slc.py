@@ -69,6 +69,9 @@ def get_test_context():
     with open(Path(__file__).parent.absolute() / 'data' / '20151127' / 'gamma.proc', 'r') as fileobj:
         proc_config = ProcConfig.from_file(fileobj)
 
+    # Note: The filenames below aren't necessarily representative of a valid scene at the moment...
+    # this isn't inherently a problem, as the unit tests don't test for file naming conventions of
+    # input data (input data is outside the control of our code / not something we can test).
     data = {
         'proc': proc_config,
         'slc_master': data_dir / '20151127_VV.slc',
@@ -76,11 +79,11 @@ def get_test_context():
         'slave_mli': data_dir / '20151127_VV_8rlks.mli',
         'range_looks': 1,
         'azimuth_looks': 1,
-        'ellip_pix_sigma0': data_dir / 'TODO_ellip_pix.sigma0',
+        'ellip_pix_sigma0': data_dir / '20151127_VV_8rlks_ellip_pix.sigma0',
         'dem_pix_gamma0': data_dir / '20151127_VV_8rlks_rdc_pix.gamma0',
-        'r_dem_master_mli': data_dir / 'r20151127_VV_8rlks.mli',  # FIXME: Pretty sure this isn't right (but can't find any DEM runs with an mli)
+        'r_dem_master_mli': data_dir / 'r20151127_VV_8rlks.mli',
         'rdc_dem': data_dir / '20151127_VV_8rlks_rdc.dem',
-        'eqa_dem_par': data_dir / '20180127_VV_8rlks_eqa.dem.par',  # HACK: This is from a totally different scene
+        'eqa_dem_par': data_dir / '20180127_VV_8rlks_eqa.dem.par',
         'dem_lt_fine': data_dir / '20151127_VV_8rlks_eqa_to_rdc.lt',
     }
 

@@ -33,14 +33,24 @@ def get_test_context():
         Image.new('RGB', size=(50, 50), color=(155, 0, 0)).save(slave_gamma0_eqa)
         return pgp.raspwr(*args, **kwargs)
 
+    def mcf_se(*args, **kwargs):
+        # mcf's unw output parameter needs to have content for image_stat calls to go through
+        unw = Path(args[3])
+        unw.touch()
+        with unw.open('w') as file:
+            file.write("TEST CONTENT\n")
+        
+        result = pgp.mcf(*args, **kwargs)
+        return result
+
     def image_stat_se(*args, **kwargs):
         result = pgp.image_stat(*args, **kwargs)
         report = args[6]
 
         with open(report, 'w') as file:
-            file.write('mean:             42.0\n')
-            file.write('stdev:            3.0\n')
-            file.write('fraction_valid:   1.0\n')
+            file.write('mean:             0.42\n')
+            file.write('stdev:            0.03\n')
+            file.write('fraction_valid:   0.8\n')
 
         return result
 
@@ -56,6 +66,9 @@ def get_test_context():
 
     pgmock.offset_fit.side_effect = offset_fit_se
     pgmock.offset_fit.return_value = (0, 'final model fit std. dev. (samples) range:   0.3699  azimuth:   0.1943', '')
+
+    pgmock.mcf.side_effect = mcf_se
+    pgmock.mcf.return_value = 0, '', ''
 
     pgmock.image_stat.side_effect = image_stat_se
     pgmock.image_stat.return_value = 0, '', ''

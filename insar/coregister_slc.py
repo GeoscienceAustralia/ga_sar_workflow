@@ -337,7 +337,6 @@ class CoregisterSlc:
             A full string line of the matched string.
         """
         for line in std_output:
-            print(line)
             if line.startswith(match_start_string):
                 return line
 
@@ -816,6 +815,10 @@ class CoregisterSlc:
         ###################
         # determine phase offsets for sub-swath overlap regions
         def calc_phase_offsets(subswath_id):
+            nonlocal sum_all
+            nonlocal samples_all
+            nonlocal sum_weight_all
+
             # Get subswath file paths & load par files
             IWid = f"IW{subswath_id}"
 

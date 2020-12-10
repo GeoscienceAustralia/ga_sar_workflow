@@ -344,6 +344,13 @@ def test_geocode(monkeypatch):
 
         assert(Path(coreg.dem_master_gamma0_eqa_bmp.with_suffix(".kml")).exists())
 
+        # And with external image
+        Path(coreg.ext_image_flt).touch();
+
+        coreg.geocode(True)
+
+        assert(Path(coreg.ext_image_sar).exists())
+
 
 def test_look_vector(monkeypatch):
     pgp, pgmock, data, temp_dir = get_test_context()
@@ -369,6 +376,31 @@ def test_look_vector(monkeypatch):
         assert(Path(coreg.dem_lv_theta).exists())
         assert(Path(coreg.dem_lv_phi).exists())
         assert(Path(coreg.dem_lv_phi_geo).exists())
+
+
+def test_small_settings_get_fixed_up(monkeypatch):
+    pgp, pgmock, data, temp_dir = get_test_context()
+    monkeypatch.setattr(insar.coregister_dem, 'pg', pgmock)
+    monkeypatch.setattr(insar.coregister_dem, 'run_command', fake_cmd_runner)
+
+    with temp_dir as temp_path:
+        outdir = Path(temp_path) / '20151127'
+
+        outdir.mkdir(parents=True, exist_ok=True)
+
+        # Make smaller than acceptable values
+        data['dem_window'] = (8, 8)
+        data['dem_patch_window'] = 64
+
+        coreg = CoregisterDem(
+            *data.values(),
+            outdir,
+            outdir
+        )
+
+        assert(coreg.dem_window[0] > 8)
+        assert(coreg.dem_window[1] > 8)
+        assert(coreg.dem_patch_window > 64)
 
 
 # TODO: Test more specific corner cases (what are they?)

@@ -112,6 +112,104 @@ def get_scenes(burst_data_csv):
     return frames_data
 
 
+def find_scenes_in_range(master_dt, date_list, thres_days: int, include_closest: bool = True):
+    """
+    Creates a list of frame dates that within range of a master date.
+
+    :param master_dt:
+        The master date in which we are searching for scenes relative to.
+    :param date_list:
+        The list which we're searching for dates in.
+    :param thres_days:
+        The number of days threshold in which scenes must be within relative to
+        the master date.
+    :param include_closest:
+        When true - if there exist slc frames on either side of the master date, which are NOT
+        within the threshold window then the closest date from each side will be
+        used instead of no scene at all.
+    """
+
+    thresh_dt = datetime.timedelta(days=thres_days)
+    tree_lhs = []  # This was the 'lower' side in the bash...
+    tree_rhs = []  # This was the 'upper' side in the bash...
+    closest_lhs = None
+    closest_rhs = None
+    closest_lhs_diff = None
+    closest_rhs_diff = None
+
+    for dt in date_list:
+        dt_diff = master_dt - dt
+
+        # Skip scenes that match the master date
+        if dt_diff.days == 0:
+            continue
+
+        # Record closest scene
+        if dt_diff < 0:
+            is_closer = closest_lhs is None or dt_diff > closest_lhs_diff
+            closest_lhs = dt if is_closer else closest_lhs
+            closest_lhs_diff = dt_diff
+        else:
+            is_closer = closest_rhs is None or dt_diff < closest_rhs_diff
+            closest_rhs = dt if is_closer else closest_rhs
+            closest_rhs_diff = dt_diff
+
+        # Skip scenes outside threshold window
+        if abs(dt_diff) > thresh_dt:
+            continue
+
+        if dt_diff < 0:
+            tree_lhs.append(dt)
+        else:
+            tree_rhs.append(dt)
+
+    # Use closest scene if none are in threshold window
+    if include_closest:
+        if len(tree_lhs) == 0 and closest_lhs is not None:
+            _LOG.info(f"Date difference to closest slave greater than {thres_days} days, using closest slave only: {closest_lhs}")
+            tree_lhs = [closest_lhs]
+
+        if len(tree_rhs) == 0 and closest_rhs is not None:
+            _LOG.info(f"Date difference to closest slave greater than {thres_days} days, using closest slave only: {closest_rhs}")
+            tree_rhs = [closest_rhs]
+
+    return tree_lhs, tree_rhs
+
+
+def create_slave_coreg_tree(master_dt, date_list, thres_days=63):
+    """
+    Creates a set of co-registration lists containing subsets of the prior set, to create a tree-like co-registration structure.
+
+    Notes from the bash on :thres_days: parameter:
+        #thres_days=93 # three months, S1A/B repeats 84, 90, 96, ... (90 still ok, 96 too long)
+        # -> some slaves with zero averages for azimuth offset refinement
+        thres_days=63 # three months, S1A/B repeats 54, 60, 66, ... (60 still ok, 66 too long)
+         -> 63 days seems to be a good compromise between runtime and coregistration success
+        #thres_days=51 # maximum 7 weeks, S1A/B repeats 42, 48, 54, ... (48 still ok, 54 too long)
+        # -> longer runtime compared to 63, similar number of badly coregistered scenes
+        # do slaves with time difference less than thres_days
+    """
+
+    lists = []
+
+    # Initial Master<->Slave coreg list
+    lhs, rhs = find_scenes_in_range(master_dt, date_list, thres_days)
+    last_list = lhs + rhs
+    lists.append(last_list)
+
+    while len(last_list) > 0:
+        lhs, rhs = find_scenes_in_range(last_list[0], last_list, thres_days)
+        sub_list1 = lhs + rhs
+
+        lhs, rhs = find_scenes_in_range(last_list[-1], last_list, thres_days)
+        sub_list2 = lhs + rhs
+
+        last_list = sub_list1 + sub_list2
+        lists.append(last_list)
+
+    return lists
+
+
 def calculate_master(scenes_list) -> datetime:
 
     slc_dates = [
@@ -755,7 +853,10 @@ class CoregisterSlave(luigi.Task):
 @requires(CoregisterDemMaster)
 class CreateCoregisterSlaves(luigi.Task):
     """
-    Runs the master-slaves co-registration tasks
+    Runs the co-registration tasks.
+
+    The first batch of tasks produced is the master-slave coregistration, followed
+    up by each sub-tree of slave-slave coregistrations in the coregistration network.
     """
 
     master_scene_polarization = luigi.Parameter(default="VV")
@@ -780,6 +881,8 @@ class CreateCoregisterSlaves(luigi.Task):
             master_scene = calculate_master(
                 [dt.strftime(__DATE_FMT__) for dt, *_ in slc_frames]
             )
+
+        coreg_tree = create_slave_coreg_tree(master_scene, [dt for dt, _, _ in slc_frames])
 
         master_polarizations = [
             pols for dt, _, pols in slc_frames if dt.date() == master_scene
@@ -849,20 +952,23 @@ class CreateCoregisterSlaves(luigi.Task):
             )
             slave_coreg_jobs.append(CoregisterSlave(**kwargs))
 
-        for _dt, _, _pols in slc_frames:
-            slc_scene = _dt.strftime(__DATE_FMT__)
-            if slc_scene == master_scene:
-                continue
-            slave_dir = Path(self.outdir).joinpath(__SLC__).joinpath(slc_scene)
-            for _pol in _pols:
-                if _pol not in self.polarization:
+        for slave_list in coreg_tree:
+            list_frames = [i for i in slc_frames if i[0].date() in slave_list]
+
+            for _dt, _, _pols in list_frames:
+                slc_scene = _dt.strftime(__DATE_FMT__)
+                if slc_scene == master_scene:
                     continue
-                slave_slc_prefix = f"{slc_scene}_{_pol.upper()}"
-                kwargs["slc_slave"] = slave_dir.joinpath(f"{slave_slc_prefix}.slc")
-                kwargs["slave_mli"] = slave_dir.joinpath(
-                    f"{slave_slc_prefix}_{rlks}rlks.mli"
-                )
-                slave_coreg_jobs.append(CoregisterSlave(**kwargs))
+                slave_dir = Path(self.outdir).joinpath(__SLC__).joinpath(slc_scene)
+                for _pol in _pols:
+                    if _pol not in self.polarization:
+                        continue
+                    slave_slc_prefix = f"{slc_scene}_{_pol.upper()}"
+                    kwargs["slc_slave"] = slave_dir.joinpath(f"{slave_slc_prefix}.slc")
+                    kwargs["slave_mli"] = slave_dir.joinpath(
+                        f"{slave_slc_prefix}_{rlks}rlks.mli"
+                    )
+                    slave_coreg_jobs.append(CoregisterSlave(**kwargs))
 
         yield slave_coreg_jobs
 

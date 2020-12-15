@@ -192,20 +192,32 @@ def create_slave_coreg_tree(master_dt, date_list, thres_days=63):
 
     lists = []
 
+    # Note: when compositing the lists, rhs comes first because the bash puts the rhs as
+    # the "lower" part of the tree, which seems to appear first in the list file...
+    #
+    # I've opted for rhs vs. lhs because it's more obvious, newer scenes are to the right
+    # in sequence as they're greater than, older scenes are to the left / less than.
+
     # Initial Master<->Slave coreg list
     lhs, rhs = find_scenes_in_range(master_dt, date_list, thres_days)
-    last_list = lhs + rhs
-    lists.append(last_list)
+    last_list = rhs + lhs
 
     while len(last_list) > 0:
-        lhs, rhs = find_scenes_in_range(last_list[0], last_list, thres_days)
-        sub_list1 = lhs + rhs
+        lists.append(last_list)
 
-        lhs, rhs = find_scenes_in_range(last_list[-1], last_list, thres_days)
-        sub_list2 = lhs + rhs
+        if last_list[0] < master_dt:
+            lhs, rhs = find_scenes_in_range(last_list[0], last_list, thres_days)
+            sub_list1 = rhs
+        else:
+            sub_list1 = []
+
+        if last_list[-1] > master_dt:
+            lhs, rhs = find_scenes_in_range(last_list[-1], last_list, thres_days)
+            sub_list2 = lhs
+        else:
+            sub_list2 = []
 
         last_list = sub_list1 + sub_list2
-        lists.append(last_list)
 
     return lists
 

@@ -207,13 +207,13 @@ def create_slave_coreg_tree(master_dt, date_list, thres_days=63):
 
         if last_list[0] < master_dt:
             lhs, rhs = find_scenes_in_range(last_list[0], date_list, thres_days)
-            sub_list1 = rhs
+            sub_list1 = lhs
         else:
             sub_list1 = []
 
         if last_list[-1] > master_dt:
             lhs, rhs = find_scenes_in_range(last_list[-1], date_list, thres_days)
-            sub_list2 = lhs
+            sub_list2 = rhs
         else:
             sub_list2 = []
 

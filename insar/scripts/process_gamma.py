@@ -145,7 +145,7 @@ def find_scenes_in_range(master_dt, date_list, thres_days: int, include_closest:
             continue
 
         # Record closest scene
-        if dt_diff < 0:
+        if dt_diff < datetime.timedelta(0):
             is_closer = closest_lhs is None or dt_diff > closest_lhs_diff
             closest_lhs = dt if is_closer else closest_lhs
             closest_lhs_diff = dt_diff
@@ -158,7 +158,7 @@ def find_scenes_in_range(master_dt, date_list, thres_days: int, include_closest:
         if abs(dt_diff) > thresh_dt:
             continue
 
-        if dt_diff < 0:
+        if dt_diff < datetime.timedelta(0):
             tree_lhs.append(dt)
         else:
             tree_rhs.append(dt)

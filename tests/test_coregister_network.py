@@ -44,19 +44,19 @@ def test_tree_structure():
     master_dates = [today, today]
     last_level = test_dates
 
+    # We should have a non-empty tree w/ non-empty data!
+    assert(len(tree) > 0)
+
     for level in tree:
         # Shouldn't have any empty levels
         assert(len(level) > 0)
-
-        # Should shrink as we go down the hierarchy
-        assert(len(level) < len(last_level))
 
         # Should be within thres_days of our master dates
         for dt in level:
             lhs_dist = abs(dt - master_dates[0])
             rhs_dist = abs(dt - master_dates[1])
 
-            assert(lhs_dist.days < thres_days or rhs_dist < thres_days)
+            assert(lhs_dist.days < thres_days or rhs_dist.days < thres_days)
 
         master_dates = [level[0], level[-1]]
         last_level = level

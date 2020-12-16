@@ -138,7 +138,7 @@ def find_scenes_in_range(master_dt, date_list, thres_days: int, include_closest:
     closest_rhs_diff = None
 
     for dt in date_list:
-        dt_diff = master_dt - dt
+        dt_diff = dt - master_dt
 
         # Skip scenes that match the master date
         if dt_diff.days == 0:
@@ -200,20 +200,20 @@ def create_slave_coreg_tree(master_dt, date_list, thres_days=63):
 
     # Initial Master<->Slave coreg list
     lhs, rhs = find_scenes_in_range(master_dt, date_list, thres_days)
-    last_list = rhs + lhs
+    last_list = lhs + rhs
 
     while len(last_list) > 0:
         lists.append(last_list)
 
         if last_list[0] < master_dt:
             lhs, rhs = find_scenes_in_range(last_list[0], date_list, thres_days)
-            sub_list1 = rhs
+            sub_list1 = lhs
         else:
             sub_list1 = []
 
         if last_list[-1] > master_dt:
             lhs, rhs = find_scenes_in_range(last_list[-1], date_list, thres_days)
-            sub_list2 = lhs
+            sub_list2 = rhs
         else:
             sub_list2 = []
 

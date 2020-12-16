@@ -34,6 +34,13 @@ def test_scene_search_threshold():
         else:
             assert(date not in found_dates)
 
+    # Make sure LHS are left of reference date, and RHS are right
+    for date in lhs:
+        assert(date < today)
+
+    for date in rhs:
+        assert(date > today)
+
 
 def test_tree_structure():
     test_dates = _generate_dates(date_a, date_b)

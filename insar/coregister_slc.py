@@ -94,6 +94,7 @@ class CoregisterSlc:
     def __init__(
         self,
         proc: ProcConfig,
+        list_idx: Union[str, int],
         slc_master: Union[str, Path],
         slc_slave: Union[str, Path],
         slave_mli: Union[str, Path],
@@ -112,6 +113,9 @@ class CoregisterSlc:
 
         :param proc:
             The gamma proc configuration file for the coregistration processing.
+        :param list_idx:
+            The list file index the slave originated from (eg: 1 for slaves1.list),
+            or '-' if not applicable (eg: master coregistration).
         :param slc_master:
             A full path to a master (reference) SLC image file.
         :param slc_slave:
@@ -138,6 +142,7 @@ class CoregisterSlc:
             A full path to a output directory.
         """
         self.proc = proc
+        self.list_idx = list_idx
         self.slc_master = slc_master
         self.slc_slave = slc_slave
         self.rdc_dem = rdc_dem
@@ -630,7 +635,7 @@ class CoregisterSlc:
 
             return (IW1_result, IW2_result, IW3_result)
 
-    def fine_registration(
+    def fine_coregistration(
         self,
         slave: Union[str, int],
         list_idx: Union[str, int],
@@ -695,7 +700,7 @@ class CoregisterSlc:
                     coreg_slave = self._read_line(self.proc.slave_list, coreg_pos)
                     r_coreg_slave_tab = f'{self.proc.slc_dir}/{coreg_slave}/r{coreg_slave}_{self.proc.polarisation}_tab'
 
-                elif int(list_idx) < 20140000:  # coregister to particular slave
+                elif int(list_idx) > 20140000:  # coregister to particular slave
                     coreg_slave = list_idx
                     r_coreg_slave_tab = f'{self.proc.slc_dir}/{coreg_slave}/r{coreg_slave}_{self.proc.polarisation}_tab'
 
@@ -1433,7 +1438,7 @@ class CoregisterSlc:
             self.set_tab_files()
             self.get_lookup()
             self.reduce_offset()
-            self.fine_registration('-', '-')
+            self.fine_coregistration(self.slave_date, self.list_idx)
             self.resample_full()
             self.multi_look()
             self.generate_normalised_backscatter()

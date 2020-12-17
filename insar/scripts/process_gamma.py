@@ -816,6 +816,7 @@ class CoregisterSlave(luigi.Task):
     """
 
     proc_file = luigi.Parameter()
+    list_idx = luigi.Parameter()
     slc_master = luigi.Parameter()
     slc_slave = luigi.Parameter()
     slave_mli = luigi.Parameter()
@@ -843,6 +844,7 @@ class CoregisterSlave(luigi.Task):
 
         coreg_slave = CoregisterSlc(
             proc=proc_config,
+            list_idx=str(self.list_idx),
             slc_master=Path(str(self.slc_master)),
             slc_slave=Path(str(self.slc_slave)),
             slave_mli=Path(str(self.slave_mli)),
@@ -871,6 +873,7 @@ class CreateCoregisterSlaves(luigi.Task):
     up by each sub-tree of slave-slave coregistrations in the coregistration network.
     """
 
+    proc_file = luigi.Parameter()
     master_scene_polarization = luigi.Parameter(default="VV")
     master_scene = luigi.Parameter(default=None)
     cleanup = luigi.Parameter()
@@ -885,6 +888,10 @@ class CreateCoregisterSlaves(luigi.Task):
     def run(self):
         log = STATUS_LOGGER.bind(track_frame=f"{self.track}_{self.frame}")
         log.info("co-register master-slaves task")
+
+        # Load the gamma proc config file
+        with open(str(self.proc_file), 'r') as proc_fileobj:
+            proc_config = ProcConfig.from_file(proc_fileobj)
 
         slc_frames = get_scenes(self.burst_data_csv)
 
@@ -937,6 +944,8 @@ class CreateCoregisterSlaves(luigi.Task):
             outdir=slc_master_dir,
         )
         kwargs = {
+            "proc_file": self.proc_file,
+            "list_idx": "-",
             "slc_master": slc_master_dir.joinpath(f"{master_slc_prefix}.slc"),
             "range_looks": rlks,
             "azimuth_looks": alks,
@@ -964,18 +973,28 @@ class CreateCoregisterSlaves(luigi.Task):
             )
             slave_coreg_jobs.append(CoregisterSlave(**kwargs))
 
-        for slave_list in coreg_tree:
-            list_frames = [i for i in slc_frames if i[0].date() in slave_list]
+        for list_index, list_dates in enumerate(coreg_tree):
+            list_index += 1  # list index is 1-based
+            list_frames = [i for i in slc_frames if i[0].date() in list_dates]
+
+            # Write list file
+            list_file_path = Path(proc_config.list_dir) / f'slaves{list_index}.list'
+            with open(list_file_path, 'w') as listfile:
+                list_date_strings = [dt.strftime(__DATE_FMT__) for dt in list_frames]
+                listfile.write('\n'.join(list_date_strings))
 
             for _dt, _, _pols in list_frames:
                 slc_scene = _dt.strftime(__DATE_FMT__)
                 if slc_scene == master_scene:
                     continue
+
                 slave_dir = Path(self.outdir).joinpath(__SLC__).joinpath(slc_scene)
                 for _pol in _pols:
                     if _pol not in self.polarization:
                         continue
+
                     slave_slc_prefix = f"{slc_scene}_{_pol.upper()}"
+                    kwargs["list_idx"] = list_index
                     kwargs["slc_slave"] = slave_dir.joinpath(f"{slave_slc_prefix}.slc")
                     kwargs["slave_mli"] = slave_dir.joinpath(
                         f"{slave_slc_prefix}_{rlks}rlks.mli"

@@ -34,6 +34,7 @@ source {env}
 export OMP_NUM_THREADS={num_threads}
 export TMPDIR={workdir}
 gamma_insar ARD \
+    --proc-file {proc_file} \
     --vector-file-list {vector_file_list} \
     --start-date {start_date} \
     --end-date {end_date} \
@@ -74,6 +75,7 @@ def scatter(iterable, n):
 
 
 def _gen_pbs(
+    proc_file,
     scattered_tasklist,
     env,
     workdir,
@@ -105,6 +107,7 @@ def _gen_pbs(
         pbs = PBS_TEMPLATE.format(
             pbs_resources=pbs_resource,
             env=env,
+            proc_file=proc_file,
             vector_file_list=basename(out_fname),
             start_date=start_date,
             end_date=end_date,
@@ -142,6 +145,11 @@ def _submit_pbs(pbs_scripts, test):
 @click.command(
     "ard-insar",
     help="Equally partition a jobs into batches and submit each batch into the PBS queue.",
+)
+@click.option(
+    "--proc-file",
+    type=click.Path(exists=True, readable=True),
+    help="The file containing gamma process config variables",
 )
 @click.option(
     "--taskfile",
@@ -226,6 +234,7 @@ def _submit_pbs(pbs_scripts, test):
     default=False,
 )
 def ard_insar(
+    proc_file: click.Path,
     taskfile: click.Path,
     start_date: click.DateTime,
     end_date: click.DateTime,
@@ -305,6 +314,7 @@ def ard_insar(
         num_workers = workers
 
     pbs_scripts = _gen_pbs(
+        proc_file,
         scattered_tasklist,
         env,
         workdir,

@@ -1047,6 +1047,7 @@ class ARD(luigi.WrapperTask):
     ------------------------------------------------------------------------------
     usage:{
         luigi --module process_gamma ARD
+        --proc-file <path to the .proc config file>
         --vector-file <path to a vector file (.shp)>
         --start-date <start date of SLC acquisition>
         --end-date <end date of SLC acquisition>
@@ -1057,6 +1058,7 @@ class ARD(luigi.WrapperTask):
     }
     """
 
+    proc_file = luigi.Parameter()
     vector_file_list = luigi.Parameter(significant=False)
     start_date = luigi.DateParameter(significant=False)
     end_date = luigi.DateParameter(significant=False)
@@ -1093,6 +1095,7 @@ class ARD(luigi.WrapperTask):
                 os.makedirs(workdir, exist_ok=True)
 
                 kwargs = {
+                    "proc_file": proc_file,
                     "vector_file": vector_file,
                     "start_date": self.start_date,
                     "end_date": self.end_date,

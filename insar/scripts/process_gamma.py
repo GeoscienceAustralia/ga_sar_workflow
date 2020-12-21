@@ -996,6 +996,9 @@ class CreateCoregisterSlaves(luigi.Task):
 
             # Write list file
             list_file_path = Path(proc_config.list_dir) / f'slaves{list_index}.list'
+            if not list_file_path.parent.exists():
+                list_file_path.parent.mkdir(parents=True)
+
             with open(list_file_path, 'w') as listfile:
                 list_date_strings = [dt.strftime(__DATE_FMT__) for dt in list_frames]
                 listfile.write('\n'.join(list_date_strings))

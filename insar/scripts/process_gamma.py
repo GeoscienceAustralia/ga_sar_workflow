@@ -129,6 +129,12 @@ def find_scenes_in_range(master_dt, date_list, thres_days: int, include_closest:
         used instead of no scene at all.
     """
 
+    # We do everything with datetime.date's (can't mix and match date vs. datetime)
+    if isinstance(master_dt, datetime.datetime):
+        master_dt = master_dt.date()
+    elif not isinstance(master_dt, datetime.date):
+        master_dt = datetime.date(master_dt)
+
     thresh_dt = datetime.timedelta(days=thres_days)
     tree_lhs = []  # This was the 'lower' side in the bash...
     tree_rhs = []  # This was the 'upper' side in the bash...
@@ -138,6 +144,11 @@ def find_scenes_in_range(master_dt, date_list, thres_days: int, include_closest:
     closest_rhs_diff = None
 
     for dt in date_list:
+        if isinstance(dt, datetime.datetime):
+            dt = dt.date()
+        elif not isinstance(master_dt, datetime.date):
+            dt = datetime.date(dt)
+
         dt_diff = dt - master_dt
 
         # Skip scenes that match the master date
@@ -189,6 +200,12 @@ def create_slave_coreg_tree(master_dt, date_list, thres_days=63):
         # -> longer runtime compared to 63, similar number of badly coregistered scenes
         # do slaves with time difference less than thres_days
     """
+
+    # We do everything with datetime.date's (can't mix and match date vs. datetime)
+    if isinstance(master_dt, datetime.datetime):
+        master_dt = master_dt.date()
+    elif not isinstance(master_dt, datetime.date):
+        master_dt = datetime.date(master_dt)
 
     lists = []
 

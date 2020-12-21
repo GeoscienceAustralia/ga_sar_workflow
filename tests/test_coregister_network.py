@@ -11,7 +11,7 @@ def _generate_dates(first_date, last_date, N=100):
     coefs = np.linspace(0, 1, N).tolist()
     return [first_date + dt_diff*c for c in coefs]
 
-today = datetime.now()
+today = datetime.now().date()
 date_a = today - timedelta(days=200)
 date_b = today + timedelta(days=200)
 
@@ -29,7 +29,7 @@ def test_scene_search_threshold():
     # Make sure all test dates in threshold were found
     # and that those outside threshold were not
     for date in test_dates:
-        if abs(date - today).days < thres_days:
+        if abs(date - today).days <= thres_days:
             assert(date in found_dates)
         else:
             assert(date not in found_dates)
@@ -63,7 +63,7 @@ def test_tree_structure():
             lhs_dist = abs(dt - master_dates[0])
             rhs_dist = abs(dt - master_dates[1])
 
-            assert(lhs_dist.days < thres_days or rhs_dist.days < thres_days)
+            assert(lhs_dist.days <= thres_days or rhs_dist.days <= thres_days)
 
         master_dates = [level[0], level[-1]]
         last_level = level

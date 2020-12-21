@@ -87,6 +87,7 @@ def get_test_context():
     # input data (input data is outside the control of our code / not something we can test).
     data = {
         'proc': proc_config,
+        'list_idx': '-',
         'slc_master': data_dir / '20151127_VV.slc',
         'slc_slave': data_dir / '20151127_VV.slc',  # if slave/master are the same... everything should still run i assume? just useless outputs?
         'slave_mli': data_dir / '20151127_VV_8rlks.mli',

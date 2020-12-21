@@ -1000,7 +1000,7 @@ class CreateCoregisterSlaves(luigi.Task):
                 list_file_path.parent.mkdir(parents=True)
 
             with open(list_file_path, 'w') as listfile:
-                list_date_strings = [dt.strftime(__DATE_FMT__) for dt in list_frames]
+                list_date_strings = [dt.strftime(__DATE_FMT__) for dt, _, _ in list_frames]
                 listfile.write('\n'.join(list_date_strings))
 
             for _dt, _, _pols in list_frames:

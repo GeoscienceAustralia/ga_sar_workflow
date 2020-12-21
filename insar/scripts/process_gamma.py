@@ -1095,7 +1095,7 @@ class ARD(luigi.WrapperTask):
                 os.makedirs(workdir, exist_ok=True)
 
                 kwargs = {
-                    "proc_file": proc_file,
+                    "proc_file": self.proc_file,
                     "vector_file": vector_file,
                     "start_date": self.start_date,
                     "end_date": self.end_date,

@@ -483,7 +483,7 @@ class CoregisterSlc:
                     range_stdev, azimuth_stdev = re.findall(
                         r"[-+]?[0-9]*\.?[0-9]+",
                         self._grep_stdout(
-                            cout.splitlines(), "final model fit std. dev. (samples) range:"
+                            cout, "final model fit std. dev. (samples) range:"
                         ),
                     )
 

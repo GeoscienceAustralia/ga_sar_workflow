@@ -62,8 +62,8 @@ def auto_logging_decorator(func, exception_type, logger):
             kwargs[const.CERR] = []
 
         stat = func(cmd, *args, **kwargs)
-        cout = str(kwargs[const.COUT])
-        cerr = str(kwargs[const.CERR])
+        cout = kwargs[const.COUT]
+        cerr = kwargs[const.CERR]
 
         if stat:
             msg = "failed to execute pg.{}".format(cmd)

@@ -1003,6 +1003,10 @@ class CreateCoregisterSlaves(luigi.Task):
                 list_date_strings = [dt.strftime(__DATE_FMT__) for dt, _, _ in list_frames]
                 listfile.write('\n'.join(list_date_strings))
 
+            # Bash passes '-' for slaves1.list, and list_index there after.
+            if list_index > 1:
+                kwargs["list_idx"] = list_index
+
             for _dt, _, _pols in list_frames:
                 slc_scene = _dt.strftime(__DATE_FMT__)
                 if slc_scene == master_scene:
@@ -1014,7 +1018,6 @@ class CreateCoregisterSlaves(luigi.Task):
                         continue
 
                     slave_slc_prefix = f"{slc_scene}_{_pol.upper()}"
-                    kwargs["list_idx"] = list_index
                     kwargs["slc_slave"] = slave_dir.joinpath(f"{slave_slc_prefix}.slc")
                     kwargs["slave_mli"] = slave_dir.joinpath(
                         f"{slave_slc_prefix}_{rlks}rlks.mli"

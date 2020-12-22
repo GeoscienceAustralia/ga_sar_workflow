@@ -843,7 +843,7 @@ class CoregisterSlc:
             sum = 0.0
             sum_weight = 0.0
 
-            for i in range(1, number_of_bursts_IWi+1):
+            for i in range(1, number_of_bursts_IWi):
                 starting_line1 = lines_offset + (i - 1)*lines_per_burst
                 starting_line2 = i*lines_per_burst
                 _LOG.info(f"{i} {starting_line1} {starting_line2}")
@@ -1023,7 +1023,7 @@ class CoregisterSlc:
                     4
                 )
 
-                off20_par = pg.ParFile(off20)
+                off20_par = pg.ParFile(off20.as_posix())
                 range_samples20 = off20_par.get_value("interferogram_width", dtype=int, index=0)
                 azimuth_lines20 = off20_par.get_value("interferogram_azimuth_lines", dtype=int, index=0)
 

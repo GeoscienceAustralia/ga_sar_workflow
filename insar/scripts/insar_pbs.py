@@ -241,7 +241,7 @@ def _submit_pbs(pbs_scripts, test):
     type=click.BOOL,
     is_flag=False,
     help="If the job should cleanup the DEM/SLC directories after completion or not.",
-    default=True
+    default=False
 )
 def ard_insar(
     proc_file: click.Path,

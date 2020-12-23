@@ -239,7 +239,7 @@ def _submit_pbs(pbs_scripts, test):
 @click.option(
     "--cleanup",
     type=click.BOOL,
-    is_flag=True,
+    is_flag=False,
     help="If the job should cleanup the DEM/SLC directories after completion or not.",
     default=True
 )

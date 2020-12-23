@@ -42,7 +42,8 @@ gamma_insar ARD \
     --outdir {outdir} \
     --polarization '{json_polar}' \
     --workers {worker} \
-    --local-scheduler
+    --local-scheduler \
+    --cleanup {cleanup}
 """
 
 PBS_PACKAGE_TEMPLATE = r"""{pbs_resources}
@@ -87,6 +88,7 @@ def _gen_pbs(
     cpu_count,
     num_workers,
     num_threads,
+    cleanup
 ):
     """
     Generates a pbs scripts
@@ -116,6 +118,7 @@ def _gen_pbs(
             json_polar=json_polar,
             worker=num_workers,
             num_threads=num_threads,
+            cleanup="true" if cleanup else "false"
         )
 
         out_fname = pjoin(job_dir, FMT1.format(jobid=jobid))
@@ -233,6 +236,13 @@ def _submit_pbs(pbs_scripts, test):
     help="mock the job submission to PBS queue",
     default=False,
 )
+@click.option(
+    "--cleanup",
+    type=click.BOOL,
+    is_flag=True,
+    help="If the job should cleanup the DEM/SLC directories after completion or not.",
+    default=True
+)
 def ard_insar(
     proc_file: click.Path,
     taskfile: click.Path,
@@ -253,6 +263,7 @@ def ard_insar(
     project: click.STRING,
     env: click.Path,
     test: click.BOOL,
+    cleanup: click.BOOL
 ):
     """
     consolidates batch processing job script creation and submission of pbs jobs
@@ -326,6 +337,7 @@ def ard_insar(
         ncpus,
         num_workers,
         num_threads,
+        cleanup
     )
     _submit_pbs(pbs_scripts, test)
 

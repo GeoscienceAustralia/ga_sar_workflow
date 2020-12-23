@@ -197,7 +197,7 @@ class CoregisterSlc:
         self.r_slave_mli_par = None
 
         self.slave_date, self.slave_polar = self.slc_slave.stem.split('_')
-        self.master_date, self.master_polar = self.slc_slave.stem.split('_')
+        self.master_date, self.master_polar = self.slc_master.stem.split('_')
 
         master_slave_prefix = f"{self.master_date}-{self.slave_date}"
         self.r_master_slave_name = f"{master_slave_prefix}_{self.slave_polar}_{self.rlks}rlks"
@@ -661,7 +661,7 @@ class CoregisterSlc:
                 "",
             ])
 
-            for iteration in range(max_iteration):
+            for iteration in range(1, max_iteration+1):
                 # cp -rf $slave_off $slave_off_start
                 slave_off_start = temp_dir.joinpath(f"{self.slave_off.name}.start")
                 shutil.copy(self.slave_off, slave_off_start)
@@ -777,7 +777,7 @@ class CoregisterSlc:
             burst_start_time_1 = IW_TOPS.get_value("burst_start_time_1", dtype=float, index=0)
             burst_start_time_2 = IW_TOPS.get_value("burst_start_time_2", dtype=float, index=0)
             lines_offset_float = (burst_start_time_2 - burst_start_time_1) / azimuth_line_time
-            return 0.5 + lines_offset_float
+            return int(0.5 + lines_offset_float)
 
         # determine lines offset between start of burst1 and start of burst2
         lines_offset_IWi = [None, None, None]

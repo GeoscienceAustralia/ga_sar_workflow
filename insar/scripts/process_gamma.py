@@ -1086,7 +1086,7 @@ class ARD(luigi.WrapperTask):
     start_date = luigi.DateParameter(significant=False)
     end_date = luigi.DateParameter(significant=False)
     polarization = luigi.ListParameter(default=["VV", "VH"], significant=False)
-    cleanup = luigi.Parameter(default=True, significant=False)
+    cleanup = luigi.BoolParameter(default=True, significant=False, parsing=luigi.BoolParameter.EXPLICIT_PARSING)
     outdir = luigi.Parameter(significant=False)
     workdir = luigi.Parameter(significant=False)
     database_name = luigi.Parameter()

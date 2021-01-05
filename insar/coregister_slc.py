@@ -216,9 +216,9 @@ class CoregisterSlc:
             A namedtuple containing the names of slc, par and tops_par.
         """
 
-        swath_par = f"{prefix}_iw{swath}.slc.par"
-        swath_tops_par = f"{prefix}_iw{swath}.slc.TOPS_par"
-        swath_slc = f"{prefix}_iw{swath}.slc"
+        swath_par = f"{prefix}_IW{swath}.slc.par"
+        swath_tops_par = f"{prefix}_IW{swath}.slc.TOPS_par"
+        swath_slc = f"{prefix}_IW{swath}.slc"
 
         # TODO: refactor to define in module scope
         swath_tab = namedtuple("swath_tab", ["slc", "par", "tops_par"])
@@ -568,7 +568,6 @@ class CoregisterSlc:
 
                     iteration += 1
 
-            # TODO this needs to be removed once fine co-registration step is implemented
             shutil.copy(slave_doff, self.slave_off)
 
     def _read_line(

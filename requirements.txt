@@ -1,5 +1,6 @@
 # Unversioned
 pytest
+pytest-cov
 simplekml
 rasterio
 

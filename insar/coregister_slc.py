@@ -167,6 +167,7 @@ class CoregisterSlc:
             )
 
         self.r_dem_master_slc_par = self.slc_master.with_suffix(".slc.par")
+        self.r_dem_master_slc_par = self.r_dem_master_slc_par.parent / ("r" + self.r_dem_master_slc_par.name)
         if not self.r_dem_master_slc_par.exists():
             _LOG.error(
                 "DEM Master SLC par file not found",

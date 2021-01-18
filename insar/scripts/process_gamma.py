@@ -14,6 +14,7 @@ from luigi.util import requires
 import zlib
 import structlog
 
+from insar.constant import SCENE_DATE_FMT
 from insar.generate_slc_inputs import query_slc_inputs, slc_inputs
 from insar.calc_baselines_new import BaselineProcess
 from insar.calc_multilook_values import multilook, calculate_mean_look_values
@@ -21,7 +22,8 @@ from insar.coregister_dem import CoregisterDem
 from insar.coregister_slc import CoregisterSlc
 from insar.make_gamma_dem import create_gamma_dem
 from insar.process_s1_slc import SlcProcess
-from insar.project import ProcConfig
+from insar.process_ifg import run_workflow, TempFileConfig
+from insar.project import ProcConfig, DEMFileNames, IfgFileNames
 
 from insar.meta_data.s1_slc import S1DataDownload
 from insar.clean_up import (
@@ -493,6 +495,54 @@ class ProcessSlc(luigi.Task):
                     f.write("")
 
 
+class ProcessSlcSubset(luigi.Task):
+    """
+    Runs single slc processing task
+    """
+
+    scene_date = luigi.Parameter()
+    raw_path = luigi.Parameter()
+    polarization = luigi.Parameter()
+    burst_data = luigi.Parameter()
+    slc_dir = luigi.Parameter()
+    workdir = luigi.Parameter()
+    ref_master_tab = luigi.Parameter(default=None)
+    rlks = luigi.IntParameter()
+    alks = luigi.IntParameter()
+
+    def output(self):
+        return luigi.LocalTarget(
+            Path(str(self.workdir)).joinpath(
+                f"{self.scene_date}_{self.polarization}_slc_subset_logs.out"
+            )
+        )
+
+    def run(self):
+        slc_job = SlcProcess(
+            str(self.raw_path),
+            str(self.slc_dir),
+            str(self.polarization),
+            str(self.scene_date),
+            str(self.burst_data),
+            self.ref_master_tab,
+        )
+
+        # TODO this is a crude way to handle gamma program error which fails
+        # TODO create full SLC because of resizing issue with only single burst
+        # TODO find better way to handle this Error in process_s1_slc class.
+        failed = False
+        try:
+            slc_job.main_subset(int(self.rlks), int(self.alks))
+        except OSError:
+            failed = True
+        finally:
+            with self.output().open("w") as f:
+                if failed:
+                    f.write(f"{self.scene_date}")
+                else:
+                    f.write("")
+
+
 @requires(InitialSetup)
 class CreateFullSlc(luigi.Task):
     """
@@ -654,6 +704,7 @@ class CreateMultilook(luigi.Task):
         log.info("create multi-look task")
 
         # calculate the mean range and azimuth look values
+        slc_dir = Path(self.outdir).joinpath(__SLC__)
         slc_frames = get_scenes(self.burst_data_csv)
         slc_par_files = []
 
@@ -687,6 +738,33 @@ class CreateMultilook(luigi.Task):
                     slc=slc, slc_par=slc_par, rlks=rlks, alks=alks, workdir=self.workdir
                 )
             )
+
+        # HACK: We're scheduling the slc subsetting after multi-look as well
+        # - this probably needs it's own task that comes after multilook...
+        # - but due to the expediency we need this fix it's been tacked on here...
+        for _dt, status_frame, _pols in slc_frames:
+            slc_scene = _dt.strftime(__DATE_FMT__)
+            for _pol in _pols:
+                if _pol not in self.polarization:
+                    continue
+
+                if slc_scene == resize_master_scene and _pol == resize_master_pol:
+                    continue
+
+                ml_jobs.append(
+                    ProcessSlcSubset(
+                        scene_date=slc_scene,
+                        raw_path=Path(self.outdir).joinpath(__RAW__),
+                        polarization=_pol,
+                        burst_data=self.burst_data_csv,
+                        slc_dir=slc_dir,
+                        workdir=self.workdir,
+                        ref_master_tab=resize_master_tab,
+                        rlks=rlks,
+                        alks=alks
+                    )
+                )
+
         yield ml_jobs
 
         with self.output().open("w") as out_fid:
@@ -1076,6 +1154,86 @@ class CreateCoregisterSlaves(luigi.Task):
             f.write("")
 
 
+class ProcessIFG(luigi.Task):
+    """
+    Runs the interferogram processing tasks.
+    """
+
+    proc_file = luigi.Parameter()
+    master_date = luigi.Parameter()
+    slave_date = luigi.Parameter()
+
+    def output(self):
+        return luigi.LocalTarget(
+            Path(self.workdir).joinpath(
+                f"{self.track}_{self.frame}_ifg_{self.master_date}-{self.slave_date}_status_logs.out"
+            )
+        )
+
+    def run(self):
+        # Load the gamma proc config file
+        with open(str(self.proc_file), 'r') as proc_fileobj:
+            proc_config = ProcConfig.from_file(proc_fileobj)
+
+        ic = IfgFileNames(proc_config, self.master_date, self.slave_date)
+        dc = DEMFileNames(proc_config)
+        tc = TempFileConfig(ic)
+
+        run_workflow(
+            proc_config,
+            ic,
+            dc,
+            tc,
+            ifg_width,
+            cleanup)
+
+        with self.output().open("w") as f:
+            f.write("")
+
+
+@requires(CoregisterSlave)
+class CreateProcessIFGs(luigi.Task):
+    """
+    Runs the interferogram processing tasks.
+    """
+
+    proc_file = luigi.Parameter()
+
+    def output(self):
+        return luigi.LocalTarget(
+            Path(self.workdir).joinpath(
+                f"{self.track}_{self.frame}_create_ifgs_status_logs.out"
+            )
+        )
+
+    def run(self):
+        log = STATUS_LOGGER.bind(track_frame=f"{self.track}_{self.frame}")
+        log.info("Process interferograms task")
+
+        # Load the gamma proc config file
+        with open(str(self.proc_file), 'r') as proc_fileobj:
+            proc_config = ProcConfig.from_file(proc_fileobj)
+
+        # Parse ifg_list to schedule jobs for each interferogram
+        with open(Path(self.outdir) / proc_config.list_dir / proc_config.ifg_list) as ifg_list_file:
+            ifgs_list = [dates.split(",") for dates in ifg_list_file.read().splitlines()]
+
+        jobs = []
+        for master_date, slave_date in ifgs_list:
+            jobs.append(
+                ProcessIFG(
+                    proc_file=self.proc_file,
+                    master_date=master_date,
+                    slave_date=slave_date
+                )
+            )
+
+        yield jobs
+
+        with self.output().open("w") as f:
+            f.write("")
+
+
 class ARD(luigi.WrapperTask):
     """
     Runs the InSAR ARD pipeline using GAMMA software.
@@ -1117,6 +1275,8 @@ class ARD(luigi.WrapperTask):
         log = STATUS_LOGGER.bind(vector_file_list=Path(self.vector_file_list).stem)
 
         ard_tasks = []
+
+        # Coregistration processing
         with open(self.vector_file_list, "r") as fid:
             vector_files = fid.readlines()
             for vector_file in vector_files:
@@ -1154,6 +1314,11 @@ class ARD(luigi.WrapperTask):
                     "cleanup": self.cleanup,
                 }
                 ard_tasks.append(CreateCoregisterSlaves(**kwargs))
+
+        # IFG processing
+        # Note: we just re-use the last kwargs (it will have extra params we don't use, but everything we need in there is correct)
+        ard_tasks.append(CreateProcessIFGs(**kwargs))
+
         yield ard_tasks
 
 

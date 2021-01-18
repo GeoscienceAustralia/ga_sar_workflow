@@ -716,7 +716,8 @@ class SlcProcess:
             _make_png(tab)
 
     def main(
-        self, write_png=True,
+        self,
+        write_png: bool = True,
     ):
         """Main method to execute SLC processing sequence need to produce SLC."""
         work_dir = self.output_dir.joinpath(self.scene_date)
@@ -727,8 +728,20 @@ class SlcProcess:
             self.phase_shift()
             self.mosaic_slc()
             self.orbits()
+
+    def main_subset(
+        self,
+        rlks: int,
+        alks: int,
+        write_png: bool = True,
+    ):
+        """Main method to execute SLC processing sequence need to produce SLC frame subsets."""
+        work_dir = self.output_dir.joinpath(self.scene_date)
+        work_dir.mkdir(exist_ok=True)
+
+        with working_directory(work_dir):
             self.frame_subset()
-            self.mosaic_slc()
+            self.mosaic_slc(rlks, alks)
 
             if write_png:
                 self.burst_images()

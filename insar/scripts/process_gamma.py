@@ -1198,6 +1198,10 @@ class CreateProcessIFGs(luigi.Task):
     """
 
     proc_file = luigi.Parameter()
+    track = luigi.Parameter()
+    frame = luigi.Parameter()
+    outdir = luigi.Parameter()
+    workdir = luigi.Parameter()
 
     def output(self):
         return luigi.LocalTarget(
@@ -1315,9 +1319,14 @@ class ARD(luigi.WrapperTask):
                 }
                 ard_tasks.append(CreateCoregisterSlaves(**kwargs))
 
-        # IFG processing
-        # Note: we just re-use the last kwargs (it will have extra params we don't use, but everything we need in there is correct)
-        ard_tasks.append(CreateProcessIFGs(**kwargs))
+                # IFG processing
+                ard_tasks.append(CreateProcessIFGs(
+                    proc_file = self.proc_file,
+                    track = track,
+                    frame = frame,
+                    outdir = outdir,
+                    workdir = workdir,
+                ))
 
         yield ard_tasks
 

@@ -1191,7 +1191,6 @@ class ProcessIFG(luigi.Task):
             f.write("")
 
 
-@requires(CoregisterSlave)
 class CreateProcessIFGs(luigi.Task):
     """
     Runs the interferogram processing tasks.
@@ -1278,9 +1277,11 @@ class ARD(luigi.WrapperTask):
     def requires(self):
         log = STATUS_LOGGER.bind(vector_file_list=Path(self.vector_file_list).stem)
 
-        ard_tasks = []
+        tracks = []
 
         # Coregistration processing
+        ard_tasks = []
+
         with open(self.vector_file_list, "r") as fid:
             vector_files = fid.readlines()
             for vector_file in vector_files:
@@ -1292,6 +1293,8 @@ class ARD(luigi.WrapperTask):
                     continue
 
                 track, frame = Path(vector_file).stem.split("_")
+                tracks.append((track,frame))
+
                 outdir = Path(str(self.outdir)).joinpath(f"{track}_{frame}")
                 workdir = Path(str(self.workdir)).joinpath(f"{track}_{frame}")
 
@@ -1319,16 +1322,25 @@ class ARD(luigi.WrapperTask):
                 }
                 ard_tasks.append(CreateCoregisterSlaves(**kwargs))
 
-                # IFG processing
-                ard_tasks.append(CreateProcessIFGs(
-                    proc_file = self.proc_file,
-                    track = track,
-                    frame = frame,
-                    outdir = outdir,
-                    workdir = workdir,
-                ))
-
         yield ard_tasks
+
+        # Process ifgs after all coregistrations are complete
+        ifg_tasks = []
+
+        for track, frame in tracks:
+            outdir = Path(str(self.outdir)).joinpath(f"{track}_{frame}")
+            workdir = Path(str(self.workdir)).joinpath(f"{track}_{frame}")
+
+            # IFG processing
+            ifg_tasks.append(CreateProcessIFGs(
+                proc_file = self.proc_file,
+                track = track,
+                frame = frame,
+                outdir = outdir,
+                workdir = workdir,
+            ))
+
+        yield ifg_tasks
 
 
 def run():

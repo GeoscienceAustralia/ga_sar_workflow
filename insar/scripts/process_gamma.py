@@ -1200,7 +1200,7 @@ class ProcessIFG(luigi.Task):
         tc = TempFileConfig(ic)
 
         # Run interferogram processing workflow w/ ifg width specified in r_master_mli par file
-        with open(ic.r_master_mli_par, 'r') as fileobj:
+        with open(Path(self.outdir) / ic.r_master_mli_par, 'r') as fileobj:
             ifg_width = get_ifg_width(fileobj)
 
         run_workflow(

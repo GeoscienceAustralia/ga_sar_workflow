@@ -1338,7 +1338,7 @@ class ARD(luigi.WrapperTask):
                 # IFG processing
                 ard_tasks.append(CreateProcessIFGs(**kwargs))
 
-        yield ifg_tasks
+        yield ard_tasks
 
 
 def run():

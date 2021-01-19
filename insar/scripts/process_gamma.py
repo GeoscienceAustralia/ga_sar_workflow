@@ -1196,8 +1196,8 @@ class ProcessIFG(luigi.Task):
         with open(str(self.proc_file), 'r') as proc_fileobj:
             proc_config = ProcConfig.from_file(proc_fileobj)
 
-        ic = IfgFileNames(proc_config, self.master_date, self.slave_date)
-        dc = DEMFileNames(proc_config)
+        ic = IfgFileNames(proc_config, self.master_date, self.slave_date, self.outdir)
+        dc = DEMFileNames(proc_config, self.outdir)
         tc = TempFileConfig(ic)
 
         # Run interferogram processing workflow w/ ifg width specified in r_master_mli par file

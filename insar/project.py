@@ -321,15 +321,20 @@ class DEMMasterNames:
         "r_dem_master_mli_bmp",
     ]
 
-    def __init__(self, proc=None):
+    def __init__(self, proc=None, out_dir = None):
         if proc:
-            self.dem_master_dir = pathlib.Path(proc.slc_dir) / proc.ref_master_scene
+            if not out_dir:
+                out_dir = proc.proj_dir / proc.track
+
+            out_dir = pathlib.Path(out_dir)
+
+            self.dem_master_dir = out_dir / proc.slc_dir / proc.ref_master_scene
 
             suffix = proc.ref_master_scene + "_" + proc.polarisation
-            self.dem_master_slc_name = pathlib.Path(self.dem_master_dir) / suffix
+            self.dem_master_slc_name = self.dem_master_dir / suffix
 
-            self.dem_master_slc = pathlib.Path(self.dem_master_dir) / (suffix + ".slc")
-            self.dem_master_slc_par = pathlib.Path(self.dem_master_dir) / (
+            self.dem_master_slc = self.dem_master_dir / (suffix + ".slc")
+            self.dem_master_slc_par = self.dem_master_dir / (
                 suffix + ".slc.par"
             )
 
@@ -341,53 +346,53 @@ class DEMMasterNames:
                 + proc.range_looks
                 + "rlks"
             )
-            self.dem_master_mli_name = pathlib.Path(self.dem_master_dir) / suffix_lks
+            self.dem_master_mli_name = self.dem_master_dir / suffix_lks
 
-            self.dem_master_mli = pathlib.Path(self.dem_master_dir) / (
+            self.dem_master_mli = self.dem_master_dir / (
                 suffix_lks + ".mli"
             )
-            self.dem_master_mli_par = pathlib.Path(self.dem_master_dir) / (
+            self.dem_master_mli_par = self.dem_master_dir / (
                 suffix_lks + ".mli.par"
             )
-            self.dem_master_gamma0 = pathlib.Path(self.dem_master_dir) / (
+            self.dem_master_gamma0 = self.dem_master_dir / (
                 suffix_lks + ".gamma0"
             )
-            self.dem_master_gamma0_bmp = pathlib.Path(self.dem_master_dir) / (
+            self.dem_master_gamma0_bmp = self.dem_master_dir / (
                 suffix_lks + ".gamma0.bmp"
             )
 
-            self.dem_master_gamma0_eqa = pathlib.Path(self.dem_master_dir) / (
+            self.dem_master_gamma0_eqa = self.dem_master_dir / (
                 suffix_lks + "_eqa.gamma0"
             )
-            self.dem_master_gamma0_eqa_bmp = pathlib.Path(self.dem_master_dir) / (
+            self.dem_master_gamma0_eqa_bmp = self.dem_master_dir / (
                 suffix_lks + "_eqa.gamma0.bmp"
             )
-            self.dem_master_gamma0_eqa_geo = pathlib.Path(self.dem_master_dir) / (
+            self.dem_master_gamma0_eqa_geo = self.dem_master_dir / (
                 suffix_lks + "_eqa.gamma0.tif"
             )
 
             suffix_slc = "r{}_{}".format(proc.ref_master_scene, proc.polarisation)
-            self.r_dem_master_slc_name = pathlib.Path(self.dem_master_dir) / suffix_slc
+            self.r_dem_master_slc_name = self.dem_master_dir / suffix_slc
 
-            self.r_dem_master_slc = pathlib.Path(self.dem_master_dir) / (
+            self.r_dem_master_slc = self.dem_master_dir / (
                 suffix_slc + ".slc"
             )
-            self.r_dem_master_slc_par = pathlib.Path(self.dem_master_dir) / (
+            self.r_dem_master_slc_par = self.dem_master_dir / (
                 suffix_slc + ".slc.par"
             )
 
             suffix_mli = "r{}_{}_{}rlks".format(
                 proc.ref_master_scene, proc.polarisation, proc.range_looks
             )
-            self.r_dem_master_mli_name = pathlib.Path(self.dem_master_dir) / suffix_mli
+            self.r_dem_master_mli_name = self.dem_master_dir / suffix_mli
 
-            self.r_dem_master_mli = pathlib.Path(self.dem_master_dir) / (
+            self.r_dem_master_mli = self.dem_master_dir / (
                 suffix_mli + ".mli"
             )
-            self.r_dem_master_mli_par = pathlib.Path(self.dem_master_dir) / (
+            self.r_dem_master_mli_par = self.dem_master_dir / (
                 suffix_mli + ".mli.par"
             )
-            self.r_dem_master_mli_bmp = pathlib.Path(self.dem_master_dir) / (
+            self.r_dem_master_mli_bmp = self.dem_master_dir / (
                 suffix_mli + ".mli.bmp"
             )
 
@@ -427,11 +432,16 @@ class DEMFileNames:
         "lat_lon_pix",
     ]
 
-    def __init__(self, proc):
-        self.dem = os.path.join(proc.gamma_dem_dir, proc.dem_name + ".dem")
+    def __init__(self, proc, out_dir = None):
+        if not out_dir:
+            out_dir = proc.proj_dir / proc.track
+
+        out_dir = pathlib.Path(out_dir)
+
+        self.dem = out_dir / proc.gamma_dem_dir / (proc.dem_name + ".dem")
         self.dem_par = self.dem + ".par"
-        self.dem_master_name = (
-            os.path.join(proc.dem_dir, proc.ref_master_scene)
+        self.dem_master_name = out_dir / proc.dem_dir (
+            proc.ref_master_scene
             + "_"
             + proc.polarisation
             + "_"
@@ -439,7 +449,7 @@ class DEMFileNames:
             + "rlks"
         )
         self.dem_diff = os.path.join(
-            proc.dem_dir,
+            out_dir / proc.dem_dir,
             "diff_{}_{}_{}rlks.par".format(
                 proc.ref_master_scene, proc.polarisation, proc.range_looks
             ),
@@ -472,10 +482,10 @@ class DEMFileNames:
         self.ext_image_sar = self.dem_master_name + "_ext_img.sar"
 
         self.dem_check_file = os.path.join(
-            proc.results_dir, proc.track + "_DEM_coreg_results"
+            out_dir / proc.results_dir, proc.track + "_DEM_coreg_results"
         )
-        self.lat_lon_pix = (
-            os.path.join(proc.dem_dir, proc.track)
+        self.lat_lon_pix = out_dir / proc.dem_dir / (
+            proc.track
             + "_"
             + proc.range_looks
             + "rlks_sar_latlon.txt"
@@ -563,10 +573,15 @@ class IfgFileNames:
         "ifg_filt_cc_geocode_out_tiff",
     ]
 
-    def __init__(self, proc, master, slave):
-        self.ifg_dir = proc.int_dir / "{}-{}".format(master, slave)
-        self.master_dir = proc.slc_dir / master
-        self.slave_dir = proc.slc_dir / slave
+    def __init__(self, proc, master, slave, out_dir = None):
+        if not out_dir:
+            out_dir = proc.proj_dir / proc.track
+
+        out_dir = pathlib.Path(out_dir)
+
+        self.ifg_dir = out_dir / proc.int_dir / "{}-{}".format(master, slave)
+        self.master_dir = out_dir / proc.slc_dir / master
+        self.slave_dir = out_dir / proc.slc_dir / slave
 
         self.r_master_slc_name = self.master_dir / "r{}_{}".format(
             master, proc.polarisation

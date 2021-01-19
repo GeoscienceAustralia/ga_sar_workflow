@@ -1179,6 +1179,7 @@ class ProcessIFG(luigi.Task):
     frame = luigi.Parameter()
     outdir = luigi.Parameter()
     workdir = luigi.Parameter()
+    cleanup = luigi.Parameter()
 
     master_date = luigi.Parameter()
     slave_date = luigi.Parameter()
@@ -1209,7 +1210,7 @@ class ProcessIFG(luigi.Task):
             dc,
             tc,
             ifg_width,
-            cleanup)
+            self.cleanup)
 
         with self.output().open("w") as f:
             f.write("")
@@ -1225,6 +1226,7 @@ class CreateProcessIFGs(luigi.Task):
     frame = luigi.Parameter()
     outdir = luigi.Parameter()
     workdir = luigi.Parameter()
+    cleanup = luigi.Parameter()
 
     def output(self):
         return luigi.LocalTarget(
@@ -1254,6 +1256,7 @@ class CreateProcessIFGs(luigi.Task):
                     frame=self.frame,
                     outdir=self.outdir,
                     workdir=self.workdir,
+                    cleanup=self.cleanup,
                     master_date=master_date,
                     slave_date=slave_date
                 )

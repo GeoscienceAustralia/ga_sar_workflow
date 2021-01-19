@@ -22,7 +22,7 @@ from insar.coregister_dem import CoregisterDem
 from insar.coregister_slc import CoregisterSlc
 from insar.make_gamma_dem import create_gamma_dem
 from insar.process_s1_slc import SlcProcess
-from insar.process_ifg import run_workflow, TempFileConfig
+from insar.process_ifg import run_workflow, get_ifg_width, TempFileConfig
 from insar.project import ProcConfig, DEMFileNames, IfgFileNames
 
 from insar.meta_data.s1_slc import S1DataDownload
@@ -1198,6 +1198,10 @@ class ProcessIFG(luigi.Task):
         ic = IfgFileNames(proc_config, self.master_date, self.slave_date)
         dc = DEMFileNames(proc_config)
         tc = TempFileConfig(ic)
+
+        # Run interferogram processing workflow w/ ifg width specified in r_master_mli par file
+        with open(ic.r_master_mli_par, 'r') as fileobj:
+            ifg_width = get_ifg_width(fileobj)
 
         run_workflow(
             proc_config,

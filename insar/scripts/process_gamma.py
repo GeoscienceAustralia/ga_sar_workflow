@@ -1175,6 +1175,11 @@ class ProcessIFG(luigi.Task):
     """
 
     proc_file = luigi.Parameter()
+    track = luigi.Parameter()
+    frame = luigi.Parameter()
+    outdir = luigi.Parameter()
+    workdir = luigi.Parameter()
+
     master_date = luigi.Parameter()
     slave_date = luigi.Parameter()
 
@@ -1241,6 +1246,10 @@ class CreateProcessIFGs(luigi.Task):
             jobs.append(
                 ProcessIFG(
                     proc_file=self.proc_file,
+                    track=self.track,
+                    frame=self.frame,
+                    outdir=self.outdir,
+                    workdir=self.workdir,
                     master_date=master_date,
                     slave_date=slave_date
                 )

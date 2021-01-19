@@ -740,6 +740,18 @@ class SlcProcess:
         work_dir.mkdir(exist_ok=True)
 
         with working_directory(work_dir):
+            # Get slc_prefix/tab based on acquisition date
+            self.read_raw_data()
+
+            first_tabs, *remaining_tabs = sorted(
+                self.slc_tabs_params.items(), key=lambda x: x[1]["datetime"]
+            )
+            _, _initial_dict = first_tabs
+            _dt = _initial_dict["datetime"]
+            self.slc_prefix = "{0:04}{1:02}{2:02}".format(_dt.year, _dt.month, _dt.day)
+            self.slc_tab = work_dir / "{}_{}_tab".format(self.slc_prefix, self.polarization)
+
+            # Run remainder of S1 SLC processing (subset + second mosaic)
             self.frame_subset()
             self.mosaic_slc(rlks, alks)
 

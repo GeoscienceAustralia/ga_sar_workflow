@@ -742,6 +742,25 @@ class CreateMultilook(luigi.Task):
         # HACK: We're scheduling the slc subsetting after multi-look as well
         # - this probably needs it's own task that comes after multilook...
         # - but due to the expediency we need this fix it's been tacked on here...
+        # first create slc for one complete frame which will be a reference frame
+        # to resize the incomplete frames.
+        resize_master_tab = None
+        resize_master_scene = None
+        resize_master_pol = None
+        for _dt, status_frame, _pols in slc_frames:
+            slc_scene = _dt.strftime(__DATE_FMT__)
+            for _pol in _pols:
+                if status_frame:
+                    resize_master_tab = Path(slc_dir).joinpath(
+                        slc_scene, f"{slc_scene}_{_pol.upper()}_tab"
+                    )
+                    break
+            if resize_master_tab is not None:
+                if resize_master_tab.exists():
+                    resize_master_scene = slc_scene
+                    resize_master_pol = _pol
+                    break
+
         for _dt, status_frame, _pols in slc_frames:
             slc_scene = _dt.strftime(__DATE_FMT__)
             for _pol in _pols:
@@ -842,6 +861,7 @@ class CoregisterDemMaster(luigi.Task):
     Runs co-registration of DEM and master scene
     """
 
+    multi_look = luigi.IntParameter()
     master_scene_polarization = luigi.Parameter(default="VV")
     master_scene = luigi.Parameter(default=None)
     cleanup = luigi.Parameter()
@@ -894,11 +914,6 @@ class CoregisterDemMaster(luigi.Task):
         )
         dem_par = dem.with_suffix(dem.suffix + ".par")
 
-        # Load the gamma proc config file
-        # TODO: pass in multi_looks as a param from Luigi if possible?
-        with open(str(self.proc_file), "r") as proc_fileobj:
-            proc_config = ProcConfig.from_file(proc_fileobj)
-
         coreg = CoregisterDem(
             rlks=rlks,
             alks=alks,
@@ -907,7 +922,7 @@ class CoregisterDemMaster(luigi.Task):
             dem_par=dem_par,
             slc_par=master_slc_par,
             dem_outdir=Path(self.outdir).joinpath(__DEM__),
-            multi_look=proc_config.multi_look,
+            multi_look=self.multi_look,
         )
 
         coreg.main()
@@ -1190,7 +1205,7 @@ class ProcessIFG(luigi.Task):
         with self.output().open("w") as f:
             f.write("")
 
-
+@requires(CreateCoregisterSlaves)
 class CreateProcessIFGs(luigi.Task):
     """
     Runs the interferogram processing tasks.
@@ -1270,14 +1285,12 @@ class ARD(luigi.WrapperTask):
     database_name = luigi.Parameter()
     orbit = luigi.Parameter()
     dem_img = luigi.Parameter()
-    multi_look = luigi.Parameter()
+    multi_look = luigi.IntParameter()
     poeorb_path = luigi.Parameter()
     resorb_path = luigi.Parameter()
 
     def requires(self):
         log = STATUS_LOGGER.bind(vector_file_list=Path(self.vector_file_list).stem)
-
-        tracks = []
 
         # Coregistration processing
         ard_tasks = []
@@ -1322,23 +1335,8 @@ class ARD(luigi.WrapperTask):
                 }
                 ard_tasks.append(CreateCoregisterSlaves(**kwargs))
 
-        yield ard_tasks
-
-        # Process ifgs after all coregistrations are complete
-        ifg_tasks = []
-
-        for track, frame in tracks:
-            outdir = Path(str(self.outdir)).joinpath(f"{track}_{frame}")
-            workdir = Path(str(self.workdir)).joinpath(f"{track}_{frame}")
-
-            # IFG processing
-            ifg_tasks.append(CreateProcessIFGs(
-                proc_file = self.proc_file,
-                track = track,
-                frame = frame,
-                outdir = outdir,
-                workdir = workdir,
-            ))
+                # IFG processing
+                ard_tasks.append(CreateProcessIFGs(**kwargs))
 
         yield ifg_tasks
 

@@ -8,7 +8,7 @@ from insar.project import ProcConfig, IfgFileNames, DEMFileNames
 import insar.constant as const
 
 from insar.py_gamma_ga import GammaInterface, auto_logging_decorator, subprocess_wrapper
-
+from insar.subprocess_utils import working_directory
 
 _LOG = structlog.get_logger("insar")
 

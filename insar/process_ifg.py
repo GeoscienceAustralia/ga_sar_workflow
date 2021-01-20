@@ -2,6 +2,7 @@ import io
 import pathlib
 import subprocess
 from typing import Union
+from PIL import Image
 
 import structlog
 from insar.project import ProcConfig, IfgFileNames, DEMFileNames
@@ -276,10 +277,10 @@ def generate_init_flattened_ifg(
 
     if clean_up:
         remove_files(
-            ic.ifg_base_temp,
+            #ic.ifg_base_temp, - TBD: These aren't used?
             ic.ifg_base_res,
             ic.ifg_base_init,
-            ic.ifg_flat_temp,
+            #ic.ifg_flat_temp,
             ic.ifg_sim_unw0,
             ic.ifg_flat0,
         )
@@ -1103,28 +1104,15 @@ def rascc_wrapper(
 
 def convert(input_file: Union[pathlib.Path, str]):
     """
-    Run an ImageMagick command to convert a BMP to PNG.
-    :param input_file: BMP
+    Converts a BMP image to PNG.
+    :param input_file: The path to the bmp image to convert
     """
-    args = [
-        input_file,  # a BMP
-        "-transparent black",
-        input_file.with_suffix(".png"),
-    ]
 
-    try:
-        subprocess.run(
-            args,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            universal_newlines=True,
-            check=True,
-        )
-        _LOG.info("Calling ImageMagick's convert", args=args)
-    except subprocess.CalledProcessError as cpe:
-        msg = "failed to execute ImageMagick's convert"
-        _LOG.error(msg, stat=cpe.returncode, stdout=cpe.stdout, stderr=cpe.stderr)
-        raise cpe
+    # Convert the bitmap to a PNG w/ black pixels made transparent
+    img = Image.open(input_file)
+    img = np.array(img.convert('RGBA'))
+    img[(img[:, :, :3] == (0, 0, 0)).all(axis=-1)] = (0, 0, 0, 0)
+    Image.fromarray(img).save(input_file.with_suffix(".png"))
 
 
 def kml_map(

@@ -190,8 +190,8 @@ class ProcConfig:
         )
         self.proj_dir = pathlib.Path(self.nci_path) / self.project / self.sensor / "GAMMA"
         self.raw_data_track_dir = pathlib.Path(self.raw_data_dir) / self.track
-        self.gamma_dem_dir = pathlib.Path(self.proj_dir) / "gamma_dem"
-        self.results_dir = pathlib.Path(self.proj_dir) / self.track / "results"
+        self.gamma_dem_dir = "gamma_dem"
+        self.results_dir = "results"
 
         self.dem_noff1, self.dem_noff2 = self.dem_offset.split(" ")
         self.ifg_rpos = self.dem_rpos
@@ -449,7 +449,7 @@ class DEMFileNames:
         self.dem_diff = dmn.parent / ("diff_" + dmn.name + ".par")
 
         self.rdc_dem = dmn.parent / (dmn.name + "_rdc.dem")
-        self.eqa_dem = dmn / (dmn.name + "_eqa.dem")
+        self.eqa_dem = dmn.parent / (dmn.name + "_eqa.dem")
         self.eqa_dem_par = self.eqa_dem.with_suffix(".dem.par")
         self.seamask = dmn.parent / (dmn.name + "_eqa_seamask.tif")
         self.dem_lt_rough = dmn.parent / (dmn.name + "_rough_eqa_to_rdc.lt")
@@ -474,9 +474,8 @@ class DEMFileNames:
         self.ext_image_init_sar = dmn.parent / (dmn.name + "_ext_img_init.sar")
         self.ext_image_sar = dmn.parent / (dmn.name + "_ext_img.sar")
 
-        self.dem_check_file = os.path.join(
-            out_dir / proc.results_dir, proc.track + "_DEM_coreg_results"
-        )
+        results_dir = out_dir / proc.results_dir
+        self.dem_check_file = results_dir / (proc.track + "_DEM_coreg_results")
         self.lat_lon_pix = out_dir / proc.dem_dir / (
             proc.track
             + "_"

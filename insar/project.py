@@ -438,48 +438,41 @@ class DEMFileNames:
 
         out_dir = pathlib.Path(out_dir)
 
-        self.dem = out_dir / proc.gamma_dem_dir / (proc.dem_name + ".dem")
-        self.dem_par = self.dem + ".par"
-        self.dem_master_name = out_dir / proc.dem_dir (
-            proc.ref_master_scene
-            + "_"
-            + proc.polarisation
-            + "_"
-            + proc.range_looks
-            + "rlks"
+        self.dem = (out_dir / proc.gamma_dem_dir / proc.dem_name).with_suffix(".dem")
+        self.dem_par = self.dem.with_suffix(".dem.par")
+        self.dem_master_name = "{}_{}_{}rlks".format(
+            proc.ref_master_scene, proc.polarisation, proc.range_looks
         )
-        self.dem_diff = os.path.join(
-            out_dir / proc.dem_dir,
-            "diff_{}_{}_{}rlks.par".format(
-                proc.ref_master_scene, proc.polarisation, proc.range_looks
-            ),
-        )
+        self.dem_master_name = out_dir / proc.dem_dir / self.dem_master_name
+        dmn = self.dem_master_name
 
-        self.rdc_dem = self.dem_master_name + "_rdc.dem"
-        self.eqa_dem = self.dem_master_name + "_eqa.dem"
-        self.eqa_dem_par = self.eqa_dem + ".par"
-        self.seamask = self.dem_master_name + "_eqa_seamask.tif"
-        self.dem_lt_rough = self.dem_master_name + "_rough_eqa_to_rdc.lt"
-        self.dem_lt_fine = self.dem_master_name + "_eqa_to_rdc.lt"
-        self.dem_eqa_sim_sar = self.dem_master_name + "_eqa.sim"
-        self.dem_rdc_sim_sar = self.dem_master_name + "_rdc.sim"
-        self.dem_loc_inc = self.dem_master_name + "_eqa.linc"
-        self.dem_rdc_inc = self.dem_master_name + "_rdc.linc"
-        self.dem_lsmap = self.dem_master_name + "_eqa.lsmap"
-        self.ellip_pix_sigma0 = self.dem_master_name + "_ellip_pix_sigma0"
-        self.dem_pix_gam = self.dem_master_name + "_rdc_pix_gamma0"
-        self.dem_pix_gam_bmp = self.dem_pix_gam + ".bmp"
-        self.dem_off = self.dem_master_name + ".off"
-        self.dem_offs = self.dem_master_name + ".offs"
-        self.dem_ccp = self.dem_master_name + ".ccp"
-        self.dem_offsets = self.dem_master_name + ".offsets"
-        self.dem_coffs = self.dem_master_name + ".coffs"
-        self.dem_coffsets = self.dem_master_name + ".coffsets"
-        self.dem_lv_theta = self.dem_master_name + "_eqa.lv_theta"
-        self.dem_lv_phi = self.dem_master_name + "_eqa.lv_phi"
-        self.ext_image_flt = self.dem_master_name + "_ext_img_sar.flt"
-        self.ext_image_init_sar = self.dem_master_name + "_ext_img_init.sar"
-        self.ext_image_sar = self.dem_master_name + "_ext_img.sar"
+        self.dem_diff = dmn.parent / ("diff_" + dmn.name + ".par")
+
+        self.rdc_dem = dmn.parent / (dmn.name + "_rdc.dem")
+        self.eqa_dem = dmn / (dmn.name + "_eqa.dem")
+        self.eqa_dem_par = self.eqa_dem.with_suffix(".dem.par")
+        self.seamask = dmn.parent / (dmn.name + "_eqa_seamask.tif")
+        self.dem_lt_rough = dmn.parent / (dmn.name + "_rough_eqa_to_rdc.lt")
+        self.dem_lt_fine = dmn.parent / (dmn.name + "_eqa_to_rdc.lt")
+        self.dem_eqa_sim_sar = dmn.parent / (dmn.name + "_eqa.sim")
+        self.dem_rdc_sim_sar = dmn.parent / (dmn.name + "_rdc.sim")
+        self.dem_loc_inc = dmn.parent / (dmn.name + "_eqa.linc")
+        self.dem_rdc_inc = dmn.parent / (dmn.name + "_rdc.linc")
+        self.dem_lsmap = dmn.parent / (dmn.name + "_eqa.lsmap")
+        self.ellip_pix_sigma0 = dmn.parent / (dmn.name + "_ellip_pix_sigma0")
+        self.dem_pix_gam = dmn.parent / (dmn.name + "_rdc_pix_gamma0")
+        self.dem_pix_gam_bmp = self.dem_pix_gam.with_suffix(".bmp")
+        self.dem_off = dmn.with_suffix(".off")
+        self.dem_offs = dmn.with_suffix(".offs")
+        self.dem_ccp = dmn.with_suffix(".ccp")
+        self.dem_offsets = dmn.with_suffix(".offsets")
+        self.dem_coffs = dmn.with_suffix(".coffs")
+        self.dem_coffsets = dmn.with_suffix(".coffsets")
+        self.dem_lv_theta = dmn.parent / (dmn.name + "_eqa.lv_theta")
+        self.dem_lv_phi = dmn.parent / (dmn.name + "_eqa.lv_phi")
+        self.ext_image_flt = dmn.parent / (dmn.name + "_ext_img_sar.flt")
+        self.ext_image_init_sar = dmn.parent / (dmn.name + "_ext_img_init.sar")
+        self.ext_image_sar = dmn.parent / (dmn.name + "_ext_img.sar")
 
         self.dem_check_file = os.path.join(
             out_dir / proc.results_dir, proc.track + "_DEM_coreg_results"
@@ -588,7 +581,7 @@ class IfgFileNames:
         )
 
         self.r_master_slc = self.r_master_slc_name.with_suffix(".slc")
-        self.r_master_slc_par = self.r_master_slc_name.with_suffix(".par")
+        self.r_master_slc_par = self.r_master_slc_name.with_suffix(".slc.par")
 
         self.r_master_mli_name = self.master_dir / "r{}_{}_{}rlks".format(
             master, proc.polarisation, proc.range_looks

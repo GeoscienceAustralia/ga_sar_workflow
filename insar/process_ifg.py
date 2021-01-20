@@ -670,7 +670,7 @@ def calc_unw_thinning(
     """
     # Use rascc_mask_thinning to weed the validity mask for large scenes. this can unwrap a sparser
     # network which can be interpolated and used as a model for unwrapping the full interferogram
-    thresh_1st = pc.ifg_coherence_threshold + const.RASCC_THRESHOLD_INCREMENT
+    thresh_1st = float(pc.ifg_coherence_threshold) + const.RASCC_THRESHOLD_INCREMENT
     thresh_max = thresh_1st + const.RASCC_THRESHOLD_INCREMENT
 
     pg.rascc_mask_thinning(

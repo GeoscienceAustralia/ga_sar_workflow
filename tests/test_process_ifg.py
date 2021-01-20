@@ -34,7 +34,10 @@ def pg_int_mock():
 @pytest.fixture
 def pc_mock():
     """Returns basic mock to simulate a ProcConfig object."""
-    pc = mock.NonCallableMock(spec=ProcConfig)
+    with open(pathlib.Path(__file__).parent.absolute() / 'data' / '20151127' / 'gamma.proc', 'r') as fileobj:
+        proc_config = ProcConfig.from_file(fileobj)
+
+    pc = mock.NonCallableMock(spec=ProcConfig, wraps=proc_config)
     pc.multi_look = 2  # always 2 for Sentinel 1
     pc.ifg_coherence_threshold = 2.5  # fake value
     return pc

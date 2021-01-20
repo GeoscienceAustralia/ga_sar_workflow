@@ -625,7 +625,7 @@ def calc_unw(
 
     if (
         const.RASCC_MIN_THINNING_THRESHOLD
-        <= pc.multi_look
+        <= int(pc.multi_look)
         <= const.RASCC_THINNING_THRESHOLD
     ):
         unwrapped_tmp = calc_unw_thinning(pc, ic, tc, ifg_width, clean_up=clean_up)

@@ -51,8 +51,8 @@ class TempFileConfig:
         self.geocode_unwrapped_ifg = pathlib.Path("geocode_unw_ifg.tmp")
         self.geocode_flat_ifg = pathlib.Path("geocode_flat_ifg.tmp")
         self.geocode_filt_ifg = pathlib.Path("geocode_filt_ifg.tmp")
-        self.geocode_flat_coherence_file = pathlib.Path("geocode_flat_coherence_file.tmp")
-        self.geocode_filt_coherence_file = pathlib.Path("geocode_filt_coherence_file.tmp")
+        self.geocode_flat_coherence_file = pathlib.Path("geocode_flat_coherence_file.tmp.bmp")
+        self.geocode_filt_coherence_file = pathlib.Path("geocode_filt_coherence_file.tmp.bmp")
 
 
 # Customise Gamma shim to automatically handle basic error checking and logging

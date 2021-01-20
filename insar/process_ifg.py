@@ -3,6 +3,7 @@ import pathlib
 import subprocess
 from typing import Union
 from PIL import Image
+import numpy as np
 
 import structlog
 from insar.project import ProcConfig, IfgFileNames, DEMFileNames

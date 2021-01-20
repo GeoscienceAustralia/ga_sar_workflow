@@ -59,9 +59,6 @@ pg = GammaInterface(
 )
 
 
-# FIXME: set working dir (do outside workflow to reduce buried I/O)
-# mkdir -p $ifg_dir
-# cd $ifg_dir
 def run_workflow(
     pc: ProcConfig,
     ic: IfgFileNames,
@@ -70,15 +67,19 @@ def run_workflow(
     ifg_width: int,
     clean_up: bool,  # TODO: should clean_up apply to everything, or just specific steps?
 ):
-    _validate_input_files(ic)
+    if not ic.ifg_dir.exists():
+        ic.ifg_dir.mkdir(parents=True)
 
-    # future version might want to allow selection of steps (skipped for simplicity Oct 2020)
-    calc_int(pc, ic, clean_up)
-    generate_init_flattened_ifg(pc, ic, dc, clean_up)
-    generate_final_flattened_ifg(pc, ic, dc, tc, ifg_width, clean_up)
-    calc_filt(pc, ic, ifg_width)
-    calc_unw(pc, ic, tc, ifg_width, clean_up)  # this calls unw thinning
-    do_geocode(pc, ic, dc, tc, ifg_width)
+    with working_directory(ic.ifg_dir):
+        _validate_input_files(ic)
+
+        # future version might want to allow selection of steps (skipped for simplicity Oct 2020)
+        calc_int(pc, ic, clean_up)
+        generate_init_flattened_ifg(pc, ic, dc, clean_up)
+        generate_final_flattened_ifg(pc, ic, dc, tc, ifg_width, clean_up)
+        calc_filt(pc, ic, ifg_width)
+        calc_unw(pc, ic, tc, ifg_width, clean_up)  # this calls unw thinning
+        do_geocode(pc, ic, dc, tc, ifg_width)
 
 
 def _validate_input_files(ic: IfgFileNames):

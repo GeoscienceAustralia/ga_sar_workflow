@@ -133,6 +133,29 @@ class SlcProcess:
         ]
         return safe_files
 
+    def read_scene_date(self):
+        """Reads Sentinel-1 SLC data to determine the acquisition date of the scene"""
+
+        _dt = None
+
+        # Read raw data, and take the earliest start date
+        for save_file in self.slc_safe_files():
+            _id = save_file.stem
+            # _id = basename of .SAFE folder, e.g.
+            # S1A_IW_SLC__1SDV_20180103T191741_20180103T191808_019994_0220EE_1A2D
+
+            # add start time to dict
+            dt_start = re.findall("[0-9]{8}T[0-9]{6}", _id)[0]
+            start_datetime = datetime.datetime.strptime(dt_start, "%Y%m%dT%H%M%S")
+
+            # Note: Repeating this assignment here as the second pass doesn't read_raw_data, it uses this function.
+            self.acquisition_date = start_datetime.date()
+
+            if _dt is None or start_datetime < _dt:
+                _dt = start_datetime
+
+        return _dt
+
     def read_raw_data(self):
         """Reads Sentinel-1 SLC data and generate SLC parameter file."""
 
@@ -741,13 +764,7 @@ class SlcProcess:
 
         with working_directory(work_dir):
             # Get slc_prefix/tab based on acquisition date
-            self.read_raw_data()
-
-            first_tabs, *remaining_tabs = sorted(
-                self.slc_tabs_params.items(), key=lambda x: x[1]["datetime"]
-            )
-            _, _initial_dict = first_tabs
-            _dt = _initial_dict["datetime"]
+            _dt = self.read_scene_date()
             self.slc_prefix = "{0:04}{1:02}{2:02}".format(_dt.year, _dt.month, _dt.day)
             self.slc_tab = work_dir / "{}_{}_tab".format(self.slc_prefix, self.polarization)
 

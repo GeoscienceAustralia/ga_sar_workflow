@@ -1322,7 +1322,6 @@ class ARD(luigi.WrapperTask):
                     continue
 
                 track, frame = Path(vector_file).stem.split("_")
-                tracks.append((track,frame))
 
                 outdir = Path(str(self.outdir)).joinpath(f"{track}_{frame}")
                 workdir = Path(str(self.workdir)).joinpath(f"{track}_{frame}")

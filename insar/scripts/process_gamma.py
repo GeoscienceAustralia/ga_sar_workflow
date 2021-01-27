@@ -479,20 +479,10 @@ class ProcessSlc(luigi.Task):
             self.ref_master_tab,
         )
 
-        # TODO this is a crude way to handle gamma program error which fails
-        # TODO create full SLC because of resizing issue with only single burst
-        # TODO find better way to handle this Error in process_s1_slc class.
-        failed = False
-        try:
-            slc_job.main()
-        except OSError:
-            failed = True
-        finally:
-            with self.output().open("w") as f:
-                if failed:
-                    f.write(f"{self.scene_date}")
-                else:
-                    f.write("")
+        slc_job.main()
+
+        with self.output().open("w") as f:
+            f.write("")
 
 
 class ProcessSlcSubset(luigi.Task):
@@ -527,20 +517,10 @@ class ProcessSlcSubset(luigi.Task):
             self.ref_master_tab,
         )
 
-        # TODO this is a crude way to handle gamma program error which fails
-        # TODO create full SLC because of resizing issue with only single burst
-        # TODO find better way to handle this Error in process_s1_slc class.
-        failed = False
-        try:
-            slc_job.main_subset(int(self.rlks), int(self.alks))
-        except OSError:
-            failed = True
-        finally:
-            with self.output().open("w") as f:
-                if failed:
-                    f.write(f"{self.scene_date}")
-                else:
-                    f.write("")
+        slc_job.main_subset(int(self.rlks), int(self.alks))
+
+        with self.output().open("w") as f:
+            f.write("")
 
 
 @requires(InitialSetup)

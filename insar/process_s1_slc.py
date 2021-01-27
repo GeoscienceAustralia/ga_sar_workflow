@@ -749,7 +749,9 @@ class SlcProcess:
             self.read_raw_data()
             self.concatenate()
             self.phase_shift()
-            self.mosaic_slc()
+            # Note: This is hard-coded to 8, 2 now to match Bash until a final solution
+            # is devised...
+            self.mosaic_slc(8, 2)
             self.orbits()
             self.frame_subset()
 

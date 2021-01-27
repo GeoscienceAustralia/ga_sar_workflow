@@ -921,7 +921,7 @@ class CoregisterSlc:
                 int1 = Path(f"{r_master_slave_name}.{IWid}.{i}.int1")
                 _unlink(off1)
                 _unlink(int1)
-                
+
                 # create_offset $mas_IWi_par.{i}.1 $mas_IWi_par.{i}.1 $off1 1 1 1 0
                 pg.create_offset(
                     f"{mas_IWi_par}.{i}.1",
@@ -1036,7 +1036,7 @@ class CoregisterSlc:
                 range_samples20_half = range_samples20 / 2
                 azimuth_lines20_half = azimuth_lines20 / 2
                 log_info(f"range_samples20_half: {range_samples20_half}")
-                log_info(f"azimuth_samples20_half: {azimuth_lines20_half}")
+                log_info(f"azimuth_lines20_half: {azimuth_lines20_half}")
 
                 # determine coherence and coherence mask based on unfiltered double differential interferogram
                 diff20cc = Path(f"{r_master_slave_name}.{IWid}.{i}.diff20.cc")
@@ -1126,7 +1126,7 @@ class CoregisterSlc:
 
                 if diff20cc.exists():
                     diff20ccstat = Path(f"{r_master_slave_name}.{IWid}.{i}.diff20.cc.stat")
-                    
+
                     # image_stat $diff20cc $range_samples20 - - - - $diff20ccstat
                     pg.image_stat(
                         str(diff20cc),
@@ -1137,12 +1137,12 @@ class CoregisterSlc:
                         const.NOT_PROVIDED,
                         str(diff20ccstat)
                     )
-                    
+
                     diff20ccstat = self._grep_offset_parameter(diff20ccstat)
                     cc_mean = float(diff20ccstat["mean"][0])
                     cc_stdev = float(diff20ccstat["stdev"][0])
                     cc_fraction = float(diff20ccstat["fraction_valid"][0])
-                
+
                 # Check size of diff20phase file if it exists (I assume there's been issues with partial failures in the past?)
                 diff20phase_size = diff20phase.stat().st_size if diff20phase.exists() else 0
 

@@ -759,7 +759,7 @@ class SlcProcess:
         alks: int,
         write_png: bool = True,
     ):
-        """Main method to execute SLC processing sequence need to produce SLC frame subset mosaic."""
+        """Main method to execute SLC processing sequence needed to produce SLC frame subset mosaic."""
         work_dir = self.output_dir.joinpath(self.scene_date)
         work_dir.mkdir(exist_ok=True)
 

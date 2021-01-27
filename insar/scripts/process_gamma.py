@@ -731,10 +731,23 @@ class CreateMultilook(luigi.Task):
             slc_scene = _dt.strftime(__DATE_FMT__)
             for _pol in _pols:
                 if status_frame:
+                    resize_task = ProcessSlcSubset(
+                        scene_date=slc_scene,
+                        raw_path=Path(self.outdir).joinpath(__RAW__),
+                        polarization=_pol,
+                        burst_data=self.burst_data_csv,
+                        slc_dir=slc_dir,
+                        workdir=self.workdir,
+                        rlks=rlks,
+                        alks=alks
+                    )
+                    yield resize_task
+
                     resize_master_tab = Path(slc_dir).joinpath(
                         slc_scene, f"{slc_scene}_{_pol.upper()}_tab"
                     )
                     break
+
             if resize_master_tab is not None:
                 if resize_master_tab.exists():
                     resize_master_scene = slc_scene

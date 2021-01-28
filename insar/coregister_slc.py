@@ -502,6 +502,7 @@ class CoregisterSlc:
 
                     _LOG.info(
                         "matching iteration",
+                        slave_offs=slave_offs,
                         iteration=iteration + 1,
                         daz=d_azimuth,
                         dr=d_range,
@@ -512,6 +513,7 @@ class CoregisterSlc:
                     )
                     _LOG.info(
                         "matching iteration and standard deviation",
+                        slave_offs=slave_offs,
                         iteration=iteration + 1,
                         azimuth_stdev=azimuth_stdev,
                         range_stdev=range_stdev,

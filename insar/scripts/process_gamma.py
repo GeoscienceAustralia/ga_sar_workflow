@@ -485,44 +485,6 @@ class ProcessSlc(luigi.Task):
             f.write("")
 
 
-class ProcessSlcSubset(luigi.Task):
-    """
-    Runs single slc processing task
-    """
-
-    scene_date = luigi.Parameter()
-    raw_path = luigi.Parameter()
-    polarization = luigi.Parameter()
-    burst_data = luigi.Parameter()
-    slc_dir = luigi.Parameter()
-    workdir = luigi.Parameter()
-    ref_master_tab = luigi.Parameter(default=None)
-    rlks = luigi.IntParameter()
-    alks = luigi.IntParameter()
-
-    def output(self):
-        return luigi.LocalTarget(
-            Path(str(self.workdir)).joinpath(
-                f"{self.scene_date}_{self.polarization}_slc_subset_logs.out"
-            )
-        )
-
-    def run(self):
-        slc_job = SlcProcess(
-            str(self.raw_path),
-            str(self.slc_dir),
-            str(self.polarization),
-            str(self.scene_date),
-            str(self.burst_data),
-            self.ref_master_tab,
-        )
-
-        slc_job.main_subset(int(self.rlks), int(self.alks))
-
-        with self.output().open("w") as f:
-            f.write("")
-
-
 @requires(InitialSetup)
 class CreateFullSlc(luigi.Task):
     """
@@ -636,6 +598,162 @@ class CreateFullSlc(luigi.Task):
             out_fid.write("")
 
 
+
+class ProcessSlcSubset(luigi.Task):
+    """
+    Runs single slc processing task
+    """
+
+    scene_date = luigi.Parameter()
+    raw_path = luigi.Parameter()
+    polarization = luigi.Parameter()
+    burst_data = luigi.Parameter()
+    slc_dir = luigi.Parameter()
+    workdir = luigi.Parameter()
+    ref_master_tab = luigi.Parameter(default=None)
+    rlks = luigi.IntParameter()
+    alks = luigi.IntParameter()
+
+    def output(self):
+        return luigi.LocalTarget(
+            Path(str(self.workdir)).joinpath(
+                f"{self.scene_date}_{self.polarization}_slc_subset_logs.out"
+            )
+        )
+
+    def run(self):
+        slc_job = SlcProcess(
+            str(self.raw_path),
+            str(self.slc_dir),
+            str(self.polarization),
+            str(self.scene_date),
+            str(self.burst_data),
+            self.ref_master_tab,
+        )
+
+        slc_job.main_subset(int(self.rlks), int(self.alks))
+
+        with self.output().open("w") as f:
+            f.write("")
+
+
+@requires(CreateFullSlc)
+class CreateSlcSubset(luigi.Task):
+    """
+    Runs the slc subsetting tasks
+    """
+
+    multi_look = luigi.IntParameter()
+
+    def output(self):
+        return luigi.LocalTarget(
+            Path(self.workdir).joinpath(
+                f"{self.track}_{self.frame}_createslcsubset_status_logs.out"
+            )
+        )
+
+    def run(self):
+        log = STATUS_LOGGER.bind(track_frame=f"{self.track}_{self.frame}")
+        log.info("subset slc task")
+
+        slc_dir = Path(self.outdir).joinpath(__SLC__)
+        slc_frames = get_scenes(self.burst_data_csv)
+
+        # Get all VV par files and compute range and azimuth looks
+        slc_par_files = []
+        for _dt, status_frame, _pols in slc_frames:
+            slc_scene = _dt.strftime(__DATE_FMT__)
+            for _pol in _pols:
+                if _pol not in self.polarization or _pol.upper() != "VV":
+                    continue
+                slc_par = pjoin(
+                    self.outdir,
+                    __SLC__,
+                    slc_scene,
+                    f"{slc_scene}_{_pol.upper()}.slc.par",
+                )
+                if not exists(slc_par):
+                    raise FileNotFoundError(f"missing {slc_par} file")
+                slc_par_files.append(Path(slc_par))
+
+        # range and azimuth looks are only computed from VV polarization
+        rlks, alks, *_ = calculate_mean_look_values(
+            slc_par_files,
+            int(str(self.multi_look)),
+        )
+
+        # first create slc for one complete frame which will be a reference frame
+        # to resize the incomplete frames.
+        resize_master_tab = None
+        resize_master_scene = None
+        resize_master_pol = None
+        for _dt, status_frame, _pols in slc_frames:
+            slc_scene = _dt.strftime(__DATE_FMT__)
+            for _pol in _pols:
+                if status_frame:
+                    resize_task = ProcessSlcSubset(
+                        scene_date=slc_scene,
+                        raw_path=Path(self.outdir).joinpath(__RAW__),
+                        polarization=_pol,
+                        burst_data=self.burst_data_csv,
+                        slc_dir=slc_dir,
+                        workdir=self.workdir,
+                        rlks=rlks,
+                        alks=alks
+                    )
+                    yield resize_task
+                    resize_master_tab = Path(slc_dir).joinpath(
+                        slc_scene, f"{slc_scene}_{_pol.upper()}_tab"
+                    )
+                    break
+            if resize_master_tab is not None:
+                if resize_master_tab.exists():
+                    resize_master_scene = slc_scene
+                    resize_master_pol = _pol
+                    break
+
+        # need at least one complete frame to enable further processing of the stacks
+        # The frame definition were generated using all sentinel-1 acquisition dataset, thus
+        # only processing a temporal subset might encounter stacks with all scene's frame
+        # not forming a complete master frame.
+        # TODO implement a method to resize a stacks to new frames definition
+        # TODO Generate a new reference frame using scene that has least number of missing burst
+        if resize_master_tab is None:
+            raise ValueError(
+                f"Not a  single complete frames were available {self.track}_{self.frame}"
+            )
+
+        slc_tasks = []
+        for _dt, status_frame, _pols in slc_frames:
+            slc_scene = _dt.strftime(__DATE_FMT__)
+            for _pol in _pols:
+                if _pol not in self.polarization:
+                    continue
+                if slc_scene == resize_master_scene and _pol == resize_master_pol:
+                    continue
+                slc_tasks.append(
+                    ProcessSlcSubset(
+                        scene_date=slc_scene,
+                        raw_path=Path(self.outdir).joinpath(__RAW__),
+                        polarization=_pol,
+                        burst_data=self.burst_data_csv,
+                        slc_dir=slc_dir,
+                        workdir=self.workdir,
+                        ref_master_tab=resize_master_tab,
+                        rlks=rlks,
+                        alks=alks
+                    )
+                )
+        yield slc_tasks
+
+        # clean up raw data directory
+        if self.cleanup:
+            clean_rawdatadir(Path(self.outdir).joinpath(__RAW__))
+
+        with self.output().open("w") as out_fid:
+            out_fid.write("")
+
+
 class Multilook(luigi.Task):
     """
     Runs single slc processing task
@@ -663,7 +781,7 @@ class Multilook(luigi.Task):
             f.write("")
 
 
-@requires(CreateFullSlc)
+@requires(CreateSlcSubset)
 class CreateMultilook(luigi.Task):
     """
     Runs creation of multi-look image task
@@ -718,64 +836,6 @@ class CreateMultilook(luigi.Task):
                     slc=slc, slc_par=slc_par, rlks=rlks, alks=alks, workdir=self.workdir
                 )
             )
-
-        # HACK: We're scheduling the slc subsetting after multi-look as well
-        # - this probably needs it's own task that comes after multilook...
-        # - but due to the expediency we need this fix it's been tacked on here...
-        # first create slc for one complete frame which will be a reference frame
-        # to resize the incomplete frames.
-        resize_master_tab = None
-        resize_master_scene = None
-        resize_master_pol = None
-        for _dt, status_frame, _pols in slc_frames:
-            slc_scene = _dt.strftime(__DATE_FMT__)
-            for _pol in _pols:
-                if status_frame:
-                    resize_task = ProcessSlcSubset(
-                        scene_date=slc_scene,
-                        raw_path=Path(self.outdir).joinpath(__RAW__),
-                        polarization=_pol,
-                        burst_data=self.burst_data_csv,
-                        slc_dir=slc_dir,
-                        workdir=self.workdir,
-                        rlks=rlks,
-                        alks=alks
-                    )
-                    yield resize_task
-
-                    resize_master_tab = Path(slc_dir).joinpath(
-                        slc_scene, f"{slc_scene}_{_pol.upper()}_tab"
-                    )
-                    break
-
-            if resize_master_tab is not None:
-                if resize_master_tab.exists():
-                    resize_master_scene = slc_scene
-                    resize_master_pol = _pol
-                    break
-
-        for _dt, status_frame, _pols in slc_frames:
-            slc_scene = _dt.strftime(__DATE_FMT__)
-            for _pol in _pols:
-                if _pol not in self.polarization:
-                    continue
-
-                if slc_scene == resize_master_scene and _pol == resize_master_pol:
-                    continue
-
-                ml_jobs.append(
-                    ProcessSlcSubset(
-                        scene_date=slc_scene,
-                        raw_path=Path(self.outdir).joinpath(__RAW__),
-                        polarization=_pol,
-                        burst_data=self.burst_data_csv,
-                        slc_dir=slc_dir,
-                        workdir=self.workdir,
-                        ref_master_tab=resize_master_tab,
-                        rlks=rlks,
-                        alks=alks
-                    )
-                )
 
         yield ml_jobs
 

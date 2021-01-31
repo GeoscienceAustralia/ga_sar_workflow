@@ -238,7 +238,7 @@ class CoregisterSlc:
         self._write_tabs(self.slave_slc_tab, self.slc_slave.stem, self.slc_slave.parent)
 
         # write a re-sampled slave slc tab file
-        self.r_slave_slc_tab = out_dir.joinpath(f"r_{self.slc_slave.stem}_tab")
+        self.r_slave_slc_tab = out_dir.joinpath(f"r{self.slc_slave.stem}_tab")
         self._write_tabs(
             self.r_slave_slc_tab, f"r{self.slc_slave.stem}", self.slc_slave.parent
         )
@@ -571,8 +571,6 @@ class CoregisterSlc:
 
                     iteration += 1
 
-            shutil.copy(slave_doff, self.slave_off)
-
     def _read_line(
         self,
         filepath: Union[str, Path],
@@ -655,13 +653,13 @@ class CoregisterSlc:
             temp_dir = Path(temp_dir)
 
             # initialize the output text file
-            slave_ovr_res.writelines([
+            slave_ovr_res.writelines('\n'.join([
                 "    Burst Overlap Results",
                 f"        thresholds applied: cc_thresh: {self.proc.coreg_s1_cc_thresh},  ph_fraction_thresh: {self.proc.coreg_s1_frac_thresh}, ph_stdev_thresh (rad): {self.proc.coreg_s1_stdev_thresh}",
                 "",
                 "        IW  overlap  ph_mean ph_stdev ph_fraction   (cc_mean cc_stdev cc_fraction)    weight",
                 "",
-            ])
+            ]))
 
             for iteration in range(1, max_iteration+1):
                 # cp -rf $slave_off $slave_off_start
@@ -767,7 +765,7 @@ class CoregisterSlc:
         sum_weight_all = 0.0
 
         def log_info(msg):
-            _LOG.info(msg, az_ovr_iter=iteration)
+            _LOG.info(msg, az_ovr_iter=iteration, master_slc_tab=master_slc_tab, r_slave_slc_tab=r_slave_slc_tab)
 
         # determine number of rows and columns of tab file and read burst SLC filenames from tab files
         master_IWs = self.READ_TAB(master_slc_tab)

@@ -812,10 +812,19 @@ class CoregisterSlc:
         master_IW1_par = pg.ParFile(master_IWs[0].par)
 
         # FIXME: Magic constants...
-        azimuth_line_time = master_IW1_par.get_value("azimuth_line_time", dtype=float, index=0)
-        dDC = 1739.43 * azimuth_line_time * lines_offset_IWi[0]
-        dt = 0.159154 / dDC
-        dpix_factor = dt / azimuth_line_time
+        round_to_6_digits = True
+
+        # This code path is to match Bash... which seems to round to 6 digits when doing math in awk
+        if round_to_6_digits:
+            azimuth_line_time = round(master_IW1_par.get_value("azimuth_line_time", dtype=float, index=0), 6)
+            dDC = round(1739.43 * azimuth_line_time * lines_offset_IWi[0], 6)
+            dt = round(0.159154 / dDC, 6)
+            dpix_factor = round(dt / azimuth_line_time, 6)
+        else:
+            azimuth_line_time = master_IW1_par.get_value("azimuth_line_time", dtype=float, index=0)
+            dDC = 1739.43 * azimuth_line_time * lines_offset_IWi[0]
+            dt = 0.159154 / dDC
+            dpix_factor = dt / azimuth_line_time
 
         log_info(f"dDC {dDC} Hz")
         log_info(f"dt {dt} s")
@@ -1213,6 +1222,9 @@ class CoregisterSlc:
 
         # conversion of phase offset (in radian) to azimuth offset (in SLC pixel)
         azimuth_pixel_offset = -dpix_factor * average_all
+        if round_to_6_digits:
+            azimuth_pixel_offset = round(azimuth_pixel_offset, 6)
+
         log_info(f"azimuth_pixel_offset {azimuth_pixel_offset} [azimuth SLC pixel]")
         slave_ovr_res.write(f"azimuth_pixel_offset {azimuth_pixel_offset} [azimuth SLC pixel]")
 

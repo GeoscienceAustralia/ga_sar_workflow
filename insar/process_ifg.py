@@ -69,6 +69,8 @@ def run_workflow(
     ifg_width: int,
     clean_up: bool,  # TODO: should clean_up apply to everything, or just specific steps?
 ):
+    _LOG.info("Running IFG workflow", ifg_width=int(ifg_width), clean_up=bool(clean_up))
+
     if not ic.ifg_dir.exists():
         ic.ifg_dir.mkdir(parents=True)
 

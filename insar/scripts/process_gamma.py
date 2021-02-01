@@ -330,7 +330,7 @@ class InitialSetup(luigi.Task):
     burst_data_csv = luigi.Parameter()
     poeorb_path = luigi.Parameter()
     resorb_path = luigi.Parameter()
-    cleanup = luigi.Parameter()
+    cleanup = luigi.BoolParameter()
 
     def output(self):
         return luigi.LocalTarget(
@@ -917,7 +917,7 @@ class CoregisterDemMaster(luigi.Task):
     multi_look = luigi.IntParameter()
     master_scene_polarization = luigi.Parameter(default="VV")
     master_scene = luigi.Parameter(default=None)
-    cleanup = luigi.Parameter()
+    cleanup = luigi.BoolParameter()
 
     def output(self):
 
@@ -1050,7 +1050,7 @@ class CreateCoregisterSlaves(luigi.Task):
     proc_file = luigi.Parameter()
     master_scene_polarization = luigi.Parameter(default="VV")
     master_scene = luigi.Parameter(default=None)
-    cleanup = luigi.Parameter()
+    cleanup = luigi.BoolParameter()
 
     def output(self):
         return luigi.LocalTarget(
@@ -1232,7 +1232,7 @@ class ProcessIFG(luigi.Task):
     frame = luigi.Parameter()
     outdir = luigi.Parameter()
     workdir = luigi.Parameter()
-    cleanup = luigi.Parameter()
+    cleanup = luigi.BoolParameter()
 
     master_date = luigi.Parameter()
     slave_date = luigi.Parameter()
@@ -1279,7 +1279,7 @@ class CreateProcessIFGs(luigi.Task):
     frame = luigi.Parameter()
     outdir = luigi.Parameter()
     workdir = luigi.Parameter()
-    cleanup = luigi.Parameter()
+    cleanup = luigi.BoolParameter()
 
     def output(self):
         return luigi.LocalTarget(

@@ -148,7 +148,7 @@ def calc_int(pc: ProcConfig, ic: IfgFileNames, clean_up: bool):
             const.RANGE_PATCH_SIZE,
             const.AZIMUTH_PATCH_SIZE,
             const.NOT_PROVIDED,  # (output) range and azimuth offsets and cross-correlation data
-            const.NOT_PROVIDED,
+            2,
             const.NUM_OFFSET_ESTIMATES_RANGE,
             const.NUM_OFFSET_ESTIMATES_AZIMUTH,
             const.CROSS_CORRELATION_THRESHOLD,
@@ -454,7 +454,7 @@ def generate_final_flattened_ifg(
         const.NOT_PROVIDED,  # bc_flag
         const.NOT_PROVIDED,  # bn_flag
         const.NOT_PROVIDED,  # bcdot_flag
-        const.NOT_PROVIDED,  # bndot_flag
+        1,  # bndot_flag
         const.NOT_PROVIDED,  # bperp_min
     )
 
@@ -870,7 +870,7 @@ def geocode_unwrapped_ifg(
     pg.mask_data(tc.geocode_unwrapped_ifg, width_out, ic.ifg_unw_geocode_out, dc.seamask)
 
     # make quick-look png image
-    rasrmg_wrapper(ic.ifg_unw_geocode_out, width_out, ic.ifg_unw_geocode_bmp)
+    rasrmg_wrapper(ic.ifg_unw_geocode_out, width_out, ic.ifg_unw_geocode_bmp, pixavr=5, pixavaz=5)
     convert(ic.ifg_unw_geocode_bmp)
     kml_map(ic.ifg_unw_geocode_png, dc.eqa_dem_par)
     remove_files(ic.ifg_unw_geocode_bmp, tc.geocode_unwrapped_ifg)
@@ -900,7 +900,7 @@ def geocode_flattened_ifg(
     pg.mask_data(tc.geocode_flat_ifg, width_out, ic.ifg_flat_geocode_out, dc.seamask)
 
     # make quick-look png image
-    rasrmg_wrapper(ic.ifg_flat_geocode_out, width_out, ic.ifg_flat_geocode_bmp)
+    rasrmg_wrapper(ic.ifg_flat_geocode_out, width_out, ic.ifg_flat_geocode_bmp, pixavr=5, pixavaz=5)
     convert(ic.ifg_flat_geocode_bmp)
     kml_map(ic.ifg_flat_geocode_png, dc.eqa_dem_par)
     remove_files(ic.ifg_flat_geocode_bmp, tc.geocode_flat_ifg, ic.ifg_flat_float)
@@ -951,7 +951,7 @@ def geocode_flat_coherence_file(
     )
 
     # make quick-look png image
-    rascc_wrapper(ic.ifg_flat_cc_geocode_out, width_out, tc.geocode_flat_coherence_file)
+    rascc_wrapper(ic.ifg_flat_cc_geocode_out, width_out, tc.geocode_flat_coherence_file, pixavr=5, pixavaz=5)
     pg.ras2ras(
         tc.geocode_flat_coherence_file,
         ic.ifg_flat_cc_geocode_bmp,

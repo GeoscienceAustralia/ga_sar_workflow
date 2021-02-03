@@ -190,10 +190,7 @@ TEMP_FILE_GLOBS = [
     "*sim1*",
     "*int1*",
     "*.ras",
-    "*.unw",
-    "*eqa.int",
     "*filt.int",
-    "*.cc",
 ]
 
 

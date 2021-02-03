@@ -19,6 +19,13 @@ class ProcessIfgException(Exception):
     pass
 
 
+def append_suffix(path, suffix):
+    """
+    A simple filename append function that doesn't assume `.` based file extensions,
+    to replace pathlib.Path.with_suffix in cases we use `_` based file suffixes
+    """
+    return path.parent / (path.name + suffix)
+
 class TempFileConfig:
     """
     Defines temp file names for process ifg.
@@ -40,9 +47,9 @@ class TempFileConfig:
 
     def __init__(self, ic: IfgFileNames):
         # set temp file paths for flattening step
-        self.ifg_flat10_unw = ic.ifg_flat10.with_suffix("_int_unw")
-        self.ifg_flat1_unw = ic.ifg_flat1.with_suffix("_int_unw")
-        self.ifg_flat_diff_int_unw = ic.ifg_flat.with_suffix("_int1_unw")
+        self.ifg_flat10_unw = append_suffix(ic.ifg_flat10, "_int_unw")
+        self.ifg_flat1_unw = append_suffix(ic.ifg_flat1, "_int_unw")
+        self.ifg_flat_diff_int_unw = append_suffix(ic.ifg_flat, "_int1_unw")
 
         # unw thinning step
         self.unwrapped_filtered_ifg = pathlib.Path("unwrapped_filtered_ifg.tmp")
@@ -1115,7 +1122,7 @@ def convert(input_file: Union[pathlib.Path, str]):
     img = Image.open(input_file)
     img = np.array(img.convert('RGBA'))
     img[(img[:, :, :3] == (0, 0, 0)).all(axis=-1)] = (0, 0, 0, 0)
-    Image.fromarray(img).save(input_file.with_suffix(".png"))
+    Image.fromarray(img).save(append_suffix(input_file, ".png"))
 
 
 def kml_map(
@@ -1129,7 +1136,7 @@ def kml_map(
     :return:
     """
     if output_file is None:
-        output_file = input_file.with_suffix(".kml")
+        output_file = append_suffix(input_file, ".kml")
 
     pg.kml_map(input_file, dem_par, output_file)
 

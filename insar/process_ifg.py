@@ -40,9 +40,9 @@ class TempFileConfig:
 
     def __init__(self, ic: IfgFileNames):
         # set temp file paths for flattening step
-        self.ifg_flat10_unw = ic.ifg_flat10.with_suffix(".int.unw")
-        self.ifg_flat1_unw = ic.ifg_flat1.with_suffix(".int.unw")
-        self.ifg_flat_diff_int_unw = ic.ifg_flat.with_suffix(".int1.unw")
+        self.ifg_flat10_unw = ic.ifg_flat10.with_suffix("_int_unw")
+        self.ifg_flat1_unw = ic.ifg_flat1.with_suffix("_int_unw")
+        self.ifg_flat_diff_int_unw = ic.ifg_flat.with_suffix("_int1_unw")
 
         # unw thinning step
         self.unwrapped_filtered_ifg = pathlib.Path("unwrapped_filtered_ifg.tmp")
@@ -693,7 +693,7 @@ def calc_unw_thinning(
         ic.ifg_filt,  # interferogram
         ic.ifg_filt_cc,  # weight factors file (float)
         ic.ifg_mask_thin,  # validity mask file
-        ic.ifg_unw_thin,  # (output) unwrapped phase image (*.unw) (float)
+        ic.ifg_unw_thin,  # (output) unwrapped phase image (*_unw) (float)
         ifg_width,  # number of samples per row
         const.TRIANGULATION_MODE_DELAUNAY,
         const.NOT_PROVIDED,  # r offset

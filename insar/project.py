@@ -517,10 +517,10 @@ class IfgFileNames:
         "ifg_filt_geocode_out",
         "ifg_filt_geocode_png",
         "ifg_filt_mask",
-        "ifg_filt_cc",
-        "ifg_filt_cc_geocode_bmp",
-        "ifg_filt_cc_geocode_out",
-        "ifg_filt_cc_geocode_png",
+        "ifg_filt_coh",
+        "ifg_filt_coh_geocode_bmp",
+        "ifg_filt_coh_geocode_out",
+        "ifg_filt_coh_geocode_png",
         "ifg_flat",
         "ifg_flat_float",
         "ifg_flat_geocode_bmp",
@@ -530,14 +530,14 @@ class IfgFileNames:
         "ifg_flat0",
         "ifg_flat1",
         "ifg_flat10",
-        "ifg_flat_cc",
-        "ifg_flat_cc_geocode_bmp",
-        "ifg_flat_cc_geocode_out",
-        "ifg_flat_cc_geocode_png",
-        "ifg_flat_cc0",
-        "ifg_flat_cc0_mask",
-        "ifg_flat_cc10",
-        "ifg_flat_cc10_mask",
+        "ifg_flat_coh",
+        "ifg_flat_coh_geocode_bmp",
+        "ifg_flat_coh_geocode_out",
+        "ifg_flat_coh_geocode_png",
+        "ifg_flat_coh0",
+        "ifg_flat_coh0_mask",
+        "ifg_flat_coh10",
+        "ifg_flat_coh10_mask",
         "ifg_gcp",
         "ifg_gcp_ph",
         "ifg_mask",
@@ -561,8 +561,8 @@ class IfgFileNames:
         "ifg_unw_geocode_out_tiff",
         "ifg_flat_geocode_out_tiff",
         "ifg_filt_geocode_out_tiff",
-        "ifg_flat_cc_geocode_out_tiff",
-        "ifg_filt_cc_geocode_out_tiff",
+        "ifg_flat_coh_geocode_out_tiff",
+        "ifg_filt_coh_geocode_out_tiff",
     ]
 
     def __init__(self, proc, master, slave, out_dir = None):
@@ -621,13 +621,13 @@ class IfgFileNames:
         self.ifg_filt_geocode_out = pathlib.Path(_master_slave_name + "_filt_eqa_int")
         self.ifg_filt_geocode_png = pathlib.Path(_master_slave_name + "_filt_eqa_int.png")
         self.ifg_filt_mask = pathlib.Path(_master_slave_name + "_filt_mask_int")
-        self.ifg_filt_cc = pathlib.Path(_master_slave_name + "_filt_cc")
-        self.ifg_filt_cc_geocode_bmp = pathlib.Path(
-            _master_slave_name + "_filt_eqa_cc.bmp"
+        self.ifg_filt_coh = pathlib.Path(_master_slave_name + "_filt_coh")
+        self.ifg_filt_coh_geocode_bmp = pathlib.Path(
+            _master_slave_name + "_filt_eqa_coh.bmp"
         )
-        self.ifg_filt_cc_geocode_out = pathlib.Path(_master_slave_name + "_filt_eqa_cc")
-        self.ifg_filt_cc_geocode_png = pathlib.Path(
-            _master_slave_name + "_filt_eqa_cc.png"
+        self.ifg_filt_coh_geocode_out = pathlib.Path(_master_slave_name + "_filt_eqa_coh")
+        self.ifg_filt_coh_geocode_png = pathlib.Path(
+            _master_slave_name + "_filt_eqa_coh.png"
         )
 
         self.ifg_flat = pathlib.Path(_master_slave_name + "_flat_int")
@@ -639,18 +639,18 @@ class IfgFileNames:
         self.ifg_flat0 = pathlib.Path(_master_slave_name + "_flat0_int")
         self.ifg_flat1 = pathlib.Path(_master_slave_name + "_flat1_int")
         self.ifg_flat10 = pathlib.Path(_master_slave_name + "_flat10_int")
-        self.ifg_flat_cc = pathlib.Path(_master_slave_name + "_flat_cc")
-        self.ifg_flat_cc_geocode_bmp = pathlib.Path(
-            _master_slave_name + "_flat_eqa_cc.bmp"
+        self.ifg_flat_coh = pathlib.Path(_master_slave_name + "_flat_coh")
+        self.ifg_flat_coh_geocode_bmp = pathlib.Path(
+            _master_slave_name + "_flat_eqa_coh.bmp"
         )
-        self.ifg_flat_cc_geocode_out = pathlib.Path(_master_slave_name + "_flat_eqa_cc")
-        self.ifg_flat_cc_geocode_png = pathlib.Path(
-            _master_slave_name + "_flat_eqa_cc.png"
+        self.ifg_flat_coh_geocode_out = pathlib.Path(_master_slave_name + "_flat_eqa_coh")
+        self.ifg_flat_coh_geocode_png = pathlib.Path(
+            _master_slave_name + "_flat_eqa_coh.png"
         )
-        self.ifg_flat_cc0 = pathlib.Path(_master_slave_name + "_flat0_cc")
-        self.ifg_flat_cc0_mask = pathlib.Path(_master_slave_name + "_flat0_cc_mask.ras")
-        self.ifg_flat_cc10 = pathlib.Path(_master_slave_name + "_flat10_cc")
-        self.ifg_flat_cc10_mask = pathlib.Path(_master_slave_name + "_flat10_cc_mask.ras")
+        self.ifg_flat_coh0 = pathlib.Path(_master_slave_name + "_flat0_coh")
+        self.ifg_flat_coh0_mask = pathlib.Path(_master_slave_name + "_flat0_coh_mask.ras")
+        self.ifg_flat_coh10 = pathlib.Path(_master_slave_name + "_flat10_coh")
+        self.ifg_flat_coh10_mask = pathlib.Path(_master_slave_name + "_flat10_coh_mask.ras")
 
         self.ifg_gcp = pathlib.Path(_master_slave_name + ".gcp")
         self.ifg_gcp_ph = pathlib.Path(_master_slave_name + ".gcp_ph")
@@ -680,11 +680,11 @@ class IfgFileNames:
         self.ifg_filt_geocode_out_tiff = pathlib.Path(
             _master_slave_name + "_filt_eqa_int.tif"
         )
-        self.ifg_flat_cc_geocode_out_tiff = pathlib.Path(
-            _master_slave_name + "_flat_eqa_cc.tif"
+        self.ifg_flat_coh_geocode_out_tiff = pathlib.Path(
+            _master_slave_name + "_flat_eqa_coh.tif"
         )
-        self.ifg_filt_cc_geocode_out_tiff = pathlib.Path(
-            _master_slave_name + "_filt_eqa_cc.tif"
+        self.ifg_filt_coh_geocode_out_tiff = pathlib.Path(
+            _master_slave_name + "_filt_eqa_coh.tif"
         )
 
 

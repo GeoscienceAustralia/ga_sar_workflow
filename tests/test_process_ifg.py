@@ -68,9 +68,9 @@ def ic_mock():
     ic.ifg_unw_geocode_bmp = ic.ifg_dir / 'ifg_unw_geocode.bmp'
     ic.ifg_flat_geocode_bmp = ic.ifg_dir / 'ifg_flat_geocode.bmp'
     ic.ifg_unw_geocode_png = ic.ifg_dir / "test_eqa_unw.png"
-    ic.ifg_filt_cc_geocode_png = ic.ifg_dir / "test_filt_cc.png"
+    ic.ifg_filt_coh_geocode_png = ic.ifg_dir / "test_filt_coh.png"
     ic.ifg_filt_geocode_png = ic.ifg_dir / "test_filt_eqa_int.png"
-    ic.ifg_flat_cc_geocode_png = ic.ifg_dir / "test_flat_filt_cc.png"
+    ic.ifg_flat_coh_geocode_png = ic.ifg_dir / "test_flat_filt_coh.png"
     ic.ifg_flat_geocode_png = ic.ifg_dir / "test_flat_eqa_int.png"
 
     ic.ifg_bperp = mock_path()

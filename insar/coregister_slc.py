@@ -1048,7 +1048,7 @@ class CoregisterSlc:
                 log_info(f"azimuth_lines20_half: {azimuth_lines20_half}")
 
                 # determine coherence and coherence mask based on unfiltered double differential interferogram
-                diff20cc = Path(f"{r_master_slave_name}.{IWid}.{i}.diff20.cc")
+                diff20cc = Path(f"{r_master_slave_name}.{IWid}.{i}.diff20.coh")
                 diff20cc_ras = Path(f"{r_master_slave_name}.{IWid}.{i}.diff20.cc.ras")
 
                 # cc_wave $diff20  - - $diff20cc $range_samples20 5 5 0
@@ -1085,7 +1085,7 @@ class CoregisterSlc:
 
                 # adf filtering of double differential interferogram
                 diff20adf = Path(f"{r_master_slave_name}.{IWid}.{i}.diff20.adf")
-                diff20adfcc = Path(f"{r_master_slave_name}.{IWid}.{i}.diff20.adf.cc")
+                diff20adfcc = Path(f"{r_master_slave_name}.{IWid}.{i}.diff20.adf.coh")
 
                 # adf $diff20 $diff20adf $diff20adfcc $range_samples20 0.4 16 7 2
                 pg.adf(
@@ -1102,7 +1102,7 @@ class CoregisterSlc:
                 _unlink(diff20adfcc)
 
                 # unwrapping of filtered phase considering coherence and mask determined from unfiltered double differential interferogram
-                diff20cc = Path(f"{r_master_slave_name}.{IWid}.{i}.diff20.cc")
+                diff20cc = Path(f"{r_master_slave_name}.{IWid}.{i}.diff20.coh")
                 diff20cc_ras = Path(f"{r_master_slave_name}.{IWid}.{i}.diff20.cc.ras")
                 diff20phase = Path(f"{r_master_slave_name}.{IWid}.{i}.diff20.phase")
 

@@ -155,7 +155,7 @@ def calc_int(pc: ProcConfig, ic: IfgFileNames, clean_up: bool):
             const.RANGE_PATCH_SIZE,
             const.AZIMUTH_PATCH_SIZE,
             const.NOT_PROVIDED,  # (output) range and azimuth offsets and cross-correlation data
-            2,
+            const.OFFSET_PWR_OVERSAMPLING_FACTOR, # n_ovr (SLC oversampling factor)
             const.NUM_OFFSET_ESTIMATES_RANGE,
             const.NUM_OFFSET_ESTIMATES_AZIMUTH,
             const.CROSS_CORRELATION_THRESHOLD,
@@ -461,7 +461,7 @@ def generate_final_flattened_ifg(
         const.NOT_PROVIDED,  # bc_flag
         const.NOT_PROVIDED,  # bn_flag
         const.NOT_PROVIDED,  # bcdot_flag
-        1,  # bndot_flag
+        const.BASE_LS_ESTIMATE_FROM_DATA,  # bndot_flag
         const.NOT_PROVIDED,  # bperp_min
     )
 

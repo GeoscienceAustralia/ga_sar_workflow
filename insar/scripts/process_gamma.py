@@ -317,6 +317,7 @@ class InitialSetup(luigi.Task):
     creating required directories and file lists
     """
 
+    proc_file = luigi.Parameter()
     start_date = luigi.Parameter()
     end_date = luigi.Parameter()
     vector_file = luigi.Parameter()
@@ -491,6 +492,8 @@ class CreateFullSlc(luigi.Task):
     Runs the create full slc tasks
     """
 
+    proc_file = luigi.Parameter()
+
     def output(self):
         return luigi.LocalTarget(
             Path(self.workdir).joinpath(
@@ -643,6 +646,7 @@ class CreateSlcSubset(luigi.Task):
     Runs the slc subsetting tasks
     """
 
+    proc_file = luigi.Parameter()
     multi_look = luigi.IntParameter()
 
     def output(self):
@@ -787,6 +791,7 @@ class CreateMultilook(luigi.Task):
     Runs creation of multi-look image task
     """
 
+    proc_file = luigi.Parameter()
     multi_look = luigi.IntParameter()
 
     def output(self):
@@ -850,6 +855,7 @@ class CalcInitialBaseline(luigi.Task):
     Runs calculation of initial baseline task
     """
 
+    proc_file = luigi.Parameter()
     master_scene_polarization = luigi.Parameter(default="VV")
 
     def output(self):
@@ -863,6 +869,10 @@ class CalcInitialBaseline(luigi.Task):
     def run(self):
         log = STATUS_LOGGER.bind(track_frame=f"{self.track}_{self.frame}")
         log.info("calculate baseline task")
+
+        # Load the gamma proc config file
+        with open(str(self.proc_file), "r") as proc_fileobj:
+            proc_config = ProcConfig.from_file(proc_fileobj)
 
         slc_frames = get_scenes(self.burst_data_csv)
         slc_par_files = []
@@ -902,7 +912,7 @@ class CalcInitialBaseline(luigi.Task):
 
         # creates a ifg list based on sbas-network
         # TODO confirm with InSAR team if sbas-network is the default ifg list?
-        baseline.sbas_list()
+        baseline.sbas_list(nmin=int(proc_config.min_connect), nmax=int(proc_config.max_connect))
 
         with self.output().open("w") as out_fid:
             out_fid.write("")
@@ -1374,7 +1384,7 @@ class ARD(luigi.WrapperTask):
                     )
                     continue
 
-                track, frame = Path(vector_file).stem.split("_")
+                track, frame, sensor = Path(vector_file).stem.split("_")
 
                 outdir = Path(str(self.outdir)).joinpath(f"{track}_{frame}")
                 workdir = Path(str(self.workdir)).joinpath(f"{track}_{frame}")

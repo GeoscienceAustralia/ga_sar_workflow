@@ -477,7 +477,7 @@ def ard_package(
     pbs_scripts = []
     for shp_task in tasklist:
         # new code -> frame = FXX, e.g. F04
-        track, frame = shp_task.stem.split("_")
+        track, frame, sensor = shp_task.stem.split("_")
 
         jobid = uuid.uuid4().hex[0:6]
         in_dir = Path(workdir).joinpath(f"{track}_{frame}")

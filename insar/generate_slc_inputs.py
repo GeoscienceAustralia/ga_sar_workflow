@@ -158,7 +158,7 @@ def query_slc_inputs(
     orbit: str,
     track: int,
     polarization: List[str],
-    filter_by_sensor: str = "MAJORITY"
+    filter_by_sensor: str = None
 ) -> Dict:
     """A method to query sqlite database and generate slc input dict.
 

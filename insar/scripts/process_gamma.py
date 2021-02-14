@@ -1373,6 +1373,7 @@ class ARD(luigi.WrapperTask):
 
         # Coregistration processing
         ard_tasks = []
+        self.output_dirs = []
 
         with open(self.vector_file_list, "r") as fid:
             vector_files = fid.readlines()
@@ -1388,6 +1389,8 @@ class ARD(luigi.WrapperTask):
 
                 outdir = Path(str(self.outdir)).joinpath(f"{track}_{frame}")
                 workdir = Path(str(self.workdir)).joinpath(f"{track}_{frame}")
+
+                self.output_dirs.append(outdir)
 
                 os.makedirs(outdir, exist_ok=True)
                 os.makedirs(workdir, exist_ok=True)
@@ -1417,6 +1420,68 @@ class ARD(luigi.WrapperTask):
                 ard_tasks.append(CreateProcessIFGs(**kwargs))
 
         yield ard_tasks
+
+    def run(self):
+        # Finally once all ARD pipeline dependencies are complete (eg: data processing is complete)
+        # - we cleanup files that are no longer required as outputs.
+        if not self.cleanup:
+            return
+
+        log = STATUS_LOGGER.bind(track_frame=f"{self.track}_{self.frame}")
+        log.info("Cleaning up unused files")
+
+        required_files = [
+            # IFG files
+            "INT/**/*_eqa_unw.tif",
+            "INT/**/*_flat_eqa_cc.tif",
+            "INT/**/*_flat_eqa_int.tif",
+            "INT/**/*_filt_eqa_cc.tif",
+            "INT/**/*_filt_eqa_int.tif",
+            "INT/**/*_base.par",
+            "INT/**/*_bperp.par",
+            "INT/**/*_eqa_unw.png",
+            "INT/**/*_flat_eqa_int.png",
+            "INT/**/*_flat.int",
+
+            # SLC files
+            "SLC/**/r*rlks.mli.par",
+            "SLC/**/r*rlks.slc.par",
+            "SLC/**/*sigma0.tif",
+            "SLC/**/*gamma0.tif",
+
+            # DEM files
+            "DEM/**/*_eqa_to_rdc.lt",
+            "DEM/**/*_eqa.dem",
+            "DEM/**/*_eqa.dem.par",
+            "DEM/**/*_eqa.lv_phi",
+            "DEM/**/*_eqa.lv_theta",
+            "DEM/**/*_rdc.dem",
+
+            # Keep all lists and top level files
+            "lists/*",
+            "*"
+        ]
+
+        # Generate a list of required files we want to keep
+        keep_files = []
+
+        for outdir in self.output_dirs:
+            for pattern in required_files:
+                keep_files += outdir.glob(pattern)
+
+        # Iterate every single output dir, and remove any file that's not required
+        for outdir in self.output_dirs:
+            for file in outdir.rglob("*"):
+                if file.is_dir():
+                    continue
+
+                is_required = any([file.samefile(i) for i in keep_files])
+
+                if not is_required:
+                    log.info("Cleaning up file", file=file)
+                    file.unlink()
+                else:
+                    log.info("Keeping required file", file=file)
 
 
 def run():

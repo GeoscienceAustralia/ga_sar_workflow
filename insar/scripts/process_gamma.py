@@ -338,6 +338,7 @@ class InitialSetup(luigi.Task):
     def run(self):
         log = STATUS_LOGGER.bind(track_frame=f"{self.track}_{self.frame}")
         log.info("initial setup task")
+
         # get the relative orbit number, which is int value of the numeric part of the track name
         rel_orbit = int(re.findall(r"\d+", str(self.track))[0])
 
@@ -589,11 +590,6 @@ class CreateFullSlc(luigi.Task):
             )
             slc_inputs_df.to_csv(self.burst_data_csv)
 
-        # clean up raw data directory immediately (as it's tens of GB / the sooner we delete it the better)
-        raw_data_path = Path(self.outdir).joinpath(__RAW__)
-        if self.cleanup and Path(raw_data_path).exists():
-            shutil.rmtree(raw_data_path)
-
         with self.output().open("w") as out_fid:
             out_fid.write("")
 
@@ -609,6 +605,7 @@ class ProcessSlcSubset(luigi.Task):
     polarization = luigi.Parameter()
     burst_data = luigi.Parameter()
     slc_dir = luigi.Parameter()
+    outdir = luigi.Parameter()
     workdir = luigi.Parameter()
     ref_master_tab = luigi.Parameter(default=None)
     rlks = luigi.IntParameter()
@@ -698,6 +695,7 @@ class CreateSlcSubset(luigi.Task):
                         polarization=_pol,
                         burst_data=self.burst_data_csv,
                         slc_dir=slc_dir,
+                        outdir=self.outdir,
                         workdir=self.workdir,
                         rlks=rlks,
                         alks=alks
@@ -739,6 +737,7 @@ class CreateSlcSubset(luigi.Task):
                         polarization=_pol,
                         burst_data=self.burst_data_csv,
                         slc_dir=slc_dir,
+                        outdir=self.outdir,
                         workdir=self.workdir,
                         ref_master_tab=resize_master_tab,
                         rlks=rlks,
@@ -746,6 +745,11 @@ class CreateSlcSubset(luigi.Task):
                     )
                 )
         yield slc_tasks
+
+        # clean up raw data directory immediately (as it's tens of GB / the sooner we delete it the better)
+        raw_data_path = Path(self.outdir).joinpath(__RAW__)
+        if self.cleanup and Path(raw_data_path).exists():
+            shutil.rmtree(raw_data_path)
 
         with self.output().open("w") as out_fid:
             out_fid.write("")
@@ -1236,6 +1240,7 @@ class ProcessIFG(luigi.Task):
         with self.output().open("w") as f:
             f.write("")
 
+
 @requires(CreateCoregisterSlaves)
 class CreateProcessIFGs(luigi.Task):
     """
@@ -1383,7 +1388,7 @@ class ARD(luigi.WrapperTask):
         if not self.cleanup:
             return
 
-        log = STATUS_LOGGER.bind(track_frame=f"{self.track}_{self.frame}")
+        log = STATUS_LOGGER
         log.info("Cleaning up unused files")
 
         required_files = [

@@ -594,11 +594,6 @@ class CreateFullSlc(luigi.Task):
             )
             slc_inputs_df.to_csv(self.burst_data_csv)
 
-        # clean up raw data directory immediately (as it's tens of GB / the sooner we delete it the better)
-        raw_data_path = Path(self.outdir).joinpath(__RAW__)
-        if self.cleanup and Path(raw_data_path).exists():
-            shutil.rmtree(raw_data_path)
-
         with self.output().open("w") as out_fid:
             out_fid.write("")
 
@@ -637,6 +632,11 @@ class ProcessSlcSubset(luigi.Task):
         )
 
         slc_job.main_subset(int(self.rlks), int(self.alks))
+
+        # clean up raw data directory immediately (as it's tens of GB / the sooner we delete it the better)
+        raw_data_path = Path(self.outdir).joinpath(__RAW__)
+        if self.cleanup and Path(raw_data_path).exists():
+            shutil.rmtree(raw_data_path)
 
         with self.output().open("w") as f:
             f.write("")

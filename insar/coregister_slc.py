@@ -722,7 +722,7 @@ class CoregisterSlc:
                 daz, azpol = self.S1_COREG_OVERLAP(
                     iteration,
                     slave_ovr_res,
-                    str(self.out_dir / self.r_master_slave_name),
+                    str(self.r_master_slave_name),
                     str(self.master_slc_tab),
                     str(self.r_slave_slc_tab),
                     str(slave_off_start),
@@ -1206,11 +1206,11 @@ class CoregisterSlc:
             slave_ovr_res.write(f"{IWid} average: {average}\n")
 
         with tempfile.TemporaryDirectory() as temp_dir:
-            temp_dir = Path(temp_dir)
+            temp_path = Path(temp_dir)
 
-            calc_phase_offsets(1, temp_dir)  # IW1
-            calc_phase_offsets(2, temp_dir)  # IW2
-            calc_phase_offsets(3, temp_dir)  # IW3
+            calc_phase_offsets(1, temp_path)  # IW1
+            calc_phase_offsets(2, temp_path)  # IW2
+            calc_phase_offsets(3, temp_path)  # IW3
 
         ###################################################################################################################
 

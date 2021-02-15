@@ -833,7 +833,7 @@ class CoregisterSlc:
 
         ###################
         # determine phase offsets for sub-swath overlap regions
-        def calc_phase_offsets(subswath_id):
+        def calc_phase_offsets(subswath_id, temp_dir):
             nonlocal sum_all
             nonlocal samples_all
             nonlocal sum_weight_all
@@ -926,8 +926,8 @@ class CoregisterSlc:
 
                 # calculate the 2 single look interferograms for the burst overlap region i
                 # using the earlier burst --> *.int1, using the later burst --> *.int2
-                off1 = Path(f"{r_master_slave_name}.{IWid}.{i}.off1")
-                int1 = Path(f"{r_master_slave_name}.{IWid}.{i}.int1")
+                off1 = temp_dir / Path(f"{r_master_slave_name}.{IWid}.{i}.off1")
+                int1 = temp_dir / Path(f"{r_master_slave_name}.{IWid}.{i}.int1")
                 _unlink(off1)
                 _unlink(int1)
 
@@ -958,8 +958,8 @@ class CoregisterSlc:
                     0
                 )
 
-                off2 = Path(f"{r_master_slave_name}.{IWid}.{i}.off2")
-                int2 = Path(f"{r_master_slave_name}.{IWid}.{i}.int2")
+                off2 = temp_dir / Path(f"{r_master_slave_name}.{IWid}.{i}.off2")
+                int2 = temp_dir / Path(f"{r_master_slave_name}.{IWid}.{i}.int2")
                 _unlink(off2)
                 _unlink(int2)
 
@@ -992,8 +992,8 @@ class CoregisterSlc:
 
                 # calculate the single look double difference interferogram for the burst overlap region i
                 # insar phase of earlier burst is subtracted from interferogram of later burst
-                diff_par1 = Path(f"{r_master_slave_name}.{IWid}.{i}.diff_par")
-                diff1 = Path(f"{r_master_slave_name}.{IWid}.{i}.diff")
+                diff_par1 = temp_dir / Path(f"{r_master_slave_name}.{IWid}.{i}.diff_par")
+                diff1 = temp_dir / Path(f"{r_master_slave_name}.{IWid}.{i}.diff")
                 _unlink(diff_par1)
 
                 # create_diff_par $off1 $off2 $diff_par1 0 0
@@ -1024,8 +1024,8 @@ class CoregisterSlc:
                 )
 
                 # multi-look the double difference interferogram (200 range x 4 azimuth looks)
-                diff20 = Path(f"{r_master_slave_name}.{IWid}.{i}.diff20")
-                off20 = Path(f"{r_master_slave_name}.{IWid}.{i}.off20")
+                diff20 = temp_dir / Path(f"{r_master_slave_name}.{IWid}.{i}.diff20")
+                off20 = temp_dir / Path(f"{r_master_slave_name}.{IWid}.{i}.off20")
 
                 # multi_cpx $diff1 $off1 $diff20 $off20 200 4
                 pg.multi_cpx(
@@ -1048,8 +1048,8 @@ class CoregisterSlc:
                 log_info(f"azimuth_lines20_half: {azimuth_lines20_half}")
 
                 # determine coherence and coherence mask based on unfiltered double differential interferogram
-                diff20cc = Path(f"{r_master_slave_name}.{IWid}.{i}.diff20.coh")
-                diff20cc_ras = Path(f"{r_master_slave_name}.{IWid}.{i}.diff20.cc.ras")
+                diff20cc = temp_dir / Path(f"{r_master_slave_name}.{IWid}.{i}.diff20.coh")
+                diff20cc_ras = temp_dir / Path(f"{r_master_slave_name}.{IWid}.{i}.diff20.cc.ras")
 
                 # cc_wave $diff20  - - $diff20cc $range_samples20 5 5 0
                 pg.cc_wave(
@@ -1084,8 +1084,8 @@ class CoregisterSlc:
                 )
 
                 # adf filtering of double differential interferogram
-                diff20adf = Path(f"{r_master_slave_name}.{IWid}.{i}.diff20.adf")
-                diff20adfcc = Path(f"{r_master_slave_name}.{IWid}.{i}.diff20.adf.coh")
+                diff20adf = temp_dir / Path(f"{r_master_slave_name}.{IWid}.{i}.diff20.adf")
+                diff20adfcc = temp_dir / Path(f"{r_master_slave_name}.{IWid}.{i}.diff20.adf.coh")
 
                 # adf $diff20 $diff20adf $diff20adfcc $range_samples20 0.4 16 7 2
                 pg.adf(
@@ -1102,9 +1102,9 @@ class CoregisterSlc:
                 _unlink(diff20adfcc)
 
                 # unwrapping of filtered phase considering coherence and mask determined from unfiltered double differential interferogram
-                diff20cc = Path(f"{r_master_slave_name}.{IWid}.{i}.diff20.coh")
-                diff20cc_ras = Path(f"{r_master_slave_name}.{IWid}.{i}.diff20.cc.ras")
-                diff20phase = Path(f"{r_master_slave_name}.{IWid}.{i}.diff20.phase")
+                diff20cc = temp_dir / Path(f"{r_master_slave_name}.{IWid}.{i}.diff20.coh")
+                diff20cc_ras = temp_dir / Path(f"{r_master_slave_name}.{IWid}.{i}.diff20.cc.ras")
+                diff20phase = temp_dir / Path(f"{r_master_slave_name}.{IWid}.{i}.diff20.phase")
 
                 # mcf $diff20adf $diff20cc $diff20cc_ras $diff20phase $range_samples20 1 0 0 - - 1 1 512 $range_samples20_half $azimuth_lines20_half
                 pg.mcf(
@@ -1205,9 +1205,12 @@ class CoregisterSlc:
             log_info(f"{IWid} average: {average}")
             slave_ovr_res.write(f"{IWid} average: {average}\n")
 
-        calc_phase_offsets(1)  # IW1
-        calc_phase_offsets(2)  # IW2
-        calc_phase_offsets(3)  # IW3
+        with tempfile.TemporaryDirectory() as temp_dir:
+            temp_dir = Path(temp_dir)
+
+            calc_phase_offsets(1, temp_dir)  # IW1
+            calc_phase_offsets(2, temp_dir)  # IW2
+            calc_phase_offsets(3, temp_dir)  # IW3
 
         ###################################################################################################################
 

@@ -614,7 +614,6 @@ class ProcessSlcSubset(luigi.Task):
     ref_master_tab = luigi.Parameter(default=None)
     rlks = luigi.IntParameter()
     alks = luigi.IntParameter()
-    cleanup = luigi.BoolParameter()
 
     def output(self):
         return luigi.LocalTarget(
@@ -634,11 +633,6 @@ class ProcessSlcSubset(luigi.Task):
         )
 
         slc_job.main_subset(int(self.rlks), int(self.alks))
-
-        # clean up raw data directory immediately (as it's tens of GB / the sooner we delete it the better)
-        raw_data_path = Path(self.outdir).joinpath(__RAW__)
-        if self.cleanup and Path(raw_data_path).exists():
-            shutil.rmtree(raw_data_path)
 
         with self.output().open("w") as f:
             f.write("")
@@ -708,8 +702,7 @@ class CreateSlcSubset(luigi.Task):
                         outdir=self.outdir,
                         workdir=self.workdir,
                         rlks=rlks,
-                        alks=alks,
-                        cleanup=self.cleanup
+                        alks=alks
                     )
                     yield resize_task
                     resize_master_tab = Path(slc_dir).joinpath(
@@ -752,11 +745,15 @@ class CreateSlcSubset(luigi.Task):
                         workdir=self.workdir,
                         ref_master_tab=resize_master_tab,
                         rlks=rlks,
-                        alks=alks,
-                        cleanup=self.cleanup
+                        alks=alks
                     )
                 )
         yield slc_tasks
+
+        # clean up raw data directory immediately (as it's tens of GB / the sooner we delete it the better)
+        raw_data_path = Path(self.outdir).joinpath(__RAW__)
+        if self.cleanup and Path(raw_data_path).exists():
+            shutil.rmtree(raw_data_path)
 
         with self.output().open("w") as out_fid:
             out_fid.write("")

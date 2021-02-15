@@ -609,6 +609,7 @@ class ProcessSlcSubset(luigi.Task):
     polarization = luigi.Parameter()
     burst_data = luigi.Parameter()
     slc_dir = luigi.Parameter()
+    outdir = luigi.Parameter()
     workdir = luigi.Parameter()
     ref_master_tab = luigi.Parameter(default=None)
     rlks = luigi.IntParameter()
@@ -703,6 +704,7 @@ class CreateSlcSubset(luigi.Task):
                         polarization=_pol,
                         burst_data=self.burst_data_csv,
                         slc_dir=slc_dir,
+                        outdir=self.outdir,
                         workdir=self.workdir,
                         rlks=rlks,
                         alks=alks
@@ -744,6 +746,7 @@ class CreateSlcSubset(luigi.Task):
                         polarization=_pol,
                         burst_data=self.burst_data_csv,
                         slc_dir=slc_dir,
+                        outdir=self.outdir,
                         workdir=self.workdir,
                         ref_master_tab=resize_master_tab,
                         rlks=rlks,

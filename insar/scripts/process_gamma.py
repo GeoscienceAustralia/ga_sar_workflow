@@ -13,6 +13,7 @@ import pandas as pd
 from luigi.util import requires
 import zlib
 import structlog
+import shutil
 
 from insar.constant import SCENE_DATE_FMT
 from insar.generate_slc_inputs import query_slc_inputs, slc_inputs
@@ -26,12 +27,6 @@ from insar.process_ifg import run_workflow, get_ifg_width, TempFileConfig
 from insar.project import ProcConfig, DEMFileNames, IfgFileNames
 
 from insar.meta_data.s1_slc import S1DataDownload
-from insar.clean_up import (
-    clean_rawdatadir,
-    clean_slcdir,
-    clean_gammademdir,
-    clean_demdir,
-)
 from insar.logs import TASK_LOGGER, STATUS_LOGGER, COMMON_PROCESSORS
 
 structlog.configure(processors=COMMON_PROCESSORS)
@@ -598,9 +593,11 @@ class CreateFullSlc(luigi.Task):
                 f"re-writing the burst data csv files after removing failed slc scenes"
             )
             slc_inputs_df.to_csv(self.burst_data_csv)
-        # clean up raw data directory
-        if self.cleanup:
-            clean_rawdatadir(Path(self.outdir).joinpath(__RAW__))
+
+        # clean up raw data directory immediately (as it's tens of GB / the sooner we delete it the better)
+        raw_data_path = Path(self.outdir).joinpath(__RAW__)
+        if self.cleanup and Path(raw_data_path).exists():
+            shutil.rmtree(raw_data_path)
 
         with self.output().open("w") as out_fid:
             out_fid.write("")
@@ -754,10 +751,6 @@ class CreateSlcSubset(luigi.Task):
                     )
                 )
         yield slc_tasks
-
-        # clean up raw data directory
-        if self.cleanup:
-            clean_rawdatadir(Path(self.outdir).joinpath(__RAW__))
 
         with self.output().open("w") as out_fid:
             out_fid.write("")
@@ -932,7 +925,6 @@ class CoregisterDemMaster(luigi.Task):
     multi_look = luigi.IntParameter()
     master_scene_polarization = luigi.Parameter(default="VV")
     master_scene = luigi.Parameter(default=None)
-    cleanup = luigi.BoolParameter()
 
     def output(self):
 
@@ -1066,7 +1058,6 @@ class CreateCoregisterSlaves(luigi.Task):
     proc_file = luigi.Parameter()
     master_scene_polarization = luigi.Parameter(default="VV")
     master_scene = luigi.Parameter(default=None)
-    cleanup = luigi.BoolParameter()
 
     def output(self):
         return luigi.LocalTarget(
@@ -1203,37 +1194,6 @@ class CreateCoregisterSlaves(luigi.Task):
 
         yield slave_coreg_jobs
 
-        # cleanup slc directory after coreg  and gamma dem dir
-        if self.cleanup:
-            clean_slcdir(Path(self.outdir).joinpath(__SLC__))
-            clean_gammademdir(
-                Path(self.outdir).joinpath(__DEM_GAMMA__),
-                track_frame=f"{self.track}_{self.frame}",
-            )
-            # TODO move this clean up methods after interferogram generation task once implemented
-            clean_demdir(
-                Path(self.outdir).joinpath(__DEM__),
-                [
-                    "*sigma*",
-                    "*.linc",
-                    "*.lv_phi",
-                    "*.lv_theta",
-                    "*.sim",
-                    "*dem.tif",
-                    "*gamma*",
-                    "*.lt",
-                    "*.png",
-                    "*.lsmap",
-                    "_",
-                    "*.dem",
-                    "*seamask.tif",
-                ],
-            )
-            clean_slcdir(
-                Path(self.outdir).joinpath(__SLC__),
-                ["*.sigma0", "*.gamma0", "*.png", "*.slc", "*.kml", "*.bmp", "*.mli",],
-            )
-
         with self.output().open("w") as f:
             f.write("")
 
@@ -1248,7 +1208,6 @@ class ProcessIFG(luigi.Task):
     frame = luigi.Parameter()
     outdir = luigi.Parameter()
     workdir = luigi.Parameter()
-    cleanup = luigi.BoolParameter()
 
     master_date = luigi.Parameter()
     slave_date = luigi.Parameter()
@@ -1278,8 +1237,7 @@ class ProcessIFG(luigi.Task):
             ic,
             dc,
             tc,
-            ifg_width,
-            self.cleanup)
+            ifg_width)
 
         with self.output().open("w") as f:
             f.write("")
@@ -1296,7 +1254,6 @@ class CreateProcessIFGs(luigi.Task):
     frame = luigi.Parameter()
     outdir = luigi.Parameter()
     workdir = luigi.Parameter()
-    cleanup = luigi.BoolParameter()
 
     def output(self):
         return luigi.LocalTarget(
@@ -1326,7 +1283,6 @@ class CreateProcessIFGs(luigi.Task):
                     frame=self.frame,
                     outdir=self.outdir,
                     workdir=self.workdir,
-                    cleanup=self.cleanup,
                     master_date=master_date,
                     slave_date=slave_date
                 )
@@ -1381,6 +1337,7 @@ class ARD(luigi.WrapperTask):
 
         # Coregistration processing
         ard_tasks = []
+        self.output_dirs = []
 
         with open(self.vector_file_list, "r") as fid:
             vector_files = fid.readlines()
@@ -1432,6 +1389,8 @@ class ARD(luigi.WrapperTask):
                 outdir = Path(str(self.outdir)).joinpath(f"{track}_{frame}_{selected_sensors}")
                 workdir = Path(str(self.workdir)).joinpath(f"{track}_{frame}_{selected_sensors}")
 
+                self.output_dirs.append(outdir)
+
                 os.makedirs(outdir, exist_ok=True)
                 os.makedirs(workdir, exist_ok=True)
 
@@ -1461,6 +1420,68 @@ class ARD(luigi.WrapperTask):
                 ard_tasks.append(CreateProcessIFGs(**kwargs))
 
         yield ard_tasks
+
+    def run(self):
+        # Finally once all ARD pipeline dependencies are complete (eg: data processing is complete)
+        # - we cleanup files that are no longer required as outputs.
+        if not self.cleanup:
+            return
+
+        log = STATUS_LOGGER.bind(track_frame=f"{self.track}_{self.frame}")
+        log.info("Cleaning up unused files")
+
+        required_files = [
+            # IFG files
+            "INT/**/*_eqa_unw.tif",
+            "INT/**/*_flat_eqa_cc.tif",
+            "INT/**/*_flat_eqa_int.tif",
+            "INT/**/*_filt_eqa_cc.tif",
+            "INT/**/*_filt_eqa_int.tif",
+            "INT/**/*_base.par",
+            "INT/**/*_bperp.par",
+            "INT/**/*_eqa_unw.png",
+            "INT/**/*_flat_eqa_int.png",
+            "INT/**/*_flat.int",
+
+            # SLC files
+            "SLC/**/r*rlks.mli.par",
+            "SLC/**/r*rlks.slc.par",
+            "SLC/**/*sigma0.tif",
+            "SLC/**/*gamma0.tif",
+
+            # DEM files
+            "DEM/**/*_eqa_to_rdc.lt",
+            "DEM/**/*_eqa.dem",
+            "DEM/**/*_eqa.dem.par",
+            "DEM/**/*_eqa.lv_phi",
+            "DEM/**/*_eqa.lv_theta",
+            "DEM/**/*_rdc.dem",
+
+            # Keep all lists and top level files
+            "lists/*",
+            "*"
+        ]
+
+        # Generate a list of required files we want to keep
+        keep_files = []
+
+        for outdir in self.output_dirs:
+            for pattern in required_files:
+                keep_files += outdir.glob(pattern)
+
+        # Iterate every single output dir, and remove any file that's not required
+        for outdir in self.output_dirs:
+            for file in outdir.rglob("*"):
+                if file.is_dir():
+                    continue
+
+                is_required = any([file.samefile(i) for i in keep_files])
+
+                if not is_required:
+                    log.info("Cleaning up file", file=file)
+                    file.unlink()
+                else:
+                    log.info("Keeping required file", file=file)
 
 
 def run():

@@ -1006,7 +1006,7 @@ class CoregisterSlave(luigi.Task):
     dem_pix_gamma0 = luigi.Parameter()
     r_dem_master_mli = luigi.Parameter()
     rdc_dem = luigi.Parameter()
-    eqa_dem_par = luigi.Parameter()
+    geo_dem_par = luigi.Parameter()
     dem_lt_fine = luigi.Parameter()
     work_dir = luigi.Parameter()
 
@@ -1034,7 +1034,7 @@ class CoregisterSlave(luigi.Task):
             dem_pix_gamma0=Path(str(self.dem_pix_gamma0)),
             r_dem_master_mli=Path(str(self.r_dem_master_mli)),
             rdc_dem=Path(str(self.rdc_dem)),
-            eqa_dem_par=Path(str(self.eqa_dem_par)),
+            geo_dem_par=Path(str(self.geo_dem_par)),
             dem_lt_fine=Path(str(self.dem_lt_fine)),
         )
 
@@ -1134,7 +1134,7 @@ class CreateCoregisterSlaves(luigi.Task):
             "dem_pix_gamma0": dem_filenames["dem_pix_gam"],
             "r_dem_master_mli": dem_master_names["r_dem_master_mli"],
             "rdc_dem": dem_filenames["rdc_dem"],
-            "eqa_dem_par": dem_filenames["eqa_dem_par"],
+            "geo_dem_par": dem_filenames["geo_dem_par"],
             "dem_lt_fine": dem_filenames["dem_lt_fine"],
             "work_dir": Path(self.workdir),
         }
@@ -1393,15 +1393,15 @@ class ARD(luigi.WrapperTask):
 
         required_files = [
             # IFG files
-            "INT/**/*_eqa_unw.tif",
-            "INT/**/*_flat_eqa_cc.tif",
-            "INT/**/*_flat_eqa_int.tif",
-            "INT/**/*_filt_eqa_cc.tif",
-            "INT/**/*_filt_eqa_int.tif",
+            "INT/**/*_geo_unw.tif",
+            "INT/**/*_flat_geo_cc.tif",
+            "INT/**/*_flat_geo_int.tif",
+            "INT/**/*_filt_geo_cc.tif",
+            "INT/**/*_filt_geo_int.tif",
             "INT/**/*_base.par",
             "INT/**/*_bperp.par",
-            "INT/**/*_eqa_unw.png",
-            "INT/**/*_flat_eqa_int.png",
+            "INT/**/*_geo_unw.png",
+            "INT/**/*_flat_geo_int.png",
             "INT/**/*_flat.int",
 
             # SLC files
@@ -1411,11 +1411,11 @@ class ARD(luigi.WrapperTask):
             "SLC/**/*gamma0.tif",
 
             # DEM files
-            "DEM/**/*_eqa_to_rdc.lt",
-            "DEM/**/*_eqa.dem",
-            "DEM/**/*_eqa.dem.par",
-            "DEM/**/*_eqa.lv_phi",
-            "DEM/**/*_eqa.lv_theta",
+            "DEM/**/*_geo_to_rdc.lt",
+            "DEM/**/*_geo.dem",
+            "DEM/**/*_geo.dem.par",
+            "DEM/**/*_geo.lv_phi",
+            "DEM/**/*_geo.lv_theta",
             "DEM/**/*_rdc.dem",
 
             # Keep all lists and top level files

@@ -104,7 +104,7 @@ class CoregisterSlc:
         dem_pix_gamma0: Union[str, Path],
         r_dem_master_mli: Union[str, Path],
         rdc_dem: Union[str, Path],
-        eqa_dem_par: Union[str, Path],
+        geo_dem_par: Union[str, Path],
         dem_lt_fine: Union[str, Path],
         outdir: Optional[Union[str, Path]] = None,
     ) -> None:
@@ -134,10 +134,10 @@ class CoregisterSlc:
             A full path to a reference multi-looked image parameter file.
         :param rdc_dem:
             A full path to a dem (height map) in RDC of master SLC.
-        :param eqa_dem_par:
-            A full path to a eqa dem par generated during master-dem co-registration.
+        :param geo_dem_par:
+            A full path to a geo dem par generated during master-dem co-registration.
         :param dem_lt_fine:
-            A full path to a eqa_to_rdc look-up table generated during master-dem co-registration.
+            A full path to a geo_to_rdc look-up table generated during master-dem co-registration.
         :param outdir:
             A full path to a output directory.
         """
@@ -152,7 +152,7 @@ class CoregisterSlc:
         self.r_dem_master_mli = r_dem_master_mli
         self.ellip_pix_sigma0 = ellip_pix_sigma0
         self.dem_pix_gamma0 = dem_pix_gamma0
-        self.eqa_dem_par = eqa_dem_par
+        self.geo_dem_par = geo_dem_par
         self.dem_lt_fine = dem_lt_fine
         self.out_dir = outdir
         if self.out_dir is None:
@@ -1303,7 +1303,7 @@ class CoregisterSlc:
         Section 10.6 of Gamma Geocoding and Image Registration Users Guide.
         """
         slave_gamma0 = self.out_dir.joinpath(f"{self.slave_mli.stem}.gamma0")
-        slave_gamma0_eqa = self.out_dir.joinpath(f"{self.slave_mli.stem}_eqa.gamma0")
+        slave_gamma0_geo = self.out_dir.joinpath(f"{self.slave_mli.stem}_geo.gamma0")
 
         with tempfile.TemporaryDirectory() as temp_dir:
             temp_dir = Path(temp_dir)
@@ -1330,13 +1330,13 @@ class CoregisterSlc:
             )
 
             # back geocode gamma0 backscatter product to map geometry using B-spline interpolation on sqrt data
-            eqa_dem_par_vals = DemParFileParser(self.eqa_dem_par)
-            dem_width = eqa_dem_par_vals.dem_par_params.width
+            geo_dem_par_vals = DemParFileParser(self.geo_dem_par)
+            dem_width = geo_dem_par_vals.dem_par_params.width
 
             data_in_pathname = str(slave_gamma0)
             width_in = self.master_sample.mli_width_end
             lookup_table_pathname = str(self.dem_lt_fine)
-            data_out_pathname = str(slave_gamma0_eqa)
+            data_out_pathname = str(slave_gamma0_geo)
             width_out = dem_width
             nlines_out = const.NOT_PROVIDED
             interp_mode = 5  # B-spline interpolation
@@ -1360,11 +1360,11 @@ class CoregisterSlc:
             )
 
             # make quick-look png image
-            temp_bmp = temp_dir.joinpath(f"{slave_gamma0_eqa.name}.bmp")
+            temp_bmp = temp_dir.joinpath(f"{slave_gamma0_geo.name}.bmp")
             slave_png = self.out_dir.joinpath(temp_bmp.with_suffix(".png").name)
 
             with working_directory(temp_dir):
-                pwr_pathname = str(slave_gamma0_eqa)
+                pwr_pathname = str(slave_gamma0_geo)
                 width = dem_width
                 start = 1
                 nlines = 0
@@ -1395,10 +1395,10 @@ class CoregisterSlc:
                 Image.fromarray(img).save(slave_png.as_posix())
 
                 # convert gamma0 Gamma file to GeoTIFF
-                dem_par_pathname = str(self.eqa_dem_par)
-                data_pathname = str(slave_gamma0_eqa)
+                dem_par_pathname = str(self.geo_dem_par)
+                data_pathname = str(slave_gamma0_geo)
                 dtype = 2  # float
-                geotiff_pathname = str(slave_gamma0_eqa.with_suffix(".gamma0.tif"))
+                geotiff_pathname = str(slave_gamma0_geo.with_suffix(".gamma0.tif"))
                 nodata = 0.0
 
                 pg.data2geotiff(
@@ -1407,7 +1407,7 @@ class CoregisterSlc:
 
                 # create KML map of PNG file
                 image_pathname = str(slave_png)
-                dem_par_pathname = str(self.eqa_dem_par)
+                dem_par_pathname = str(self.geo_dem_par)
                 kml_pathname = str(slave_png.with_suffix(".kml"))
 
                 pg.kml_map(
@@ -1415,12 +1415,12 @@ class CoregisterSlc:
                 )
 
                 # geocode sigma0 mli
-                slave_sigma0_eqa = slave_gamma0_eqa.with_suffix(".sigma0")
+                slave_sigma0_geo = slave_gamma0_geo.with_suffix(".sigma0")
 
                 data_in_pathname = str(self.r_slave_mli)
                 width_in = self.master_sample.mli_width_end
                 lookup_table_pathname = str(self.dem_lt_fine)
-                data_out_pathname = str(slave_sigma0_eqa)
+                data_out_pathname = str(slave_sigma0_geo)
                 width_out = dem_width
                 nlines_out = const.NOT_PROVIDED
                 interp_mode = 0  # nearest-neighbor
@@ -1442,10 +1442,10 @@ class CoregisterSlc:
                 )
 
                 # convert sigma0 Gamma file to GeoTIFF
-                dem_par_pathname = str(self.eqa_dem_par)
-                data_pathname = str(slave_sigma0_eqa)
+                dem_par_pathname = str(self.geo_dem_par)
+                data_pathname = str(slave_sigma0_geo)
                 dtype = 2  # float
-                geotiff_pathname = str(slave_sigma0_eqa.with_suffix(".sigma0.tif"))
+                geotiff_pathname = str(slave_sigma0_geo.with_suffix(".sigma0.tif"))
                 nodata = 0.0
 
                 pg.data2geotiff(

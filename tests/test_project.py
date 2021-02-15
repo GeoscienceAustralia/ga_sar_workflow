@@ -148,16 +148,16 @@ def test_default_dem_master_paths(mproc):
     assert cfg.dem_master_gamma0 == cfg.dem_master_mli_name.with_suffix(".gamma0")
     assert cfg.dem_master_gamma0_bmp == cfg.dem_master_gamma0.with_suffix(".gamma0.bmp")
     assert (
-        cfg.dem_master_gamma0_eqa.as_posix()
-        == cfg.dem_master_mli_name.as_posix() + "_eqa.gamma0"
+        cfg.dem_master_gamma0_geo.as_posix()
+        == cfg.dem_master_mli_name.as_posix() + "_geo.gamma0"
     )
     assert (
-        cfg.dem_master_gamma0_eqa_bmp.as_posix()
-        == cfg.dem_master_gamma0_eqa.as_posix() + ".bmp"
+        cfg.dem_master_gamma0_geo_bmp.as_posix()
+        == cfg.dem_master_gamma0_geo.as_posix() + ".bmp"
     )
     assert (
-        cfg.dem_master_gamma0_eqa_geo.as_posix()
-        == cfg.dem_master_gamma0_eqa.as_posix() + ".tif"
+        cfg.dem_master_gamma0_geo_geo.as_posix()
+        == cfg.dem_master_gamma0_geo.as_posix() + ".tif"
     )
 
     assert cfg.r_dem_master_slc_name.as_posix() == "{}/r{}_{}".format(
@@ -216,16 +216,16 @@ def test_default_dem_file_names(mproc):
     assert cfg.rdc_dem == tail(dem_master_name, "_rdc.dem")
 
     # NB: rest of these are only string concatenation, so probably not worth testing!
-    assert cfg.eqa_dem == tail(dem_master_name, "_eqa.dem")
-    # assert cfg.eqa_dem_par == eqa_dem.par
-    assert cfg.seamask == tail(dem_master_name, "_eqa_seamask.tif")
-    assert cfg.dem_lt_rough == tail(dem_master_name, "_rough_eqa_to_rdc.lt")
-    assert cfg.dem_lt_fine == tail(dem_master_name, "_eqa_to_rdc.lt")
-    assert cfg.dem_eqa_sim_sar == tail(dem_master_name, "_eqa.sim")
+    assert cfg.geo_dem == tail(dem_master_name, "_geo.dem")
+    # assert cfg.geo_dem_par == geo_dem.par
+    assert cfg.seamask == tail(dem_master_name, "_geo_seamask.tif")
+    assert cfg.dem_lt_rough == tail(dem_master_name, "_rough_geo_to_rdc.lt")
+    assert cfg.dem_lt_fine == tail(dem_master_name, "_geo_to_rdc.lt")
+    assert cfg.dem_geo_sim_sar == tail(dem_master_name, "_geo.sim")
     assert cfg.dem_rdc_sim_sar == tail(dem_master_name, "_rdc.sim")
-    assert cfg.dem_loc_inc == tail(dem_master_name, "_eqa.linc")
+    assert cfg.dem_loc_inc == tail(dem_master_name, "_geo.linc")
     assert cfg.dem_rdc_inc == tail(dem_master_name, "_rdc.linc")
-    assert cfg.dem_lsmap == tail(dem_master_name, "_eqa.lsmap")
+    assert cfg.dem_lsmap == tail(dem_master_name, "_geo.lsmap")
     assert cfg.ellip_pix_sigma0 == tail(dem_master_name, "_ellip_pix_sigma0")
     assert cfg.dem_pix_gam == tail(dem_master_name, "_rdc_pix_gamma0")
     # assert cfg.dem_pix_gam_bmp == dem_pix_gam".bmp"
@@ -235,8 +235,8 @@ def test_default_dem_file_names(mproc):
     assert cfg.dem_offsets == tail(dem_master_name, ".offsets")
     assert cfg.dem_coffs == tail(dem_master_name, ".coffs")
     assert cfg.dem_coffsets == tail(dem_master_name, ".coffsets")
-    assert cfg.dem_lv_theta == tail(dem_master_name, "_eqa.lv_theta")
-    assert cfg.dem_lv_phi == tail(dem_master_name, "_eqa.lv_phi")
+    assert cfg.dem_lv_theta == tail(dem_master_name, "_geo.lv_theta")
+    assert cfg.dem_lv_phi == tail(dem_master_name, "_geo.lv_phi")
     assert cfg.ext_image_flt == tail(dem_master_name, "_ext_img_sar.flt")
     assert cfg.ext_image_init_sar == tail(dem_master_name, "_ext_img_init.sar")
     assert cfg.ext_image_sar == tail(dem_master_name, "_ext_img.sar")
@@ -299,11 +299,11 @@ def test_default_ifg_file_names(mproc):
     assert cfg.ifg_filt_coh_geocode_out_tiff.as_posix().count(".") == 1
 
     ms_base = "master-slave_polarisation_range-looksrlks{}"
-    assert cfg.ifg_unw_geocode_out_tiff.as_posix() == ms_base.format("_eqa_unw.tif")
-    assert cfg.ifg_flat_geocode_out_tiff.as_posix().endswith("_flat_eqa_int.tif")
-    assert cfg.ifg_filt_geocode_out_tiff.as_posix().endswith("_filt_eqa_int.tif")
-    assert cfg.ifg_flat_coh_geocode_out_tiff.as_posix().endswith("_flat_eqa_coh.tif")
-    assert cfg.ifg_filt_coh_geocode_out_tiff.as_posix().endswith("_filt_eqa_coh.tif")
+    assert cfg.ifg_unw_geocode_out_tiff.as_posix() == ms_base.format("_geo_unw.tif")
+    assert cfg.ifg_flat_geocode_out_tiff.as_posix().endswith("_flat_geo_int.tif")
+    assert cfg.ifg_filt_geocode_out_tiff.as_posix().endswith("_filt_geo_int.tif")
+    assert cfg.ifg_flat_coh_geocode_out_tiff.as_posix().endswith("_flat_geo_coh.tif")
+    assert cfg.ifg_filt_coh_geocode_out_tiff.as_posix().endswith("_filt_geo_coh.tif")
 
 
 FULL_PROC_VARIABLES_FILE = """##### GAMMA CONFIGURATION FILE #####

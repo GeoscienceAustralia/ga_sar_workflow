@@ -727,7 +727,7 @@ def do_geocode(
     if width_in != ifg_width:
         raise ProcessIfgException("width_in != ifg_width. Check for a processing error")
 
-    width_out = get_width_out(dc.eqa_dem_par.open())
+    width_out = get_width_out(dc.geo_dem_par.open())
 
     geocode_unwrapped_ifg(ic, dc, tc, width_in, width_out)
     geocode_flattened_ifg(ic, dc, tc, width_in, width_out)
@@ -739,35 +739,35 @@ def do_geocode(
     if pc.ifg_geotiff.lower() == const.YES:
         # unw
         pg.data2geotiff(
-            dc.eqa_dem_par,
+            dc.geo_dem_par,
             ic.ifg_unw_geocode_out,
             dtype_out,
             ic.ifg_unw_geocode_out_tiff,
         )
         # flat ifg
         pg.data2geotiff(
-            dc.eqa_dem_par,
+            dc.geo_dem_par,
             ic.ifg_flat_geocode_out,
             dtype_out,
             ic.ifg_flat_geocode_out_tiff,
         )
         # filt ifg
         pg.data2geotiff(
-            dc.eqa_dem_par,
+            dc.geo_dem_par,
             ic.ifg_filt_geocode_out,
             dtype_out,
             ic.ifg_filt_geocode_out_tiff,
         )
         # flat cc
         pg.data2geotiff(
-            dc.eqa_dem_par,
+            dc.geo_dem_par,
             ic.ifg_flat_coh_geocode_out,
             dtype_out,
             ic.ifg_flat_coh_geocode_out_tiff,
         )
         # filt cc
         pg.data2geotiff(
-            dc.eqa_dem_par,
+            dc.geo_dem_par,
             ic.ifg_filt_coh_geocode_out,
             dtype_out,
             ic.ifg_filt_coh_geocode_out_tiff,
@@ -802,18 +802,18 @@ def get_width_in(dem_diff: io.IOBase):
     raise ProcessIfgException(msg)
 
 
-def get_width_out(dem_eqa_par: io.IOBase):
+def get_width_out(dem_geo_par: io.IOBase):
     """
-    Return range field from eqa_dem_par file
-    :param dem_eqa_par: open file like obj
+    Return range field from geo_dem_par file
+    :param dem_geo_par: open file like obj
     :return: width as integer
     """
-    for line in dem_eqa_par.readlines():
-        if const.DEM_EQA_WIDTH in line:
+    for line in dem_geo_par.readlines():
+        if const.DEM_GEO_WIDTH in line:
             _, value = line.split()
             return int(value)
 
-    msg = 'Cannot locate "{}" value in DEM eqa param file'.format(const.DEM_EQA_WIDTH)
+    msg = 'Cannot locate "{}" value in DEM geo param file'.format(const.DEM_GEO_WIDTH)
     raise ProcessIfgException(msg)
 
 
@@ -837,7 +837,7 @@ def geocode_unwrapped_ifg(
     # make quick-look png image
     rasrmg_wrapper(ic.ifg_unw_geocode_out, width_out, ic.ifg_unw_geocode_bmp, pixavr=5, pixavaz=5)
     convert(ic.ifg_unw_geocode_bmp)
-    kml_map(ic.ifg_unw_geocode_png, dc.eqa_dem_par)
+    kml_map(ic.ifg_unw_geocode_png, dc.geo_dem_par)
     remove_files(ic.ifg_unw_geocode_bmp, tc.geocode_unwrapped_ifg)
 
 
@@ -867,7 +867,7 @@ def geocode_flattened_ifg(
     # make quick-look png image
     rasrmg_wrapper(ic.ifg_flat_geocode_out, width_out, ic.ifg_flat_geocode_bmp, pixavr=5, pixavaz=5)
     convert(ic.ifg_flat_geocode_bmp)
-    kml_map(ic.ifg_flat_geocode_png, dc.eqa_dem_par)
+    kml_map(ic.ifg_flat_geocode_png, dc.geo_dem_par)
     remove_files(ic.ifg_flat_geocode_bmp, tc.geocode_flat_ifg, ic.ifg_flat_float)
 
 
@@ -896,7 +896,7 @@ def geocode_filtered_ifg(
     # make quick-look png image
     rasrmg_wrapper(ic.ifg_filt_geocode_out, width_out, ic.ifg_filt_geocode_bmp)
     convert(ic.ifg_filt_geocode_bmp)
-    kml_map(ic.ifg_filt_geocode_png, dc.eqa_dem_par)
+    kml_map(ic.ifg_filt_geocode_png, dc.geo_dem_par)
     remove_files(ic.ifg_filt_geocode_bmp, tc.geocode_filt_ifg, ic.ifg_filt_float)
 
 
@@ -923,7 +923,7 @@ def geocode_flat_coherence_file(
         const.RAS2RAS_GREY_COLOUR_MAP,
     )
     convert(ic.ifg_flat_coh_geocode_bmp)
-    kml_map(ic.ifg_flat_coh_geocode_png, dc.eqa_dem_par)
+    kml_map(ic.ifg_flat_coh_geocode_png, dc.geo_dem_par)
     remove_files(ic.ifg_flat_coh_geocode_bmp, tc.geocode_flat_coherence_file)
 
 
@@ -950,7 +950,7 @@ def geocode_filtered_coherence_file(
         const.RAS2RAS_GREY_COLOUR_MAP,
     )
     convert(ic.ifg_filt_coh_geocode_bmp)
-    kml_map(ic.ifg_filt_coh_geocode_png, dc.eqa_dem_par)
+    kml_map(ic.ifg_filt_coh_geocode_png, dc.geo_dem_par)
     remove_files(ic.ifg_filt_coh_geocode_bmp, tc.geocode_filt_coherence_file)
 
 

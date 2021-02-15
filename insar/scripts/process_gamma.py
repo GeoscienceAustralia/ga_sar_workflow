@@ -1394,9 +1394,9 @@ class ARD(luigi.WrapperTask):
         required_files = [
             # IFG files
             "INT/**/*_geo_unw.tif",
-            "INT/**/*_flat_geo_cc.tif",
+            "INT/**/*_flat_geo_coh.tif",
             "INT/**/*_flat_geo_int.tif",
-            "INT/**/*_filt_geo_cc.tif",
+            "INT/**/*_filt_geo_coh.tif",
             "INT/**/*_filt_geo_int.tif",
             "INT/**/*_base.par",
             "INT/**/*_bperp.par",
@@ -1406,12 +1406,12 @@ class ARD(luigi.WrapperTask):
 
             # SLC files
             "SLC/**/r*rlks.mli.par",
-            "SLC/**/r*rlks.slc.par",
+            "SLC/**/r*.slc.par",
             "SLC/**/*sigma0.tif",
             "SLC/**/*gamma0.tif",
 
             # DEM files
-            "DEM/**/*_geo_to_rdc.lt",
+            "DEM/**/*rlks_geo_to_rdc.lt",
             "DEM/**/*_geo.dem",
             "DEM/**/*_geo.dem.par",
             "DEM/**/*_geo.lv_phi",

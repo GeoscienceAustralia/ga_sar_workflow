@@ -871,8 +871,8 @@ class CoregisterSlc:
                 pg.SLC_copy(
                     master_IWi.slc if r_slave2_slc_tab is None else r_slave2_IWi.slc,
                     master_IWi.par,
-                    f"{mas_IWi_slc}.{i}.1",
-                    f"{mas_IWi_par}.{i}.1",
+                    temp_dir / f"{mas_IWi_slc}.{i}.1",
+                    temp_dir / f"{mas_IWi_par}.{i}.1",
                     const.NOT_PROVIDED,
                     1.0,
                     0,
@@ -886,8 +886,8 @@ class CoregisterSlc:
                 pg.SLC_copy(
                     master_IWi.slc if r_slave2_slc_tab is None else r_slave2_IWi.slc,
                     master_IWi.par,
-                    f"{mas_IWi_slc}.{i}.2",
-                    f"{mas_IWi_par}.{i}.2",
+                    temp_dir / f"{mas_IWi_slc}.{i}.2",
+                    temp_dir / f"{mas_IWi_par}.{i}.2",
                     const.NOT_PROVIDED,
                     1.0,
                     0,
@@ -900,8 +900,8 @@ class CoregisterSlc:
                 pg.SLC_copy(
                     r_slave_IWi.slc,
                     master_IWi.par,
-                    f"{r_slave_IWi.slc}.{i}.1",
-                    f"{r_slave_IWi.par}.{i}.1",
+                    temp_dir / f"{r_slave_IWi.slc}.{i}.1",
+                    temp_dir / f"{r_slave_IWi.par}.{i}.1",
                     const.NOT_PROVIDED,
                     1.0,
                     0,
@@ -914,8 +914,8 @@ class CoregisterSlc:
                 pg.SLC_copy(
                     r_slave_IWi.slc,
                     master_IWi.par,
-                    f"{r_slave_IWi.slc}.{i}.2",
-                    f"{r_slave_IWi.par}.{i}.2",
+                    temp_dir / f"{r_slave_IWi.slc}.{i}.2",
+                    temp_dir / f"{r_slave_IWi.par}.{i}.2",
                     const.NOT_PROVIDED,
                     1.0,
                     0,
@@ -933,8 +933,8 @@ class CoregisterSlc:
 
                 # create_offset $mas_IWi_par.{i}.1 $mas_IWi_par.{i}.1 $off1 1 1 1 0
                 pg.create_offset(
-                    f"{mas_IWi_par}.{i}.1",
-                    f"{mas_IWi_par}.{i}.1",
+                    temp_dir / f"{mas_IWi_par}.{i}.1",
+                    temp_dir / f"{mas_IWi_par}.{i}.1",
                     str(off1),
                     1,  # intensity cross-correlation
                     1,
@@ -944,10 +944,10 @@ class CoregisterSlc:
 
                 # SLC_intf $mas_IWi_slc.{i}.1 $r_slave_IWi.slc.{i}.1 $mas_IWi_par.{i}.1 $mas_IWi_par.{i}.1 $off1 $int1 1 1 0 - 0 0
                 pg.SLC_intf(
-                    f"{mas_IWi_slc}.{i}.1",
-                    f"{r_slave_IWi.slc}.{i}.1",
-                    f"{mas_IWi_par}.{i}.1",
-                    f"{mas_IWi_par}.{i}.1",
+                    temp_dir / f"{mas_IWi_slc}.{i}.1",
+                    temp_dir / f"{r_slave_IWi.slc}.{i}.1",
+                    temp_dir / f"{mas_IWi_par}.{i}.1",
+                    temp_dir / f"{mas_IWi_par}.{i}.1",
                     str(off1),
                     str(int1),
                     1,
@@ -965,8 +965,8 @@ class CoregisterSlc:
 
                 # create_offset $mas_IWi_par.{i}.2 $mas_IWi_par.{i}.2 $off2 1 1 1 0
                 pg.create_offset(
-                    f"{mas_IWi_par}.{i}.2",
-                    f"{mas_IWi_par}.{i}.2",
+                    temp_dir / f"{mas_IWi_par}.{i}.2",
+                    temp_dir / f"{mas_IWi_par}.{i}.2",
                     str(off2),
                     1,  # intensity cross-correlation
                     1,
@@ -976,10 +976,10 @@ class CoregisterSlc:
 
                 # SLC_intf $mas_IWi_slc.{i}.2 $r_slave_IWi_slc.{i}.2 $mas_IWi_par.{i}.2 $mas_IWi_par.{i}.2 $off2 $int2 1 1 0 - 0 0
                 pg.SLC_intf(
-                    f"{mas_IWi_slc}.{i}.2",
-                    f"{r_slave_IWi.slc}.{i}.2",
-                    f"{mas_IWi_par}.{i}.2",
-                    f"{mas_IWi_par}.{i}.2",
+                    temp_dir / f"{mas_IWi_slc}.{i}.2",
+                    temp_dir / f"{r_slave_IWi.slc}.{i}.2",
+                    temp_dir / f"{mas_IWi_par}.{i}.2",
+                    temp_dir / f"{mas_IWi_par}.{i}.2",
                     str(off2),
                     str(int2),
                     1,
@@ -1008,7 +1008,7 @@ class CoregisterSlc:
                 # cpx_to_real $int1 tmp $range_samples 4
                 pg.cpx_to_real(
                     str(int1),
-                    "tmp",
+                    temp_dir / "tmp",
                     range_samples,
                     4
                 )
@@ -1016,7 +1016,7 @@ class CoregisterSlc:
                 # sub_phase $int2 tmp $diff_par1 $diff1 1 0
                 pg.sub_phase(
                     str(int2),
-                    "tmp",
+                    temp_dir / "tmp",
                     str(diff_par1),
                     str(diff1),
                     1,
@@ -1134,7 +1134,7 @@ class CoregisterSlc:
                 fraction = 0
 
                 if diff20cc.exists():
-                    diff20ccstat = Path(f"{r_master_slave_name}.{IWid}.{i}.diff20.cc.stat")
+                    diff20ccstat = temp_dir / Path(f"{r_master_slave_name}.{IWid}.{i}.diff20.cc.stat")
 
                     # image_stat $diff20cc $range_samples20 - - - - $diff20ccstat
                     pg.image_stat(
@@ -1156,7 +1156,7 @@ class CoregisterSlc:
                 diff20phase_size = diff20phase.stat().st_size if diff20phase.exists() else 0
 
                 if diff20phase_size > 0:
-                    diff20phasestat = Path(f"{r_master_slave_name}.{IWid}.{i}.diff20.phase.stat")
+                    diff20phasestat = temp_dir / Path(f"{r_master_slave_name}.{IWid}.{i}.diff20.phase.stat")
 
                     # image_stat $diff20phase $range_samples20 - - - - $diff20phasestat
                     pg.image_stat(

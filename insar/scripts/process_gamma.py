@@ -1430,7 +1430,7 @@ class ARD(luigi.WrapperTask):
         if not self.cleanup:
             return
 
-        log = STATUS_LOGGER.bind(track_frame=f"{self.track}_{self.frame}")
+        log = STATUS_LOGGER
         log.info("Cleaning up unused files")
 
         required_files = [

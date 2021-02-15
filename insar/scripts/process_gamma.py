@@ -614,6 +614,7 @@ class ProcessSlcSubset(luigi.Task):
     ref_master_tab = luigi.Parameter(default=None)
     rlks = luigi.IntParameter()
     alks = luigi.IntParameter()
+    cleanup = luigi.BoolParameter()
 
     def output(self):
         return luigi.LocalTarget(
@@ -707,7 +708,8 @@ class CreateSlcSubset(luigi.Task):
                         outdir=self.outdir,
                         workdir=self.workdir,
                         rlks=rlks,
-                        alks=alks
+                        alks=alks,
+                        cleanup=self.cleanup
                     )
                     yield resize_task
                     resize_master_tab = Path(slc_dir).joinpath(
@@ -750,7 +752,8 @@ class CreateSlcSubset(luigi.Task):
                         workdir=self.workdir,
                         ref_master_tab=resize_master_tab,
                         rlks=rlks,
-                        alks=alks
+                        alks=alks,
+                        cleanup=self.cleanup
                     )
                 )
         yield slc_tasks

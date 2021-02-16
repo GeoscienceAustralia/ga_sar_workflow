@@ -20,7 +20,7 @@ def test_read_proc_file():
     file_obj = io.StringIO(FULL_PROC_VARIABLES_FILE)
     assert file_obj.closed is False
 
-    pv = project.ProcConfig.from_file(file_obj)
+    pv = project.ProcConfig.from_file(file_obj, '/fake/outdir')
     assert pv.nci_path.as_posix() == "<user-defined>"
     assert pv.slc_dir.as_posix() == "SLC"
     assert pv.ifg_list == "ifgs.list"
@@ -45,7 +45,7 @@ def test_read_incomplete_proc_file_fails():
     file_obj = io.StringIO(FULL_PROC_VARIABLES_FILE[:207])
 
     with pytest.raises(AttributeError):
-        project.ProcConfig.from_file(file_obj)
+        project.ProcConfig.from_file(file_obj, '/fake/outdir')
 
 
 def test_read_unknown_settings():
@@ -54,7 +54,7 @@ def test_read_unknown_settings():
     file_obj = io.StringIO(content)
 
     with pytest.raises(AttributeError):
-        project.ProcConfig.from_file(file_obj)
+        project.ProcConfig.from_file(file_obj, '/fake/outdir')
 
 
 # tests for the PBS job dirs section
@@ -417,7 +417,7 @@ AZIMUTH_LOOKS=auto
     # Options: chain (use daisy-chain), sbas (use reference master) or single (use single master)
 PROCESS_METHOD=<method>
     # Leave as 'auto' if not pre-selecting a scene, it will then be calculated and updated
-REF_MASTER_SCENE=auto
+REF_MASTER_SCENE=20151127
     # thresholds for minimum and maximum number of SBAS connections
 MIN_CONNECT=4
     # default is 7 for S1, 10 for other sensors (e.g. RSAT2)

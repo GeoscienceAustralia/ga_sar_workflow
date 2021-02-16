@@ -1080,7 +1080,7 @@ def convert(input_file: Union[pathlib.Path, str]):
     img = Image.open(input_file)
     img = np.array(img.convert('RGBA'))
     img[(img[:, :, :3] == (0, 0, 0)).all(axis=-1)] = (0, 0, 0, 0)
-    Image.fromarray(img).save(append_suffix(Path(input_file).stem, ".png"))
+    Image.fromarray(img).save(append_suffix(pathlib.Path(input_file).stem, ".png"))
 
 
 def kml_map(

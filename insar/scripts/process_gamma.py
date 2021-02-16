@@ -1399,7 +1399,7 @@ class ARD(luigi.WrapperTask):
 
                 self.output_dirs.append(outdir)
 
-                os.makedirs(outdir, exist_ok=True)
+                os.makedirs(outdir / 'lists', exist_ok=True)
                 os.makedirs(workdir, exist_ok=True)
 
                 # Write reference scene before we start processing

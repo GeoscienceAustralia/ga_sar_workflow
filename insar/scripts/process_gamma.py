@@ -869,7 +869,7 @@ class CalcInitialBaseline(luigi.Task):
 
         # Load the gamma proc config file
         with open(str(self.proc_file), "r") as proc_fileobj:
-            proc_config = ProcConfig.from_file(proc_fileobj)
+            proc_config = ProcConfig.from_file(proc_fileobj, self.outdir)
 
         slc_frames = get_scenes(self.burst_data_csv)
         slc_par_files = []
@@ -1008,6 +1008,7 @@ class CoregisterSlave(luigi.Task):
     rdc_dem = luigi.Parameter()
     geo_dem_par = luigi.Parameter()
     dem_lt_fine = luigi.Parameter()
+    outdir = luigi.Parameter()
     work_dir = luigi.Parameter()
 
     def output(self):
@@ -1020,7 +1021,7 @@ class CoregisterSlave(luigi.Task):
     def run(self):
         # Load the gamma proc config file
         with open(str(self.proc_file), "r") as proc_fileobj:
-            proc_config = ProcConfig.from_file(proc_fileobj)
+            proc_config = ProcConfig.from_file(proc_fileobj, self.outdir)
 
         coreg_slave = CoregisterSlc(
             proc=proc_config,
@@ -1070,7 +1071,7 @@ class CreateCoregisterSlaves(luigi.Task):
 
         # Load the gamma proc config file
         with open(str(self.proc_file), "r") as proc_fileobj:
-            proc_config = ProcConfig.from_file(proc_fileobj)
+            proc_config = ProcConfig.from_file(proc_fileobj, self.outdir)
 
         slc_frames = get_scenes(self.burst_data_csv)
 
@@ -1136,6 +1137,7 @@ class CreateCoregisterSlaves(luigi.Task):
             "rdc_dem": dem_filenames["rdc_dem"],
             "geo_dem_par": dem_filenames["geo_dem_par"],
             "dem_lt_fine": dem_filenames["dem_lt_fine"],
+            "outdir": self.outdir,
             "work_dir": Path(self.workdir),
         }
 
@@ -1220,7 +1222,7 @@ class ProcessIFG(luigi.Task):
     def run(self):
         # Load the gamma proc config file
         with open(str(self.proc_file), 'r') as proc_fileobj:
-            proc_config = ProcConfig.from_file(proc_fileobj)
+            proc_config = ProcConfig.from_file(proc_fileobj, self.outdir)
 
         ic = IfgFileNames(proc_config, self.master_date, self.slave_date, self.outdir)
         dc = DEMFileNames(proc_config, self.outdir)
@@ -1266,7 +1268,7 @@ class CreateProcessIFGs(luigi.Task):
 
         # Load the gamma proc config file
         with open(str(self.proc_file), 'r') as proc_fileobj:
-            proc_config = ProcConfig.from_file(proc_fileobj)
+            proc_config = ProcConfig.from_file(proc_fileobj, self.outdir)
 
         # Parse ifg_list to schedule jobs for each interferogram
         with open(Path(self.outdir) / proc_config.list_dir / proc_config.ifg_list) as ifg_list_file:

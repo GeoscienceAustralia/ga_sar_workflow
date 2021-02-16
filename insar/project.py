@@ -173,7 +173,7 @@ class ProcConfig:
         "ifg_azpos",
     ]
 
-    def __init__(self, **kwargs):
+    def __init__(self, outdir, **kwargs):
         """
         Create a ProcConfig instance.
         :param kwargs: mapping of keywords and values from a proc config settings file.
@@ -200,13 +200,13 @@ class ProcConfig:
         # Handle "auto" reference scene
         if self.ref_master_scene.lower() == "auto":
             # Read computed master scene and use it
-            with open(outdir / self.list_dir / 'primary_ref_scene', 'r') as ref_scene_file:
-                auto_master_scene = ref_scene_file.readline()
+            with open(pathlib.Path(outdir) / self.list_dir / 'primary_ref_scene', 'r') as ref_scene_file:
+                auto_master_scene = ref_scene_file.readline().strip()
 
             self.ref_master_scene = auto_master_scene
 
     @classmethod
-    def from_file(cls, file_obj):
+    def from_file(cls, file_obj, outdir):
         """
         Returns a ProcConfig instantiated from the given file like obj.
 
@@ -223,7 +223,7 @@ class ProcConfig:
             pair[0] = pair[0].replace("-", "_")
 
         cfg = {e[0].strip().lower(): e[1].strip() for e in kv_pairs}
-        return ProcConfig(**cfg)
+        return ProcConfig(outdir, **cfg)
 
 
 def is_valid_config_line(line):

@@ -1381,9 +1381,12 @@ class ARD(luigi.WrapperTask):
 
                 # Determine the selected sensor(s) from the query, for directory naming
                 selected_sensors = set()
+                scene_dates = set()
 
                 for pol, dated_scenes in slc_query_results.items():
                     for date, swathes in dated_scenes.items():
+                        scene_dates.add(date)
+
                         for swath, scenes in swathes.items():
                             for slc_id, slc_metadata in scenes.items():
                                 if "sensor" in slc_metadata:
@@ -1400,7 +1403,8 @@ class ARD(luigi.WrapperTask):
                 os.makedirs(workdir, exist_ok=True)
 
                 # Write reference scene before we start processing
-                ref_scene_date = calculate_master([dt.strftime(__DATE_FMT__) for dt, *_ in slc_frames])
+                ref_scene_date = calculate_master([dt.strftime(__DATE_FMT__) for dt in scene_dates])
+                log.info("Automatically computed primary reference scene date: " + ref_scene_date.strftime(__DATE_FMT__))
 
                 with open(outdir / 'lists' / 'primary_ref_scene', 'w') as ref_scene_file:
                     ref_scene_file.write(ref_scene_date.strftime(__DATE_FMT__))

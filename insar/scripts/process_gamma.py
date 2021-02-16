@@ -1356,6 +1356,12 @@ class ARD(luigi.WrapperTask):
                 os.makedirs(outdir, exist_ok=True)
                 os.makedirs(workdir, exist_ok=True)
 
+                # Write reference scene before we start processing
+                ref_scene_date = calculate_master([dt.strftime(__DATE_FMT__) for dt, *_ in slc_frames])
+
+                with open(outdir / 'lists' / 'primary_ref_scene', 'w') as ref_scene_file:
+                    ref_scene_file.write(ref_scene_date.strftime(__DATE_FMT__))
+
                 kwargs = {
                     "proc_file": self.proc_file,
                     "vector_file": vector_file,

@@ -197,6 +197,14 @@ class ProcConfig:
         self.ifg_rpos = self.dem_rpos
         self.ifg_azpos = self.dem_azpos
 
+        # Handle "auto" reference scene
+        if self.ref_master_scene.lower() == "auto":
+            # Read computed master scene and use it
+            with open(outdir / self.list_dir / 'primary_ref_scene', 'r') as ref_scene_file:
+                auto_master_scene = ref_scene_file.readline()
+
+            self.ref_master_scene = auto_master_scene
+
     @classmethod
     def from_file(cls, file_obj):
         """

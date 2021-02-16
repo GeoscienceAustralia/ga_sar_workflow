@@ -19,11 +19,17 @@ class ProcessIfgException(Exception):
     pass
 
 
-def append_suffix(path, suffix):
+def append_suffix(
+    path: Union[pathlib.Path, str],
+    suffix: str,
+):
     """
     A simple filename append function that doesn't assume `.` based file extensions,
     to replace pathlib.Path.with_suffix in cases we use `_` based file suffixes
     """
+    if not isinstance(path, pathlib.Path):
+        path = Path(path)
+
     return path.parent / (path.name + suffix)
 
 class TempFileConfig:

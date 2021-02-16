@@ -27,9 +27,6 @@ def append_suffix(
     A simple filename append function that doesn't assume `.` based file extensions,
     to replace pathlib.Path.with_suffix in cases we use `_` based file suffixes
     """
-    if not isinstance(path, pathlib.Path):
-        path = Path(path)
-
     return path.parent / (path.name + suffix)
 
 class TempFileConfig:
@@ -1086,7 +1083,7 @@ def convert(input_file: Union[pathlib.Path, str]):
     img = Image.open(input_file)
     img = np.array(img.convert('RGBA'))
     img[(img[:, :, :3] == (0, 0, 0)).all(axis=-1)] = (0, 0, 0, 0)
-    Image.fromarray(img).save(append_suffix(pathlib.Path(input_file).stem, ".png"))
+    Image.fromarray(img).save(append_suffix(pathlib.Path(input_file.stem), ".png"))
 
 
 def kml_map(

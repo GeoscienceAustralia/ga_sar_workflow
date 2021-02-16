@@ -1348,10 +1348,48 @@ class ARD(luigi.WrapperTask):
                     )
                     continue
 
-                track, frame, sensor = Path(vector_file).stem.split("_")
+                # Extract info from shapefile
+                track, frame, shapefile_sensor = Path(vector_file).stem.split("_")
+                # TODO: We should validate this against the actual metadata in the file
 
-                outdir = Path(str(self.outdir)).joinpath(f"{track}_{frame}")
-                workdir = Path(str(self.workdir)).joinpath(f"{track}_{frame}")
+                # Query SLC inputs for this location (extent specified by vector/shape file)
+                rel_orbit = int(re.findall(r"\d+", str(track))[0])
+                slc_query_results = query_slc_inputs(
+                    str(self.database_name),
+                    str(vector_file),
+                    self.start_date,
+                    self.end_date,
+                    str(self.orbit),
+                    rel_orbit,
+                    list(self.polarization),
+                    self.sensor
+                )
+
+                if slc_query_results is None:
+                    raise ValueError(
+                        f"Nothing was returned for {self.track}_{self.frame} "
+                        f"start_date: {self.start_date} "
+                        f"end_date: {self.end_date} "
+                        f"orbit: {self.orbit}"
+                    )
+
+                # Determine the selected sensor(s) from the query, for directory naming
+                selected_sensors = set()
+                scene_dates = set()
+
+                for pol, dated_scenes in slc_query_results.items():
+                    for date, swathes in dated_scenes.items():
+                        scene_dates.add(date)
+
+                        for swath, scenes in swathes.items():
+                            for slc_id, slc_metadata in scenes.items():
+                                if "sensor" in slc_metadata:
+                                    selected_sensors.add(slc_metadata["sensor"])
+
+                selected_sensors = "_".join(sorted(selected_sensors))
+
+                outdir = Path(str(self.outdir)).joinpath(f"{track}_{frame}_{selected_sensors}")
+                workdir = Path(str(self.workdir)).joinpath(f"{track}_{frame}_{selected_sensors}")
 
                 self.output_dirs.append(outdir)
 
@@ -1359,7 +1397,8 @@ class ARD(luigi.WrapperTask):
                 os.makedirs(workdir, exist_ok=True)
 
                 # Write reference scene before we start processing
-                ref_scene_date = calculate_master([dt.strftime(__DATE_FMT__) for dt, *_ in slc_frames])
+                ref_scene_date = calculate_master([dt.strftime(__DATE_FMT__) for dt in scene_dates])
+                log.info("Automatically computed primary reference scene date: " + ref_scene_date.strftime(__DATE_FMT__))
 
                 with open(outdir / 'lists' / 'primary_ref_scene', 'w') as ref_scene_file:
                     ref_scene_file.write(ref_scene_date.strftime(__DATE_FMT__))

@@ -19,7 +19,10 @@ class ProcessIfgException(Exception):
     pass
 
 
-def append_suffix(path, suffix):
+def append_suffix(
+    path: Union[pathlib.Path, str],
+    suffix: str,
+):
     """
     A simple filename append function that doesn't assume `.` based file extensions,
     to replace pathlib.Path.with_suffix in cases we use `_` based file suffixes
@@ -1080,7 +1083,7 @@ def convert(input_file: Union[pathlib.Path, str]):
     img = Image.open(input_file)
     img = np.array(img.convert('RGBA'))
     img[(img[:, :, :3] == (0, 0, 0)).all(axis=-1)] = (0, 0, 0, 0)
-    Image.fromarray(img).save(append_suffix(pathlib.Path(input_file).stem, ".png"))
+    Image.fromarray(img).save(append_suffix(pathlib.Path(input_file.stem), ".png"))
 
 
 def kml_map(

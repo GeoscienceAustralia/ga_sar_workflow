@@ -1166,7 +1166,7 @@ class CreateCoregisterSlaves(luigi.Task):
             list_frames = [i for i in slc_frames if i[0].date() in list_dates]
 
             # Write list file
-            list_file_path = Path(proc_config.list_dir) / f"slaves{list_index}.list"
+            list_file_path = Path(self.outdir) / proc_config.list_dir / f"slaves{list_index}.list"
             if not list_file_path.parent.exists():
                 list_file_path.parent.mkdir(parents=True)
 

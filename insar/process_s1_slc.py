@@ -633,6 +633,8 @@ class SlcProcess:
                     shutil.move(tmpdir.joinpath(item), item)
 
             if not complete_frame:
+                _LOG.info("Frame incomplete, resizing", slc_tab=self.slc_tab, ref_master_tab=self.ref_master_tab)
+
                 if self.ref_master_tab is None:
                     err = (
                         f" ref_master_tab is None, needs ref_master_tab "
@@ -640,6 +642,9 @@ class SlcProcess:
                     )
                     raise ValueError(err)
                 self.frame_resize(self.ref_master_tab, sub_slc_in)
+
+            else:
+                _LOG.info("Frame complete, no need to resize", slc_tab=self.slc_tab)
 
     def frame_resize(self, ref_slc_tab: Path, full_slc_tab: Path,) -> None:
         """

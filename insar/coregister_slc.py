@@ -756,8 +756,10 @@ class CoregisterSlc:
 
                     iter_log.info(
                         f'az_ovr_iteration_{iteration}: {daz} (daz in SLC pixel)',
-                        daz=daz,
-                        azimuth_px_offset_target=azimuth_px_offset_target
+                        az_ovr_iter=iteration,
+                        master_slc_tab=self.master_slc_tab,
+                        r_slave_slc_tab=self.r_slave_slc_tab,
+                        r_slave2_slc_tab=r_coreg_slave_tab
                     )
 
                     # Break out of the loop if we reach our target accuracy

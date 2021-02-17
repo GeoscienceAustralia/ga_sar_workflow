@@ -739,7 +739,13 @@ class CoregisterSlc:
                 # cp -rf $slave_off $slave_off.az_ovr.$it
                 shutil.copy(self.slave_off, f"{self.slave_off}.az_ovr.{iteration}")
 
-                _LOG.info(f'    az_ovr_iteration_{iteration}: {daz} (daz in SLC pixel)')
+                _LOG.info(
+                    f'az_ovr_iteration_{iteration}: {daz} (daz in SLC pixel)',
+                    az_ovr_iter=iteration,
+                    master_slc_tab=self.master_slc_tab,
+                    r_slave_slc_tab=self.r_slave_slc_tab,
+                    r_slave2_slc_tab=r_coreg_slave_tab
+                )
 
                 # Break out of the loop if we reach our target accuracy
                 if abs(daz) < azimuth_px_offset_target:
@@ -765,7 +771,7 @@ class CoregisterSlc:
         sum_weight_all = 0.0
 
         def log_info(msg):
-            _LOG.info(msg, az_ovr_iter=iteration, master_slc_tab=master_slc_tab, r_slave_slc_tab=r_slave_slc_tab)
+            _LOG.info(msg, az_ovr_iter=iteration, master_slc_tab=master_slc_tab, r_slave_slc_tab=r_slave_slc_tab, r_slave2_slc_tab=r_slave2_slc_tab)
 
         # determine number of rows and columns of tab file and read burst SLC filenames from tab files
         master_IWs = self.READ_TAB(master_slc_tab)

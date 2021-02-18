@@ -1265,6 +1265,9 @@ class ProcessIFG(luigi.Task):
         )
 
     def run(self):
+        log = STATUS_LOGGER.bind(track_frame=f"{self.track}_{self.frame}", master_date=self.master_date, slave_date=self.slave_date)
+        log.info("Beginning interferogram processing")
+
         # Load the gamma proc config file
         with open(str(self.proc_file), 'r') as proc_fileobj:
             proc_config = ProcConfig.from_file(proc_fileobj)
@@ -1277,16 +1280,24 @@ class ProcessIFG(luigi.Task):
         with open(Path(self.outdir) / ic.r_master_mli_par, 'r') as fileobj:
             ifg_width = get_ifg_width(fileobj)
 
-        run_workflow(
-            proc_config,
-            ic,
-            dc,
-            tc,
-            ifg_width,
-            self.cleanup)
+        # Run IFG processing in an exception handler that doesn't propagate exception into Luigi
+        # This is to allow processing to fail without stopping the Luigi pipeline, and thus
+        # allows as many scenes as possible to fully process even if some scenes fail.
+        try:
+            run_workflow(
+                proc_config,
+                ic,
+                dc,
+                tc,
+                ifg_width,
+                self.cleanup)
 
-        with self.output().open("w") as f:
-            f.write("")
+            with self.output().open("w") as f:
+                f.write("")
+
+            log.info("Interferogram complete")
+        except Exception as e:
+            log.error("Interferogram failed with exception", exception=e)
 
 @requires(CreateCoregisterSlaves)
 class CreateProcessIFGs(luigi.Task):

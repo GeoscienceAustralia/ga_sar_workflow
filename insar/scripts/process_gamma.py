@@ -1022,7 +1022,7 @@ class CoregisterSlave(luigi.Task):
         )
 
     def run(self):
-        log = STATUS_LOGGER.bind(track_frame=f"{self.track}_{self.frame}", slc_master=self.slc_master, slc_slave=self.slc_slave)
+        log = STATUS_LOGGER.bind(outdir=self.outdir, slc_master=self.slc_master, slc_slave=self.slc_slave)
         log.info("Beginning SLC coregistration")
 
         # Load the gamma proc config file
@@ -1265,7 +1265,7 @@ class ProcessIFG(luigi.Task):
         )
 
     def run(self):
-        log = STATUS_LOGGER.bind(track_frame=f"{self.track}_{self.frame}", master_date=self.master_date, slave_date=self.slave_date)
+        log = STATUS_LOGGER.bind(outdir=self.outdir, master_date=self.master_date, slave_date=self.slave_date)
         log.info("Beginning interferogram processing")
 
         # Load the gamma proc config file

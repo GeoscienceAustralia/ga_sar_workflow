@@ -1022,31 +1022,41 @@ class CoregisterSlave(luigi.Task):
         )
 
     def run(self):
+        log = STATUS_LOGGER.bind(track_frame=f"{self.track}_{self.frame}", slc_master=self.slc_master, slc_slave=self.slc_slave)
+        log.info("Beginning SLC coregistration")
+
         # Load the gamma proc config file
         with open(str(self.proc_file), "r") as proc_fileobj:
             proc_config = ProcConfig.from_file(proc_fileobj)
 
-        coreg_slave = CoregisterSlc(
-            proc=proc_config,
-            list_idx=str(self.list_idx),
-            slc_master=Path(str(self.slc_master)),
-            slc_slave=Path(str(self.slc_slave)),
-            slave_mli=Path(str(self.slave_mli)),
-            range_looks=int(str(self.range_looks)),
-            azimuth_looks=int(str(self.azimuth_looks)),
-            ellip_pix_sigma0=Path(str(self.ellip_pix_sigma0)),
-            dem_pix_gamma0=Path(str(self.dem_pix_gamma0)),
-            r_dem_master_mli=Path(str(self.r_dem_master_mli)),
-            rdc_dem=Path(str(self.rdc_dem)),
-            eqa_dem_par=Path(str(self.eqa_dem_par)),
-            dem_lt_fine=Path(str(self.dem_lt_fine)),
-        )
+        # Run SLC coreg in an exception handler that doesn't propagate exception into Luigi
+        # This is to allow processing to fail without stopping the Luigi pipeline, and thus
+        # allows as many scenes as possible to fully process even if some scenes fail.
+        try:
+            coreg_slave = CoregisterSlc(
+                proc=proc_config,
+                list_idx=str(self.list_idx),
+                slc_master=Path(str(self.slc_master)),
+                slc_slave=Path(str(self.slc_slave)),
+                slave_mli=Path(str(self.slave_mli)),
+                range_looks=int(str(self.range_looks)),
+                azimuth_looks=int(str(self.azimuth_looks)),
+                ellip_pix_sigma0=Path(str(self.ellip_pix_sigma0)),
+                dem_pix_gamma0=Path(str(self.dem_pix_gamma0)),
+                r_dem_master_mli=Path(str(self.r_dem_master_mli)),
+                rdc_dem=Path(str(self.rdc_dem)),
+                eqa_dem_par=Path(str(self.eqa_dem_par)),
+                dem_lt_fine=Path(str(self.dem_lt_fine)),
+            )
 
-        coreg_slave.main()
+            coreg_slave.main()
 
-        with self.output().open("w") as f:
-            f.write("")
+            with self.output().open("w") as f:
+                f.write("")
 
+            log.info("SLC coregistration complete")
+        except Exception as e:
+            log.error("SLC coregistration failed with exception", exception=e)
 
 @requires(CoregisterDemMaster)
 class CreateCoregisterSlaves(luigi.Task):

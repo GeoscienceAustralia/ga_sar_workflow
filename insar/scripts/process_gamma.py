@@ -1052,13 +1052,13 @@ class CoregisterSlave(luigi.Task):
             )
 
             coreg_slave.main()
-
-            with self.output().open("w") as f:
-                f.write("")
-
             log.info("SLC coregistration complete")
         except Exception as e:
             log.error("SLC coregistration failed with exception", exception=e)
+        finally:
+            # We flag a task as complete no matter if the scene failed or not!
+            with self.output().open("w") as f:
+                f.write("")
 
 @requires(CoregisterDemMaster)
 class CreateCoregisterSlaves(luigi.Task):
@@ -1261,12 +1261,13 @@ class ProcessIFG(luigi.Task):
                 tc,
                 ifg_width)
 
-            with self.output().open("w") as f:
-                f.write("")
-
             log.info("Interferogram complete")
         except Exception as e:
             log.error("Interferogram failed with exception", exception=e)
+        finally:
+            # We flag a task as complete no matter if the scene failed or not!
+            with self.output().open("w") as f:
+                f.write("")
 
 
 @requires(CreateCoregisterSlaves)

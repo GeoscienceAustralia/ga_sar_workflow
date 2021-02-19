@@ -122,7 +122,7 @@ def _gen_pbs(
         )
 
         if sensor is not None and len(sensor) > 0:
-            pbs += "\n    --sensor " + sensor
+            pbs += " \\\n    --sensor " + sensor
 
         out_fname = pjoin(job_dir, FMT1.format(jobid=jobid))
         with open(out_fname, "w") as src:

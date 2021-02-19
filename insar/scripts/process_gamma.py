@@ -1272,18 +1272,18 @@ class ProcessIFG(luigi.Task):
         with open(str(self.proc_file), 'r') as proc_fileobj:
             proc_config = ProcConfig.from_file(proc_fileobj)
 
-        ic = IfgFileNames(proc_config, self.master_date, self.slave_date, self.outdir)
-        dc = DEMFileNames(proc_config, self.outdir)
-        tc = TempFileConfig(ic)
-
-        # Run interferogram processing workflow w/ ifg width specified in r_master_mli par file
-        with open(Path(self.outdir) / ic.r_master_mli_par, 'r') as fileobj:
-            ifg_width = get_ifg_width(fileobj)
-
         # Run IFG processing in an exception handler that doesn't propagate exception into Luigi
         # This is to allow processing to fail without stopping the Luigi pipeline, and thus
         # allows as many scenes as possible to fully process even if some scenes fail.
         try:
+            ic = IfgFileNames(proc_config, self.master_date, self.slave_date, self.outdir)
+            dc = DEMFileNames(proc_config, self.outdir)
+            tc = TempFileConfig(ic)
+
+            # Run interferogram processing workflow w/ ifg width specified in r_master_mli par file
+            with open(Path(self.outdir) / ic.r_master_mli_par, 'r') as fileobj:
+                ifg_width = get_ifg_width(fileobj)
+
             run_workflow(
                 proc_config,
                 ic,

@@ -38,7 +38,7 @@ __DEM_GAMMA__ = "GAMMA_DEM"
 __DEM__ = "DEM"
 __IFG__ = "IFG"
 __DATE_FMT__ = "%Y%m%d"
-__TRACK_FRAME__ = r"^T[0-9]{3}[A|D]_F[0-9]{2}"
+__TRACK_FRAME__ = r"^T[0-9]{2}[0-9]?[A|D]_F[0-9]{2}"
 
 SLC_PATTERN = (
     r"^(?P<sensor>S1[AB])_"

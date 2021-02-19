@@ -1450,9 +1450,7 @@ class ARD(luigi.WrapperTask):
                     "burst_data_csv": pjoin(outdir, f"{track}_{frame}_burst_data.csv"),
                     "cleanup": self.cleanup,
                 }
-                ard_tasks.append(CreateCoregisterSlaves(**kwargs))
 
-                # IFG processing
                 ard_tasks.append(CreateProcessIFGs(**kwargs))
 
         yield ard_tasks

@@ -1054,7 +1054,7 @@ class CoregisterSlave(luigi.Task):
             coreg_slave.main()
             log.info("SLC coregistration complete")
         except Exception as e:
-            log.error("SLC coregistration failed with exception", exception=e)
+            log.error("SLC coregistration failed with exception", exception=e, traceback=traceback.format_exc())
         finally:
             # We flag a task as complete no matter if the scene failed or not!
             with self.output().open("w") as f:
@@ -1263,7 +1263,7 @@ class ProcessIFG(luigi.Task):
 
             log.info("Interferogram complete")
         except Exception as e:
-            log.error("Interferogram failed with exception", exception=e)
+            log.error("Interferogram failed with exception", exception=e, traceback=traceback.format_exc())
         finally:
             # We flag a task as complete no matter if the scene failed or not!
             with self.output().open("w") as f:

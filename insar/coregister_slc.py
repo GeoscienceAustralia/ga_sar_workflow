@@ -710,11 +710,11 @@ class CoregisterSlc:
 
                     if int(slave) < int(self.proc.ref_master_scene):
                         # coreg_slave=`head $list_dir/slaves$prev_list_idx.list -n1`
-                        coreg_slave = self._read_line(Path(self.proc.list_dir) / f'slaves{prev_list_idx}.list', 0)
+                        coreg_slave = self._read_line(Path(self.out_dir) / self.proc.list_dir / f'slaves{prev_list_idx}.list', 0)
 
                     elif int(slave) > int(self.proc.ref_master_scene):
                         # coreg_slave=`tail $list_dir/slaves$prev_list_idx.list -n1`
-                        coreg_slave = self._read_line(Path(self.proc.list_dir) / f'slaves{prev_list_idx}.list', -1)
+                        coreg_slave = self._read_line(Path(self.out_dir) / self.proc.list_dir / f'slaves{prev_list_idx}.list', -1)
 
                     r_coreg_slave_tab = f'{self.proc.slc_dir}/{coreg_slave}/r{coreg_slave}_{self.proc.polarisation}_tab'
 

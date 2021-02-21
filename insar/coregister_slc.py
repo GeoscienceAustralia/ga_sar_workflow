@@ -708,13 +708,17 @@ class CoregisterSlc:
                     # take the first/last slave of the previous list for coregistration
                     prev_list_idx = int(list_idx) - 1
 
+                    # slc_slave is something like:
+                    # /g/data/dz56/insar_initial_processing/T147D_F28S_S1A/SLC/20180220/20180220_VV.slc.par
+                    list_dir = Path(self.slc_slave).parent.parent.parent / self.proc.list_dir
+
                     if int(slave) < int(self.proc.ref_master_scene):
                         # coreg_slave=`head $list_dir/slaves$prev_list_idx.list -n1`
-                        coreg_slave = self._read_line(Path(self.out_dir) / self.proc.list_dir / f'slaves{prev_list_idx}.list', 0)
+                        coreg_slave = self._read_line(list_dir / f'slaves{prev_list_idx}.list', 0)
 
                     elif int(slave) > int(self.proc.ref_master_scene):
                         # coreg_slave=`tail $list_dir/slaves$prev_list_idx.list -n1`
-                        coreg_slave = self._read_line(Path(self.out_dir) / self.proc.list_dir / f'slaves{prev_list_idx}.list', -1)
+                        coreg_slave = self._read_line(list_dir / f'slaves{prev_list_idx}.list', -1)
 
                     r_coreg_slave_tab = f'{self.proc.slc_dir}/{coreg_slave}/r{coreg_slave}_{self.proc.polarisation}_tab'
 

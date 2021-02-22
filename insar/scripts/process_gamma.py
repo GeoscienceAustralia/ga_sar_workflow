@@ -1374,15 +1374,16 @@ class ARD(luigi.WrapperTask):
                 # Match <track>_<frame> prefix syntax
                 # Note: this doesn't match _<sensor> suffix which is unstructured
                 if not re.match(__TRACK_FRAME__, Path(vector_file).stem):
-                    log.info(
-                        f"{Path(vector_file).stem} should be of {__TRACK_FRAME__} format"
-                    )
-                    continue
+                    msg = f"{Path(vector_file).stem} should be of {__TRACK_FRAME__} format"
+                    log.error(msg)
+                    raise ValueError(msg)
 
                 # Extract info from shapefile
                 vec_file_parts = Path(vector_file).stem.split("_")
                 if len(vec_file_parts) != 3:
-                    log.error(f"File '{vector_file}' does not match <track>_<frame>_<sensor>")
+                    msg = f"File '{vector_file}' does not match <track>_<frame>_<sensor>"
+                    log.error(msg)
+                    raise ValueError(msg)
 
                 track, frame, shapefile_sensor = vec_file_parts
                 # Issue #180: We should validate this against the actual metadata in the file

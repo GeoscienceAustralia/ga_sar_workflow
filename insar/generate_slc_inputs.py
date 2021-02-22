@@ -241,15 +241,23 @@ def query_slc_inputs(
         if filter_by_sensor:
             # Get the value counts of slc by sensor
             sensor_counts = slc_df.sensor.value_counts()
-            sensors = list(sensor_counts.index.to_list())
+            sensors = sensor_counts.index.to_list()
+
+            src_scene_count = len(slc_df)
 
             if filter_by_sensor == "MAJORITY":
                 slc_df = slc_df[slc_df.sensor == sensor_counts.index[0]]
             else:
                 slc_df = slc_df[slc_df.sensor == filter_by_sensor]
 
+            dst_scene_count = len(slc_df)
+
             _LOG.info(
-                f"Filtering by sensor '{filter_by_sensor}' reduced to {len(slc_df)} files."
+                f"Filtering by sensor '{filter_by_sensor}' reduced to {dst_scene_count} files.",
+                src_sensors=sensors,
+                src_scene_count=src_scene_count,
+                dst_sensor=filter_by_sensor,
+                dst_scene_count=dst_scene_count
             )
 
         try:

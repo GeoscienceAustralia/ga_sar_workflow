@@ -1385,6 +1385,9 @@ class ARD(luigi.WrapperTask):
             vector_files = fid.readlines()
             for vector_file in vector_files:
                 vector_file = vector_file.rstrip()
+
+                # Match <track>_<frame> prefix syntax
+                # Note: this doesn't match _<sensor> suffix which is unstructured
                 if not re.match(__TRACK_FRAME__, Path(vector_file).stem):
                     log.info(
                         f"{Path(vector_file).stem} should be of {__TRACK_FRAME__} format"
@@ -1392,8 +1395,12 @@ class ARD(luigi.WrapperTask):
                     continue
 
                 # Extract info from shapefile
-                track, frame, shapefile_sensor = Path(vector_file).stem.split("_")
-                # TODO: We should validate this against the actual metadata in the file
+                vec_file_parts = Path(vector_file).stem.split("_")
+                if len(vec_file_parts) != 3:
+                    log.error(f"File '{vector_file}' does not match <track>_<frame>_<sensor>")
+
+                track, frame, shapefile_sensor = vec_file_parts
+                # Issue #180: We should validate this against the actual metadata in the file
 
                 # Query SLC inputs for this location (extent specified by vector/shape file)
                 rel_orbit = int(re.findall(r"\d+", str(track))[0])

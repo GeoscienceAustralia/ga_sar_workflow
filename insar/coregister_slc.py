@@ -784,8 +784,8 @@ class CoregisterSlc:
 
         # Mark inaccurate scenes
         if daz is None or abs(daz) > azimuth_px_offset_target:
-            with Path(self.out_dir / "ACCURACY_WARNING").open("w") as file:
-                file.writelines(f"Iteration {iteration}/{max_iteration}\n")
+            with Path(self.out_dir / "ACCURACY_WARNING").open("a") as file:
+                file.writelines(f"Error on fine coreg iteration {iteration}/{max_iteration}\n")
 
                 if daz is not None:
                     file.writelines(f"daz: {daz} (failed to reach {azimuth_px_offset_target})\n")
@@ -1154,23 +1154,35 @@ class CoregisterSlc:
                 diff20phase = temp_dir / Path(f"{r_master_slave_name}.{IWid}.{i}.diff20.phase")
 
                 # mcf $diff20adf $diff20cc $diff20cc_ras $diff20phase $range_samples20 1 0 0 - - 1 1 512 $range_samples20_half $azimuth_lines20_half
-                pg.mcf(
-                    str(diff20adf),
-                    str(diff20cc),
-                    str(diff20cc_ras),
-                    str(diff20phase),
-                    range_samples20,
-                    1,
-                    0,
-                    0,
-                    const.NOT_PROVIDED,
-                    const.NOT_PROVIDED,
-                    1,
-                    1,
-                    512,
-                    range_samples20_half,
-                    azimuth_lines20_half
-                )
+                try:
+                    pg.mcf(
+                        str(diff20adf),
+                        str(diff20cc),
+                        str(diff20cc_ras),
+                        str(diff20phase),
+                        range_samples20,
+                        1,
+                        0,
+                        0,
+                        const.NOT_PROVIDED,
+                        const.NOT_PROVIDED,
+                        1,
+                        1,
+                        512,
+                        range_samples20_half,
+                        azimuth_lines20_half
+                    )
+
+                # Explicitly allow for MCF failures, by ignoring them (which is what bash did)
+                # - the side effects of this is we won't use this burst as a sample that's accumulated into sum/average
+                # -- worst case if all bursts fail, samples == 0, which is explictly handled as an error blow.
+                except CoregisterSlcException as ex:
+                    with Path(self.out_dir / "ACCURACY_WARNING").open("a") as file:
+                        file.writelines(f"MCF failure on iter {iteration}, subswath {subswath_id}, burst {i}\n")
+
+                    log_info(f"{IWid} {i} MCF FAILURE", exception=ex)
+                    slave_ovr_res.write(f"{IWid} {i} MCF FAILURE\n")
+                    continue
 
                 # determine overlap phase average (in radian), standard deviation (in radian), and valid data fraction
                 cc_mean = 0
@@ -1237,7 +1249,7 @@ class CoregisterSlc:
                     samples_all += 1
                     sum_weight_all += fraction
 
-                # calculate average over the first sub-swath and print it out to output text file
+                # calculate average over the sub-swath and print it out to output text file
                 if fraction > 0:
                     log_info(f"{IWid} {i} {mean} {stdev} {fraction} ({cc_mean} {cc_stdev} {cc_fraction}) {weight}")
                     slave_ovr_res.write(f"{IWid} {i} {mean} {stdev} {fraction} ({cc_mean} {cc_stdev} {cc_fraction}) {weight}\n")
@@ -1246,6 +1258,11 @@ class CoregisterSlc:
                     log_info(f"{IWid} {i} 0.00000 0.00000 0.00000 ({cc_mean} {cc_stdev} {cc_fraction}) {weight}")
                     slave_ovr_res.write(f"{IWid} {i} 0.00000 0.00000 0.00000 ({cc_mean} {cc_stdev} {cc_fraction}) {weight}\n")
 
+            # Validate data (log accuracy issues if there were issues processing any bursts)
+            expected_samples = number_of_bursts_IWi - 1
+            if samples != expected_samples:
+                with Path(self.out_dir / "ACCURACY_WARNING").open("a") as file:
+                    file.writelines(f"Partial data warning on iter {iteration}, subswath {subswath_id}: only {samples}/{expected_samples} bursts processed\n")
 
             # Compute average
             average = sum / sum_weight if samples > 0 else 0.0
@@ -1265,7 +1282,12 @@ class CoregisterSlc:
         if samples_all > 0:
             average_all = sum_all / sum_weight_all
         else:
-            average_all = 0.0
+            msg = f"CRITICAL failure on iter {iteration}, no bursts from any subswath processed!"
+
+            with Path(self.out_dir / "ACCURACY_WARNING").open("a") as file:
+                file.writelines(f"\n{msg}\n\n")
+
+            raise CoregisterSlcException(msg)
 
         log_info(f"all {average_all}")
         slave_ovr_res.write(f"all {average_all}")

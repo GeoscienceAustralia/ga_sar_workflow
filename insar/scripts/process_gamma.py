@@ -1398,7 +1398,7 @@ class ARD(luigi.WrapperTask):
 
                 # Write reference scene before we start processing
                 ref_scene_date = calculate_master([dt.strftime(__DATE_FMT__) for dt in scene_dates])
-                log.info("Automatically computed primary reference scene date: " + ref_scene_date.strftime(__DATE_FMT__))
+                log.info("Automatically computed primary reference scene date", ref_scene_date=ref_scene_date)
 
                 with open(outdir / 'lists' / 'primary_ref_scene', 'w') as ref_scene_file:
                     ref_scene_file.write(ref_scene_date.strftime(__DATE_FMT__))

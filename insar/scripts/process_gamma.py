@@ -1456,6 +1456,7 @@ class ARD(luigi.WrapperTask):
             "SLC/**/r*.slc.par",
             "SLC/**/*sigma0.tif",
             "SLC/**/*gamma0.tif",
+            "SLC/**/ACCURACY_WARNING",
 
             # DEM files
             "DEM/**/*rlks_geo_to_rdc.lt",

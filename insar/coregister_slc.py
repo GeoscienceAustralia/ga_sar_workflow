@@ -408,7 +408,7 @@ class CoregisterSlc:
         with tempfile.TemporaryDirectory() as temp_dir:
             temp_dir = Path(temp_dir)
 
-            slave_doff = temp_dir.joinpath(f"{self.r_master_slave_name}.doff")
+            slave_doff = self.out_dir / f"{self.r_master_slave_name}.doff"
             slave_offs = temp_dir.joinpath(f"{self.r_master_slave_name}.offs")
             slave_snr = temp_dir.joinpath(f"{self.r_master_slave_name}.snr")
             slave_diff_par = temp_dir.joinpath(f"{self.r_master_slave_name}.diff_par")
@@ -567,7 +567,6 @@ class CoregisterSlc:
                         str(self.slave_lt),
                         1,  # ref_flg
                     )
-                    # TODO: do we raise and kill the program or iterate here on exception?
 
                     iteration += 1
 
@@ -646,6 +645,7 @@ class CoregisterSlc:
         """Performs a fine co-registration"""
 
         self.coarse_registration(max_iteration, max_azimuth_threshold)
+        daz = None
 
         _LOG.info("Iterative improvement of refinement offset azimuth overlap regions:")
 
@@ -723,38 +723,72 @@ class CoregisterSlc:
 
                     r_coreg_slave_tab = f'{slc_dir}/{coreg_slave}/r{coreg_slave}_{self.proc.polarisation}_tab'
 
-                # S1_COREG_OVERLAP $master_slc_tab $r_slave_slc_tab $slave_off_start $slave_off $self.proc.coreg_s1_cc_thresh $self.proc.coreg_s1_frac_thresh $self.proc.coreg_s1_stdev_thresh $r_coreg_slave_tab > $slave_off.az_ovr.$it.out
-                daz, azpol = self.S1_COREG_OVERLAP(
-                    iteration,
-                    slave_ovr_res,
-                    str(self.r_master_slave_name),
-                    str(self.master_slc_tab),
-                    str(self.r_slave_slc_tab),
-                    str(slave_off_start),
-                    str(self.slave_off),
-                    float(self.proc.coreg_s1_cc_thresh),
-                    float(self.proc.coreg_s1_frac_thresh),
-                    float(self.proc.coreg_s1_stdev_thresh),
-                    r_coreg_slave_tab,
-                )  # TODO: cout -> $slave_off.az_ovr.$it.out
-
-                # daz=`awk '$1 == "azimuth_pixel_offset" {print $2}' $slave_off.az_ovr.$it.out`
-                # ^--> we return this directly from S1_COREG_OVERLAP (no need to keep reading the file over and over like bash does)
-
-                # cp -rf $slave_off $slave_off.az_ovr.$it
-                shutil.copy(self.slave_off, f"{self.slave_off}.az_ovr.{iteration}")
-
-                _LOG.info(
-                    f'az_ovr_iteration_{iteration}: {daz} (daz in SLC pixel)',
-                    az_ovr_iter=iteration,
+                iter_log = _LOG.bind(
+                    iteration=iteration,
+                    max_iteration=max_iteration,
                     master_slc_tab=self.master_slc_tab,
                     r_slave_slc_tab=self.r_slave_slc_tab,
                     r_slave2_slc_tab=r_coreg_slave_tab
                 )
 
-                # Break out of the loop if we reach our target accuracy
-                if abs(daz) < azimuth_px_offset_target:
-                    break
+                try:
+                    # S1_COREG_OVERLAP $master_slc_tab $r_slave_slc_tab $slave_off_start $slave_off $self.proc.coreg_s1_cc_thresh $self.proc.coreg_s1_frac_thresh $self.proc.coreg_s1_stdev_thresh $r_coreg_slave_tab > $slave_off.az_ovr.$it.out
+                    daz, azpol = self.S1_COREG_OVERLAP(
+                        iteration,
+                        slave_ovr_res,
+                        str(self.r_master_slave_name),
+                        str(self.master_slc_tab),
+                        str(self.r_slave_slc_tab),
+                        str(slave_off_start),
+                        str(self.slave_off),
+                        float(self.proc.coreg_s1_cc_thresh),
+                        float(self.proc.coreg_s1_frac_thresh),
+                        float(self.proc.coreg_s1_stdev_thresh),
+                        r_coreg_slave_tab,
+                    )  # TODO: cout -> $slave_off.az_ovr.$it.out
+
+                    # daz=`awk '$1 == "azimuth_pixel_offset" {print $2}' $slave_off.az_ovr.$it.out`
+                    # ^--> we return this directly from S1_COREG_OVERLAP (no need to keep reading the file over and over like bash does)
+
+                    # cp -rf $slave_off $slave_off.az_ovr.$it
+                    shutil.copy(self.slave_off, f"{self.slave_off}.az_ovr.{iteration}")
+
+                    iter_log.info(
+                        f'az_ovr_iteration_{iteration}: {daz} (daz in SLC pixel)',
+                        daz=daz,
+                        azimuth_px_offset_target=azimuth_px_offset_target
+                    )
+
+                    # Break out of the loop if we reach our target accuracy
+                    if abs(daz) <= azimuth_px_offset_target:
+                        break
+
+                except CoregisterSlcException as ex:
+                    iter_log.warning(
+                        "Gamma error while processing SLC fine coregistration, continuing with best estimate!",
+                        exception=ex,
+                        daz=daz,
+                        azimuth_px_offset_target=azimuth_px_offset_target
+                    )
+
+                    # Note: We only need to take action if we don't even complete the first iteration,
+                    # as we update slave_off on the fly each iteration on success.
+                    #
+                    # This action is simply to use the coarse .doff as a best estimate.
+                    if iteration == 1:
+                        iter_log.warning("CAUTION: No fine coregistration iterations succeeded, proceeding with coarse coregistration")
+                        slave_doff = self.out_dir / f"{self.r_master_slave_name}.doff"
+                        shutil.copy(slave_doff, self.slave_off)
+
+        # Mark inaccurate scenes
+        if daz is None or abs(daz) > azimuth_px_offset_target:
+            with Path(self.out_dir / "ACCURACY_WARNING").open("w") as file:
+                file.writelines(f"Iteration {iteration}/{max_iteration}\n")
+
+                if daz is not None:
+                    file.writelines(f"daz: {daz} (failed to reach {azimuth_px_offset_target})\n")
+                else:
+                    file.writelines(f"Completely failed fine coregistration, proceeded with coarse coregistration\n")
 
     def S1_COREG_OVERLAP(
         self,

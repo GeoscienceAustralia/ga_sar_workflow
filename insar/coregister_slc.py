@@ -1249,6 +1249,18 @@ class CoregisterSlc:
                     samples_all += 1
                     sum_weight_all += fraction
 
+                else:
+                    with Path(self.out_dir / "ACCURACY_WARNING").open("a") as file:
+                        msg_prefix = f"Poor data in {iteration}, subswath {subswath_id}, burst {i}"
+                        frac_msg = f"fraction ({fraction}) <= slave_s1_frac ({slave_s1_frac})"
+                        noise_msg = f"stdev ({stdev}) >= slave_s1_stdev ({slave_s1_stdev})"
+
+                        if fraction <= slave_s1_frac:
+                            file.writelines(f"{msg_prefix}: {frac_msg}\n")
+
+                        if stdev >= slave_s1_stdev:
+                            file.writelines(f"{msg_prefix}: {noise_msg}\n")
+
                 # calculate average over the sub-swath and print it out to output text file
                 if fraction > 0:
                     log_info(f"{IWid} {i} {mean} {stdev} {fraction} ({cc_mean} {cc_stdev} {cc_fraction}) {weight}")

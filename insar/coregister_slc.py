@@ -775,6 +775,8 @@ class CoregisterSlc:
                         slave_doff = self.out_dir / f"{self.r_master_slave_name}.doff"
                         shutil.copy(slave_doff, self.slave_off)
 
+                    break
+
         # Mark inaccurate scenes
         if daz is None or abs(daz) > azimuth_px_offset_target:
             with Path(self.out_dir / "ACCURACY_WARNING").open("w") as file:

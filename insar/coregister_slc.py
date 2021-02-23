@@ -806,8 +806,8 @@ class CoregisterSlc:
         sum_all = 0.0
         sum_weight_all = 0.0
 
-        def log_info(msg):
-            _LOG.info(msg, az_ovr_iter=iteration, master_slc_tab=master_slc_tab, r_slave_slc_tab=r_slave_slc_tab)
+        def log_info(msg, **kwargs):
+            _LOG.info(msg, az_ovr_iter=iteration, master_slc_tab=master_slc_tab, r_slave_slc_tab=r_slave_slc_tab, r_slave2_slc_tab=r_slave2_slc_tab, **kwargs)
 
         # determine number of rows and columns of tab file and read burst SLC filenames from tab files
         master_IWs = self.READ_TAB(master_slc_tab)

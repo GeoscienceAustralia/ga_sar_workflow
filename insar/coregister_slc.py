@@ -778,12 +778,12 @@ class CoregisterSlc:
         # Mark inaccurate scenes
         if daz is None or abs(daz) > azimuth_px_offset_target:
             with Path(self.out_dir / "ACCURACY_WARNING").open("w") as file:
-                file.writeline(f"Iteration {iteration}/{max_iteration}")
+                file.writelines(f"Iteration {iteration}/{max_iteration}\n")
 
                 if daz is not None:
-                    file.writeline(f"daz: {daz} (failed to reach {azimuth_px_offset_target})")
+                    file.writelines(f"daz: {daz} (failed to reach {azimuth_px_offset_target})\n")
                 else:
-                    file.writeline(f"Completely failed fine coregistration, proceeded with coarse coregistration")
+                    file.writelines(f"Completely failed fine coregistration, proceeded with coarse coregistration\n")
 
     def S1_COREG_OVERLAP(
         self,

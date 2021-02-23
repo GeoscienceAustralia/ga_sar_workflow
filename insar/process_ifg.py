@@ -22,7 +22,7 @@ class ProcessIfgException(Exception):
 def append_suffix(
     path: Union[pathlib.Path, str],
     suffix: str,
-):
+) -> pathlib.Path:
     """
     A simple filename append function that doesn't assume `.` based file extensions,
     to replace pathlib.Path.with_suffix in cases we use `_` based file suffixes

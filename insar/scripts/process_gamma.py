@@ -1397,11 +1397,16 @@ class ARD(luigi.WrapperTask):
                 os.makedirs(workdir, exist_ok=True)
 
                 # Write reference scene before we start processing
-                ref_scene_date = calculate_master([dt.strftime(__DATE_FMT__) for dt in scene_dates])
+                formatted_scene_dates = [dt.strftime(__DATE_FMT__) for dt in scene_dates]
+                ref_scene_date = calculate_master(formatted_scene_dates)
                 log.info("Automatically computed primary reference scene date", ref_scene_date=ref_scene_date)
 
                 with open(outdir / 'lists' / 'primary_ref_scene', 'w') as ref_scene_file:
                     ref_scene_file.write(ref_scene_date.strftime(__DATE_FMT__))
+
+                # Write scenes list
+                with open(outdir / 'lists' / 'scenes.list', 'w') as scenes_list_file:
+                    scenes_list_file.write('\n'.join(formatted_scene_dates))
 
                 kwargs = {
                     "proc_file": self.proc_file,
@@ -1449,7 +1454,7 @@ class ARD(luigi.WrapperTask):
             "INT/**/*_bperp.par",
             "INT/**/*_geo_unw.png",
             "INT/**/*_flat_geo_int.png",
-            "INT/**/*_flat.int",
+            "INT/**/*_flat_int",
 
             # SLC files
             "SLC/**/r*rlks.mli.par",

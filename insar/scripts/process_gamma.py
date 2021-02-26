@@ -1348,7 +1348,7 @@ class ARD(luigi.WrapperTask):
                     )
                     continue
 
-                # Extract info from shapefile
+                # Extract <track>_<frame>_<sensor> from shapefile (eg: T118D_F32S_S1A.shp)
                 track, frame, shapefile_sensor = Path(vector_file).stem.split("_")
                 # TODO: We should validate this against the actual metadata in the file
 

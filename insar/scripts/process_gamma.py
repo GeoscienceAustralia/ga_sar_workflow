@@ -1385,6 +1385,7 @@ class ARD(luigi.WrapperTask):
                     log.error(msg)
                     raise ValueError(msg)
 
+                # Extract <track>_<frame>_<sensor> from shapefile (eg: T118D_F32S_S1A.shp)
                 track, frame, shapefile_sensor = vec_file_parts
                 # Issue #180: We should validate this against the actual metadata in the file
 
@@ -1470,12 +1471,14 @@ class ARD(luigi.WrapperTask):
         yield ard_tasks
 
     def run(self):
+        log = STATUS_LOGGER
+
         # Finally once all ARD pipeline dependencies are complete (eg: data processing is complete)
         # - we cleanup files that are no longer required as outputs.
         if not self.cleanup:
+            log.info("Cleanup of unused files skipped, all files being kept")
             return
 
-        log = STATUS_LOGGER
         log.info("Cleaning up unused files")
 
         required_files = [

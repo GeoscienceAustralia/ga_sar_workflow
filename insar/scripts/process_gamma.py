@@ -1270,6 +1270,7 @@ class ProcessIFG(luigi.Task):
                 f.write("")
 
 
+
 @requires(CreateCoregisterSlaves)
 class CreateProcessIFGs(luigi.Task):
     """
@@ -1495,6 +1496,7 @@ class ARD(luigi.WrapperTask):
             "INT/**/*_flat_int",
 
             # SLC files
+            "SLC/**/r*rlks.mli",
             "SLC/**/r*rlks.mli.par",
             "SLC/**/r*.slc.par",
             "SLC/**/*sigma0.tif",
@@ -1505,6 +1507,7 @@ class ARD(luigi.WrapperTask):
             "DEM/**/*rlks_geo_to_rdc.lt",
             "DEM/**/*_geo.dem",
             "DEM/**/*_geo.dem.par",
+            "DEM/**/diff_*rlks.par",
             "DEM/**/*_geo.lv_phi",
             "DEM/**/*_geo.lv_theta",
             "DEM/**/*_rdc.dem",

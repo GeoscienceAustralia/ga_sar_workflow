@@ -34,8 +34,8 @@ def get_test_context():
     # raspwr needs to create a dummy bmp
     def raspwr_se(*args, **kwargs):
         rasf = args[9]
-        slave_gamma0_eqa = data_dir / rasf
-        Image.new("RGB", size=(50, 50), color=(155, 0, 0)).save(slave_gamma0_eqa)
+        slave_gamma0_geo = data_dir / rasf
+        Image.new("RGB", size=(50, 50), color=(155, 0, 0)).save(slave_gamma0_geo)
         return pgp.raspwr(*args, **kwargs)
 
     def SLC_copy_se(*args, **kwargs):
@@ -64,6 +64,15 @@ def get_test_context():
         Image.new("RGB", size=(50, 50), color=(155, 0, 0)).save(rasf)
         return pgp.rashgt(*args, **kwargs)
 
+    coord_to_sarpix_cout = "SLC/MLI range, azimuth pixel (int):         7340        17060"
+    def coord_to_sarpix_se(*args, **kwargs):
+        result = pgp.coord_to_sarpix(*args, **kwargs)
+        return (
+            result[0],
+            [coord_to_sarpix_cout],
+            [],
+        )
+
     pgmock.raspwr.side_effect = raspwr_se
     pgmock.raspwr.return_value = 0, [], []
 
@@ -86,8 +95,12 @@ def get_test_context():
     pgmock.rashgt.side_effect = rashgt_se
     pgmock.rashgt.return_value = 0, [], []
 
+    pgmock.coord_to_sarpix.side_effect = coord_to_sarpix_se
+    pgmock.coord_to_sarpix.return_value = 0, [coord_to_sarpix_cout], []
+
     # Copy test data
-    shutil.copytree(Path(__file__).parent.absolute() / "data" / "20151127", data_dir)
+    test_data_dir = Path(__file__).parent.absolute() / "data"
+    shutil.copytree(test_data_dir / "20151127", data_dir)
 
     # Note: The filenames below aren't necessarily representative of a valid scene at the moment...
     # this isn't inherently a problem, as the unit tests don't test for file naming conventions of
@@ -95,9 +108,10 @@ def get_test_context():
     data = {
         "rlks": 8,
         "alks": 8,
+        "shapefile": test_data_dir / "T147D_F28S_S1A.shp",
         "dem": data_dir / "20180127_VV_blah.dem",
         "slc": data_dir / "20151127_VV.slc",
-        "dem_par": data_dir / "20180127_VV_8rlks_eqa.dem.par",
+        "dem_par": data_dir / "20180127_VV_8rlks_geo.dem.par",
         "slc_par": data_dir / "20151127_VV.slc.par",
         "dem_patch_window": 1024,
         "dem_rpos": None,
@@ -324,14 +338,14 @@ def test_geocode(monkeypatch):
         assert Path((coreg.dem_outdir / coreg.rdc_dem).with_suffix(".png")).exists()
         assert Path(coreg.dem_rdc_sim_sar).exists()
         assert Path(coreg.dem_rdc_inc).exists()
-        assert Path(coreg.dem_master_gamma0_eqa).exists()
-        assert Path(coreg.dem_master_gamma0_eqa_bmp).exists()
-        assert Path(coreg.dem_master_gamma0_eqa_bmp.with_suffix(".png")).exists()
-        assert Path(coreg.dem_master_gamma0_eqa_geo).exists()
-        assert Path(coreg.dem_master_sigma0_eqa).exists()
-        assert Path(coreg.dem_master_sigma0_eqa_geo).exists()
+        assert Path(coreg.dem_master_gamma0_geo).exists()
+        assert Path(coreg.dem_master_gamma0_geo_bmp).exists()
+        assert Path(coreg.dem_master_gamma0_geo_bmp.with_suffix(".png")).exists()
+        assert Path(coreg.dem_master_gamma0_geo_geo).exists()
+        assert Path(coreg.dem_master_sigma0_geo).exists()
+        assert Path(coreg.dem_master_sigma0_geo_geo).exists()
 
-        assert Path(coreg.dem_master_gamma0_eqa_bmp.with_suffix(".kml")).exists()
+        assert Path(coreg.dem_master_gamma0_geo_bmp.with_suffix(".kml")).exists()
 
         # And with external image
         Path(coreg.ext_image_flt).touch()
@@ -354,7 +368,7 @@ def test_look_vector(monkeypatch):
         coreg = CoregisterDem(*data.values(), outdir, outdir)
 
         # Create dummy inputs that would have been created in normal workflow before this test call
-        coreg.eqa_dem.touch()
+        coreg.geo_dem.touch()
 
         coreg.look_vector()
 

@@ -1435,12 +1435,14 @@ class ARD(luigi.WrapperTask):
         yield ard_tasks
 
     def run(self):
+        log = STATUS_LOGGER
+
         # Finally once all ARD pipeline dependencies are complete (eg: data processing is complete)
         # - we cleanup files that are no longer required as outputs.
         if not self.cleanup:
+            log.info("Cleanup of unused files skipped, all files being kept")
             return
 
-        log = STATUS_LOGGER
         log.info("Cleaning up unused files")
 
         required_files = [

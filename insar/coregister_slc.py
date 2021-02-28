@@ -204,6 +204,8 @@ class CoregisterSlc:
         master_slave_prefix = f"{self.master_date}-{self.slave_date}"
         self.r_master_slave_name = f"{master_slave_prefix}_{self.slave_polar}_{self.rlks}rlks"
 
+        self.log = _LOG.bind(task="SLC coregistration", slc_slave=self.slc_slave, slc_master=self.slc_master, list_idx=self.list_idx)
+
     @staticmethod
     def swath_tab_names(swath: int, prefix: str,) -> namedtuple:
         """
@@ -388,7 +390,8 @@ class CoregisterSlc:
         using intensity matching (offset_pwr_tracking).
         """
 
-        _LOG.info("Iterative improvement of refinement offset using matching")
+        self.log.info("Beginning coarse coregistration")
+
         # create slave offset
         if self.slave_off is None:
             self.slave_off = self.out_dir.joinpath(f"{self.r_master_slave_name}.off")
@@ -501,23 +504,16 @@ class CoregisterSlc:
                     d_azimuth_mli = d_azimuth / self.alks
                     d_range_mli = d_range / self.rlks
 
-                    _LOG.info(
+                    self.log.info(
                         "matching iteration",
                         slave_offs=slave_offs,
                         iteration=iteration + 1,
                         daz=d_azimuth,
                         dr=d_range,
-                        daz_mli=d_azimuth_mli,
-                        dr_mli=d_range_mli,
-                        max_azimuth_threshold=max_azimuth_threshold,
-                        max_iterations=max_iteration,
-                    )
-                    _LOG.info(
-                        "matching iteration and standard deviation",
-                        slave_offs=slave_offs,
-                        iteration=iteration + 1,
                         azimuth_stdev=azimuth_stdev,
                         range_stdev=range_stdev,
+                        daz_mli=d_azimuth_mli,
+                        dr_mli=d_range_mli,
                         max_azimuth_threshold=max_azimuth_threshold,
                         max_iterations=max_iteration,
                     )
@@ -615,23 +611,18 @@ class CoregisterSlc:
             nrows = len(lines)
             ncols = len(lines[0].split())
 
-            _LOG.info(f'{tab_file} nrows: {nrows} ncols: {ncols}')
-
-            with open(tab_file, 'r') as file:
-                tab_lines = file.read().splitlines()
-
             # first line
-            IW1_result = tab_record(*tab_lines[0].split())
+            IW1_result = tab_record(*lines[0].split())
 
             # second line
             IW2_result = None
             if nrows > 1:
-                IW2_result = tab_record(*tab_lines[1].split())
+                IW2_result = tab_record(*lines[1].split())
 
             # third line
             IW3_result = None
             if nrows > 2:
-                IW3_result = tab_record(*tab_lines[2].split())
+                IW3_result = tab_record(*lines[2].split())
 
             return (IW1_result, IW2_result, IW3_result)
 
@@ -648,7 +639,7 @@ class CoregisterSlc:
         self.coarse_registration(max_iteration, max_azimuth_threshold)
         daz = None
 
-        _LOG.info("Iterative improvement of refinement offset azimuth overlap regions:")
+        self.log.info("Beginning fine coregistration")
 
         # slc_slave is something like:
         # /g/data/dz56/insar_initial_processing/T147D_F28S_S1A/SLC/20180220/20180220_VV.slc.par

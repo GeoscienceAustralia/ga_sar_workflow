@@ -173,6 +173,8 @@ class CoregisterSlc:
             list_idx=self.list_idx
         )
 
+        self.log = _LOG.bind(task="SLC coregistration", slc_slave=self.slc_slave, slc_master=self.slc_master, list_idx=self.list_idx)
+
         self.r_dem_master_mli_par = self.r_dem_master_mli.with_suffix(".mli.par")
         if not self.r_dem_master_mli_par.exists():
             self.log.error(
@@ -214,8 +216,6 @@ class CoregisterSlc:
 
         master_slave_prefix = f"{self.master_date}-{self.slave_date}"
         self.r_master_slave_name = f"{master_slave_prefix}_{self.slave_polar}_{self.rlks}rlks"
-
-        self.log = _LOG.bind(task="SLC coregistration", slc_slave=self.slc_slave, slc_master=self.slc_master, list_idx=self.list_idx)
 
     @staticmethod
     def swath_tab_names(swath: int, prefix: str,) -> namedtuple:

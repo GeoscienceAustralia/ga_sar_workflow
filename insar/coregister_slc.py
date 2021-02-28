@@ -160,9 +160,11 @@ class CoregisterSlc:
         self.slave_lt = None
         self.accuracy_warning = self.out_dir / "ACCURACY_WARNING"
 
+        self.log = _LOG.bind(task="SLC coregistration", slc_slave=self.slc_slave, slc_master=self.slc_master, list_idx=self.list_idx)
+
         self.r_dem_master_mli_par = self.r_dem_master_mli.with_suffix(".mli.par")
         if not self.r_dem_master_mli_par.exists():
-            _LOG.error(
+            self.log.error(
                 "DEM Master MLI par file not found",
                 pathname=str(self.r_dem_master_mli_par),
             )
@@ -170,18 +172,18 @@ class CoregisterSlc:
         self.r_dem_master_slc_par = self.slc_master.with_suffix(".slc.par")
         self.r_dem_master_slc_par = self.r_dem_master_slc_par.parent / ("r" + self.r_dem_master_slc_par.name)
         if not self.r_dem_master_slc_par.exists():
-            _LOG.error(
+            self.log.error(
                 "DEM Master SLC par file not found",
                 pathname=str(self.r_dem_master_slc_par),
             )
 
         self.slc_slave_par = self.slc_slave.with_suffix(".slc.par")
         if not self.slc_slave_par.exists():
-            _LOG.error("SLC Slave par file not found", pathname=str(self.slc_slave_par))
+            self.log.error("SLC Slave par file not found", pathname=str(self.slc_slave_par))
 
         self.slave_mli_par = self.slave_mli.with_suffix(".mli.par")
         if not self.slave_mli_par.exists():
-            _LOG.error("Slave MLI par file not found", pathname=str(self.slave_mli_par))
+            self.log.error("Slave MLI par file not found", pathname=str(self.slave_mli_par))
 
         self.master_sample = self.master_sample_size()
 
@@ -203,8 +205,6 @@ class CoregisterSlc:
 
         master_slave_prefix = f"{self.master_date}-{self.slave_date}"
         self.r_master_slave_name = f"{master_slave_prefix}_{self.slave_polar}_{self.rlks}rlks"
-
-        self.log = _LOG.bind(task="SLC coregistration", slc_slave=self.slc_slave, slc_master=self.slc_master, list_idx=self.list_idx)
 
     @staticmethod
     def swath_tab_names(swath: int, prefix: str,) -> namedtuple:

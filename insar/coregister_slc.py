@@ -215,8 +215,6 @@ class CoregisterSlc:
         master_slave_prefix = f"{self.master_date}-{self.slave_date}"
         self.r_master_slave_name = f"{master_slave_prefix}_{self.slave_polar}_{self.rlks}rlks"
 
-        self.log = _LOG.bind(task="SLC coregistration", slc_slave=self.slc_slave, slc_master=self.slc_master, list_idx=self.list_idx)
-
     @staticmethod
     def swath_tab_names(swath: int, prefix: str,) -> namedtuple:
         """

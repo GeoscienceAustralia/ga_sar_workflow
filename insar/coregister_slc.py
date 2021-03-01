@@ -760,10 +760,10 @@ class CoregisterSlc:
 
                 except CoregisterSlcException as ex:
                     iter_log.warning(
-                        "Gamma error while processing SLC fine coregistration, continuing with best estimate!",
-                        exception=ex,
+                        "Error while processing SLC fine coregistration, continuing with best estimate!",
                         daz=daz,
-                        azimuth_px_offset_target=azimuth_px_offset_target
+                        azimuth_px_offset_target=azimuth_px_offset_target,
+                        exc_info=True
                     )
 
                     # Note: We only need to take action if we don't even complete the first iteration,
@@ -1175,7 +1175,7 @@ class CoregisterSlc:
                     with Path(self.out_dir / "ACCURACY_WARNING").open("a") as file:
                         file.writelines(f"MCF failure on iter {iteration}, subswath {subswath_id}, burst {i}\n")
 
-                    log_info(f"{IWid} {i} MCF FAILURE", exception=ex)
+                    log_info(f"{IWid} {i} MCF FAILURE")
                     slave_ovr_res.write(f"{IWid} {i} MCF FAILURE\n")
                     continue
 

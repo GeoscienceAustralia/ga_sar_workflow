@@ -1259,8 +1259,7 @@ class ProcessIFG(luigi.Task):
                 ic,
                 dc,
                 tc,
-                ifg_width,
-                self.cleanup)
+                ifg_width)
 
             log.info("Interferogram complete")
         except Exception as e:

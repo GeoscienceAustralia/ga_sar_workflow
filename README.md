@@ -1,10 +1,10 @@
 ## GAMMA-INSAR
 
-A tool to process Sentinel-1 SLC to Analysis Ready Data (ARD) using GAMMA SOFTWARE.
+A tool to process Sentinel-1 SLC to Analysis Ready Data (ARD) using GAMMA SOFTWARE. The ARD products are georeferenced backscatter and interferograms.
 
 ## Installation
 
-As of April 2020, `gamma_insar` is coupled with the NCI HPC systems and has to be installed there. Using `gamma_insar` requires membership of several NCI groups. Use [Mancini](https://my.nci.org.au/) to request membership access to the following groups:
+As of February 2021, `gamma_insar` is coupled with `GAMMA` & NCI's HPC systems. It has to be installed, tested and run there until a standalone variant is created. Using `gamma_insar` requires a GitHub account (& GA access permissions), an NCI user account & membership of several NCI groups. Use [Mancini](https://my.nci.org.au/) to request membership access to the following groups:
 
 ```
 dg9: InSAR research
@@ -12,53 +12,72 @@ u46: DEA Development and Science (GA internal)
 fj7: Sentinel Data
 ```
 
-Then, once logged into NCI, clone this repository into a dir/workspace in your NCI home dir:
+A local environment needs to be built on NCI's `gadi` compute system for executing the InSAR workflow. The local environment also allows unit tests to be run, e.g. if you do not have admin access on your laptop and/or cannot install python packages for some reason.
+
+Once logged into `gadi`, use the following instructions:
 
 ```BASH
+# this step only needs to be done once, or if rebuilding from scratch
+# if rebuilding, ensure removal of the build dirs beforehand
 cd ~/<your project dir>
 git clone git@github.com:GeoscienceAustralia/gamma_insar.git
 cd gamma_insar
-git checkout -b pygamma_workflow
+git checkout pygamma_workflow
 
-# set up a local Python 3.6 runtime environment
+# set up a local Python 3.6 based runtime environment
 source configs/insar.env  # should be error/warning free
 export CUSTOM_PY_INSTALL=~/.digitalearthau/dea-env/20191127/local
 mkdir -p $CUSTOM_PY_INSTALL/lib/python3.6/site-packages/
-python setup.py install --prefix=$CUSTOM_PY_INSTALL
+python setup.py install --prefix=$CUSTOM_PY_INSTALL || echo "ERROR: setup.py install failed!"
 ```
 
-If the `source configs/insar.env` command does not complete cleanly (e.g. cannot find a dir of modules), check your group memberships.
+The install step can take some time to download and copy all the dependencies. If the `source configs/insar.env` command does not complete cleanly (e.g. cannot find a dir of modules), check your group memberships.
 
-## Testing GAMMA-INSAR
+`setup.py` installs several dependencies into your HOME directory, **including** a copy of the `gamma_insar` code from your local git repo. Any changes to files in your git repo do not automatically appear in the runtime environment, which is not ideal for development, regularly running tests etc.
 
-Testing `gamma_insar` is handled in several parts due to complexities with the code and external dependencies. The parts are:
+Instead of rebuilding environments between code changes, it is simpler to use your local git repo as the `gamma_insar` package, using these commands:
 
-* Local unit tests
-* Unit tests on `gadi`
-* Integration tests on `gadi`
+```BASH
+rm -r ~/.digitalearthau/dea-env/20191127/local/lib/python3.6/site-packages/gamma_insar-0*  # remove installed dependency for cleanliness
+export PYTHONPATH=`pwd`:$PYTHONPATH  # add project root for accessing insar pkg
+pytest --disable-warnings -q  # should be error free
+```
 
-The `Gamma` software dependency only exists on a few hosts, so local unit testing is designed around the assumption `Gamma` is not accessible. The Gamma InSAR code can only be run on NCI's `gadi` system at present.
+If the tests pass without errors, the runtime environment is configured and ready for use. This environment can be retained until the dependency versions change.
 
-Gamma-InSAR uses pytest to execute the unittests. Code test coverage is checked with pytest-cov. Note that running `coverage.py` alone with this repo **does not accurately record coverage results!** The `pytest-cov` tool is required to measure coverage correctly.
 
-### Running unit tests on `Gadi`
+## GAMMA-INSAR Unit Testing
 
-To run unit tests on `gadi`, login and use these commands:
+Running unit tests for `gamma_insar` is handled in several ways due to complexities surrounding the platforms, code and external dependencies. `gadi` hosts the proprietary `GAMMA` software, although this is assumed to be unavailable on local machines where `gamma_insar` development occurs. The test suite was written with the assumption *GAMMA is unavailable*, but Python dependencies are.
+
+NB: `pytest` is used as the test runner. Code coverage is checked with pytest-cov. Note that running `coverage.py` alone with this repo **does not accurately record coverage results!** The `pytest-cov` tool is required to measure coverage correctly.
+
+Options for testing `gamma_insar` are summarised below:
+
+* Running unit tests on `gadi`
+* Running unit tests locally with:
+  * Docker
+  * Build your own environment
+
+
+### Running unit tests on `gadi`
+
+To run unit tests on `gadi` (from a new terminal), login and run these commands:
 
 ```BASH
 module use /g/data/v10/public/modules/modulefiles
-module load dea
+module load dea-env/20191127
 
 cd <your gamma-insar project dir>
-export PYTHONPATH=`pwd`  # note the backticks
+export PYTHONPATH=`pwd`:$PYTHONPATH  # note backticks for adding project dir to PYTHONPATH
 
 # assuming the correct git branch is checked out
 pytest --disable-warnings -q  # should be error free
 ```
 
-NB: `gadi` or the environment can be slow. The unittests may take up to 30 seconds to complete, although the tests only take a few seconds.
+NB: `gadi` and/or loading the environment can be slow. The unittests may take up to 30-60 seconds to complete, although the tests should only take a few seconds.
 
-To check code test coverage:
+To measure code test coverage:
 
 ```BASH
 # run tests & display coverage report at the terminal
@@ -70,71 +89,30 @@ pytest -q --disable-warnings --cov-report=html --cov=insar tests
 
 The report is saved to `coverage_html_report` in the project dir.
 
-### Testing Locally
 
-#### Runtime Environment Setup
+### Running Unit Tests Locally
 
- Only unit tests can be run with local `gamma_insar` repositories. First, setup a local Python virtual environment (only needs to be done once):
+#### Docker Unit Testing Environment
 
-```BASH
-# check out the gamma_insar project locally
-cd <your gamma-insar project dir>
-python3 -m venv .gamma  # creates virtual environment in ".gamma" dir
-source .gamma/bin/activate  # prompt should change slightly
-pip install --upgrade pip
-pip install -r requirements_unittest.txt
-```
+Using the supplied `Dockerfile` is a simple way to run the unit tests with dependency management handled automatically. This requires installation of `Docker` on your system, or even within a Virtual Machine (VM). Setup of Docker is not covered in this README.
 
-#### Running unit tests & code coverage locally
+See the top lines of `gamma_insar/Dockerfile` for the commands to build and run that environment (including running code coverage checks).
 
-If the virtual environment has not been activated, use the following:
 
-```BASH
-cd <gamma-insar project dir>
-source .gamma/bin/activate  # prompt should change slightly
-```
+#### Build Your Own Environment
 
-To run the tests from the project dir:
+This can be tricky and is more for advanced users due to the potential complexities with dependencies. It is not recommended on MacOS X due to technicalities with building GDAL and installing dependencies. On a Linux system, you might want to try `virtualenv/venv` and follow steps like the `Dockerfile`.
 
-```BASH
-export PYTHONPATH=`pwd`  # or set this in your profile
-pytest -q  # should complete with 0 errors and some warnings
-```
+Please contact the developers if you wish to share a standalone runtime environment configuration.
 
-To check code test coverage locally:
-
-```BASH
-# run tests, collect coverage & report results at the terminal
-pytest -q --disable-warnings --cov=insar
-
-# run tests & generate an interactive HTML report
-pytest -q --disable-warnings --cov-report=html --cov=insar tests
-```
 
 ## Operating System tested
 
 * Linux
-* OS X 10.13 (unit tests only)
+* Ubuntu Mini 18.04 (unit tests only)
 
 ## Supported Satellites and Sensors
 * Sentinel-1A/B
-
-## Requirements
-* [attrs>=17.4.0]
-* [Click>=7.0]
-* [GDAL>=2.4]
-* [geopandas>=0.4.1]
-* [luigi>=2.8.3]
-* [matplotlib>=3.0.3]
-* [numpy>=1.8]
-* [pandas>-0.24.2]
-* [pyyaml>=3.11]
-* [rasterio>=1,!=1.0.3.post1,!=1.0.3]
-* [structlog>=16.1.0]
-* [shapely>=1.5.13]
-* [spatialist==0.4]
-* [eodatasets3]
-* [GAMMA-SOFTWARE >= June 2019 release]
 
 
 ## NCI Module
@@ -143,7 +121,9 @@ pytest -q --disable-warnings --cov-report=html --cov=insar tests
 	$module load <module name>
 
 ### The InSAR Workflow
-Several preliminary steps are required to generate backscatter and interferometry products.
+
+The GAMMA InSAR code can only be run on NCI's `gadi` system at present. Several preliminary steps are required to generate backscatter and interferometry products.
+
 1) Extract SLC metadata from the Sentinel-1 zip files and store
    that information into yaml files. This needs to be done once
    for a given time frame of the user's choosing

@@ -38,7 +38,7 @@ __DEM_GAMMA__ = "GAMMA_DEM"
 __DEM__ = "DEM"
 __IFG__ = "IFG"
 __DATE_FMT__ = "%Y%m%d"
-__TRACK_FRAME__ = r"^T[0-9]{3}[A|D]_F[0-9]{2}"
+__TRACK_FRAME__ = r"^T[0-9]{2}[0-9]?[A|D]_F[0-9]{2}"
 
 SLC_PATTERN = (
     r"^(?P<sensor>S1[AB])_"
@@ -318,6 +318,7 @@ class InitialSetup(luigi.Task):
     vector_file = luigi.Parameter()
     database_name = luigi.Parameter()
     orbit = luigi.Parameter()
+    sensor = luigi.Parameter()
     polarization = luigi.ListParameter(default=["VV"])
     track = luigi.Parameter()
     frame = luigi.Parameter()
@@ -338,6 +339,8 @@ class InitialSetup(luigi.Task):
     def run(self):
         log = STATUS_LOGGER.bind(track_frame=f"{self.track}_{self.frame}")
         log.info("initial setup task")
+        if self.sensor:
+            log.info("sensor: " + self.sensor)
 
         # get the relative orbit number, which is int value of the numeric part of the track name
         rel_orbit = int(re.findall(r"\d+", str(self.track))[0])
@@ -351,6 +354,7 @@ class InitialSetup(luigi.Task):
             str(self.orbit),
             rel_orbit,
             list(self.polarization),
+            self.sensor
         )
 
         if slc_query_results is None:
@@ -1020,31 +1024,41 @@ class CoregisterSlave(luigi.Task):
         )
 
     def run(self):
+        log = STATUS_LOGGER.bind(outdir=self.outdir, slc_master=self.slc_master, slc_slave=self.slc_slave)
+        log.info("Beginning SLC coregistration")
+
         # Load the gamma proc config file
         with open(str(self.proc_file), "r") as proc_fileobj:
             proc_config = ProcConfig.from_file(proc_fileobj, self.outdir)
 
-        coreg_slave = CoregisterSlc(
-            proc=proc_config,
-            list_idx=str(self.list_idx),
-            slc_master=Path(str(self.slc_master)),
-            slc_slave=Path(str(self.slc_slave)),
-            slave_mli=Path(str(self.slave_mli)),
-            range_looks=int(str(self.range_looks)),
-            azimuth_looks=int(str(self.azimuth_looks)),
-            ellip_pix_sigma0=Path(str(self.ellip_pix_sigma0)),
-            dem_pix_gamma0=Path(str(self.dem_pix_gamma0)),
-            r_dem_master_mli=Path(str(self.r_dem_master_mli)),
-            rdc_dem=Path(str(self.rdc_dem)),
-            geo_dem_par=Path(str(self.geo_dem_par)),
-            dem_lt_fine=Path(str(self.dem_lt_fine)),
-        )
+        # Run SLC coreg in an exception handler that doesn't propagate exception into Luigi
+        # This is to allow processing to fail without stopping the Luigi pipeline, and thus
+        # allows as many scenes as possible to fully process even if some scenes fail.
+        try:
+            coreg_slave = CoregisterSlc(
+                proc=proc_config,
+                list_idx=str(self.list_idx),
+                slc_master=Path(str(self.slc_master)),
+                slc_slave=Path(str(self.slc_slave)),
+                slave_mli=Path(str(self.slave_mli)),
+                range_looks=int(str(self.range_looks)),
+                azimuth_looks=int(str(self.azimuth_looks)),
+                ellip_pix_sigma0=Path(str(self.ellip_pix_sigma0)),
+                dem_pix_gamma0=Path(str(self.dem_pix_gamma0)),
+                r_dem_master_mli=Path(str(self.r_dem_master_mli)),
+                rdc_dem=Path(str(self.rdc_dem)),
+                geo_dem_par=Path(str(self.geo_dem_par)),
+                dem_lt_fine=Path(str(self.dem_lt_fine)),
+            )
 
-        coreg_slave.main()
-
-        with self.output().open("w") as f:
-            f.write("")
-
+            coreg_slave.main()
+            log.info("SLC coregistration complete")
+        except Exception as e:
+            log.error("SLC coregistration failed with exception", exc_info=True)
+        finally:
+            # We flag a task as complete no matter if the scene failed or not!
+            with self.output().open("w") as f:
+                f.write("")
 
 @requires(CoregisterDemMaster)
 class CreateCoregisterSlaves(luigi.Task):
@@ -1221,27 +1235,39 @@ class ProcessIFG(luigi.Task):
         )
 
     def run(self):
+        log = STATUS_LOGGER.bind(outdir=self.outdir, master_date=self.master_date, slave_date=self.slave_date)
+        log.info("Beginning interferogram processing")
+
         # Load the gamma proc config file
         with open(str(self.proc_file), 'r') as proc_fileobj:
             proc_config = ProcConfig.from_file(proc_fileobj, self.outdir)
 
-        ic = IfgFileNames(proc_config, self.master_date, self.slave_date, self.outdir)
-        dc = DEMFileNames(proc_config, self.outdir)
-        tc = TempFileConfig(ic)
+        # Run IFG processing in an exception handler that doesn't propagate exception into Luigi
+        # This is to allow processing to fail without stopping the Luigi pipeline, and thus
+        # allows as many scenes as possible to fully process even if some scenes fail.
+        try:
+            ic = IfgFileNames(proc_config, self.master_date, self.slave_date, self.outdir)
+            dc = DEMFileNames(proc_config, self.outdir)
+            tc = TempFileConfig(ic)
 
-        # Run interferogram processing workflow w/ ifg width specified in r_master_mli par file
-        with open(Path(self.outdir) / ic.r_master_mli_par, 'r') as fileobj:
-            ifg_width = get_ifg_width(fileobj)
+            # Run interferogram processing workflow w/ ifg width specified in r_master_mli par file
+            with open(Path(self.outdir) / ic.r_master_mli_par, 'r') as fileobj:
+                ifg_width = get_ifg_width(fileobj)
 
-        run_workflow(
-            proc_config,
-            ic,
-            dc,
-            tc,
-            ifg_width)
+            run_workflow(
+                proc_config,
+                ic,
+                dc,
+                tc,
+                ifg_width)
 
-        with self.output().open("w") as f:
-            f.write("")
+            log.info("Interferogram complete")
+        except Exception as e:
+            log.error("Interferogram failed with exception", exc_info=True)
+        finally:
+            # We flag a task as complete no matter if the scene failed or not!
+            with self.output().open("w") as f:
+                f.write("")
 
 
 @requires(CreateCoregisterSlaves)
@@ -1319,6 +1345,7 @@ class ARD(luigi.WrapperTask):
     vector_file_list = luigi.Parameter(significant=False)
     start_date = luigi.DateParameter(significant=False)
     end_date = luigi.DateParameter(significant=False)
+    sensor = luigi.Parameter(significant=False, default=None)
     polarization = luigi.ListParameter(default=["VV", "VH"], significant=False)
     cleanup = luigi.BoolParameter(
         default=False, significant=False, parsing=luigi.BoolParameter.EXPLICIT_PARSING
@@ -1343,15 +1370,24 @@ class ARD(luigi.WrapperTask):
             vector_files = fid.readlines()
             for vector_file in vector_files:
                 vector_file = vector_file.rstrip()
+
+                # Match <track>_<frame> prefix syntax
+                # Note: this doesn't match _<sensor> suffix which is unstructured
                 if not re.match(__TRACK_FRAME__, Path(vector_file).stem):
-                    log.info(
-                        f"{Path(vector_file).stem} should be of {__TRACK_FRAME__} format"
-                    )
-                    continue
+                    msg = f"{Path(vector_file).stem} should be of {__TRACK_FRAME__} format"
+                    log.error(msg)
+                    raise ValueError(msg)
+
+                # Extract info from shapefile
+                vec_file_parts = Path(vector_file).stem.split("_")
+                if len(vec_file_parts) != 3:
+                    msg = f"File '{vector_file}' does not match <track>_<frame>_<sensor>"
+                    log.error(msg)
+                    raise ValueError(msg)
 
                 # Extract <track>_<frame>_<sensor> from shapefile (eg: T118D_F32S_S1A.shp)
-                track, frame, shapefile_sensor = Path(vector_file).stem.split("_")
-                # TODO: We should validate this against the actual metadata in the file
+                track, frame, shapefile_sensor = vec_file_parts
+                # Issue #180: We should validate this against the actual metadata in the file
 
                 # Query SLC inputs for this location (extent specified by vector/shape file)
                 rel_orbit = int(re.findall(r"\d+", str(track))[0])
@@ -1414,6 +1450,7 @@ class ARD(luigi.WrapperTask):
                     "vector_file": vector_file,
                     "start_date": self.start_date,
                     "end_date": self.end_date,
+                    "sensor": self.sensor,
                     "database_name": self.database_name,
                     "polarization": self.polarization,
                     "track": track,
@@ -1428,9 +1465,7 @@ class ARD(luigi.WrapperTask):
                     "burst_data_csv": pjoin(outdir, f"{track}_{frame}_burst_data.csv"),
                     "cleanup": self.cleanup,
                 }
-                ard_tasks.append(CreateCoregisterSlaves(**kwargs))
 
-                # IFG processing
                 ard_tasks.append(CreateProcessIFGs(**kwargs))
 
         yield ard_tasks

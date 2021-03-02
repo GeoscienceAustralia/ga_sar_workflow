@@ -745,7 +745,7 @@ class CoregisterSlc:
                     # cp -rf $slave_off $slave_off.az_ovr.$it
                     shutil.copy(self.slave_off, f"{self.slave_off}.az_ovr.{iteration}")
 
-                    iter_log.info(f'fine iteration {iteration}: {daz} (daz in SLC pixel)'
+                    iter_log.info(f'fine iteration update', daz=daz, azpol=azpol)
 
                     # Break out of the loop if we reach our target accuracy
                     if abs(daz) <= azimuth_px_offset_target:

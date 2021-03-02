@@ -158,6 +158,7 @@ class CoregisterSlc:
         if self.out_dir is None:
             self.out_dir = Path(self.slc_slave).parent
         self.slave_lt = None
+        self.accuracy_warning = self.out_dir / "ACCURACY_WARNING"
 
         self.r_dem_master_mli_par = self.r_dem_master_mli.with_suffix(".mli.par")
         if not self.r_dem_master_mli_par.exists():
@@ -779,7 +780,7 @@ class CoregisterSlc:
 
         # Mark inaccurate scenes
         if daz is None or abs(daz) > azimuth_px_offset_target:
-            with Path(self.out_dir / "ACCURACY_WARNING").open("a") as file:
+            with self.accuracy_warning.open("a") as file:
                 file.writelines(f"Error on fine coreg iteration {iteration}/{max_iteration}\n")
 
                 if daz is not None:
@@ -1171,7 +1172,7 @@ class CoregisterSlc:
                 # - the side effects of this is we won't use this burst as a sample that's accumulated into sum/average
                 # -- worst case if all bursts fail, samples == 0, which is explictly handled as an error blow.
                 except CoregisterSlcException as ex:
-                    with Path(self.out_dir / "ACCURACY_WARNING").open("a") as file:
+                    with self.accuracy_warning.open("a") as file:
                         file.writelines(f"MCF failure on iter {iteration}, subswath {subswath_id}, burst {i}\n")
 
                     log.info(f"{IWid} {i} MCF FAILURE")
@@ -1244,7 +1245,7 @@ class CoregisterSlc:
                     sum_weight_all += fraction
 
                 else:
-                    with Path(self.out_dir / "ACCURACY_WARNING").open("a") as file:
+                    with self.accuracy_warning.open("a") as file:
                         msg_prefix = f"Poor data in {iteration}, subswath {subswath_id}, burst {i}"
                         frac_msg = f"fraction ({fraction}) <= slave_s1_frac ({slave_s1_frac})"
                         noise_msg = f"stdev ({stdev}) >= slave_s1_stdev ({slave_s1_stdev})"
@@ -1267,7 +1268,7 @@ class CoregisterSlc:
             # Validate data (log accuracy issues if there were issues processing any bursts)
             expected_samples = number_of_bursts_IWi - 1
             if samples != expected_samples:
-                with Path(self.out_dir / "ACCURACY_WARNING").open("a") as file:
+                with self.accuracy_warning.open("a") as file:
                     file.writelines(f"Partial data warning on iter {iteration}, subswath {subswath_id}: only {samples}/{expected_samples} bursts processed\n")
 
             # Compute average
@@ -1290,7 +1291,7 @@ class CoregisterSlc:
         else:
             msg = f"CRITICAL failure on iter {iteration}, no bursts from any subswath processed!"
 
-            with Path(self.out_dir / "ACCURACY_WARNING").open("a") as file:
+            with self.accuracy_warning.open("a") as file:
                 file.writelines(f"\n{msg}\n\n")
 
             raise CoregisterSlcException(msg)

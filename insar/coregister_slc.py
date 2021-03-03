@@ -161,7 +161,17 @@ class CoregisterSlc:
         self.slave_lt = None
         self.accuracy_warning = self.out_dir / "ACCURACY_WARNING"
 
-        self.log = _LOG.bind(task="SLC coregistration", slc_slave=self.slc_slave, slc_master=self.slc_master, list_idx=self.list_idx)
+        self.slave_date, self.slave_polar = self.slc_slave.stem.split('_')
+        self.master_date, self.master_polar = self.slc_master.stem.split('_')
+
+        self.log = _LOG.bind(
+            task="SLC coregistration",
+            slave_date=self.slave_date,
+            slc_slave=self.slc_slave,
+            master_date=self.master_date,
+            slc_master=self.slc_master,
+            list_idx=self.list_idx
+        )
 
         self.r_dem_master_mli_par = self.r_dem_master_mli.with_suffix(".mli.par")
         if not self.r_dem_master_mli_par.exists():
@@ -200,9 +210,6 @@ class CoregisterSlc:
         self.r_slave_slc_par = None
         self.r_slave_mli = None
         self.r_slave_mli_par = None
-
-        self.slave_date, self.slave_polar = self.slc_slave.stem.split('_')
-        self.master_date, self.master_polar = self.slc_master.stem.split('_')
 
         master_slave_prefix = f"{self.master_date}-{self.slave_date}"
         self.r_master_slave_name = f"{master_slave_prefix}_{self.slave_polar}_{self.rlks}rlks"

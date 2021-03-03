@@ -1490,7 +1490,7 @@ class ARD(luigi.WrapperTask):
             "INT/**/*_filt_geo_int.tif",
             "INT/**/*_base.par",
             "INT/**/*_bperp.par",
-            "INT/**/*_geo_unw.png",
+            "INT/**/*_geo_unw*.png",
             "INT/**/*_flat_geo_int.png",
             "INT/**/*_flat_int",
 

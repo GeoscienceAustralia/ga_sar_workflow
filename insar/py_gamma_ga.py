@@ -115,7 +115,7 @@ def find_gamma_installed_exes(install_dir, packages):
             for f in filenames:
                 fullpath = os.path.join(dirpath, f)
 
-                if os.access(fullpath, os.R_OK) and os.access(fullpath, os.R_OK):  # only add executables
+                if os.access(fullpath, os.R_OK):  # only add executables
                     if f in exes and f not in ignored_exes:
                         msg = "{} duplicate in Gamma exe lookup under {}. Skipped!"
                         warnings.warn(msg.format(f, exes[f]))

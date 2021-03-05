@@ -302,7 +302,7 @@ class SlcDataDownload(luigi.Task):
         os.makedirs(str(self.output_dir), exist_ok=True)
         try:
             download_obj.slc_download(Path(str(self.output_dir)))
-        except (zipfile.BadZipFile, zlib.error):
+        except:
             failed = True
         finally:
             with self.output().open("w") as f:

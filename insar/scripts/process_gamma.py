@@ -102,6 +102,12 @@ def get_scenes(burst_data_csv):
                 missing_bursts = row.missing_master_bursts.strip("][")
                 if missing_bursts:
                     complete_frame = False
+
+        # HACK: Until we implement https://github.com/GeoscienceAustralia/gamma_insar/issues/200
+        # - this simply refuses to present any scene with missing bursts to the luigi workflow
+        if not complete_frame:
+            continue
+
         dt = datetime.datetime.strptime(_date, "%Y-%m-%d")
         frames_data.append((dt, complete_frame, polarizations))
 

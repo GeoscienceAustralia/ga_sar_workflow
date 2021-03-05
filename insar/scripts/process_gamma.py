@@ -292,6 +292,8 @@ class SlcDataDownload(luigi.Task):
         )
 
     def run(self):
+        log = STATUS_LOGGER.bind(slc_scene=self.slc_scene)
+
         download_obj = S1DataDownload(
             Path(str(self.slc_scene)),
             list(self.polarization),
@@ -303,6 +305,7 @@ class SlcDataDownload(luigi.Task):
         try:
             download_obj.slc_download(Path(str(self.output_dir)))
         except:
+            log.error("SLC download failed with exception", exc_info=True)
             failed = True
         finally:
             with self.output().open("w") as f:

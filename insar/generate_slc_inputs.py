@@ -122,18 +122,6 @@ def _check_slc_input_data(
                 for _id in slc_ids:
                     slc_df = swath_df[swath_df.id == _id]
 
-                    # Check for any missing bursts
-                    if exclude_incomplete:
-                        missing_bursts = False
-
-                        for row in swath_df.itertuples():
-                            missing_bursts = row.missing_master_bursts.strip("][")
-                            if missing_bursts:
-                                break
-
-                        if missing_bursts:
-                            continue
-
                     slc_gpd = gpd.GeoDataFrame(
                         slc_df,
                         crs={"init": "epsg:4326"},
@@ -162,7 +150,22 @@ def _check_slc_input_data(
                 err=err,
             )
 
-    return _check_frame_bursts(master_df, data_dict)
+    checked_data = _check_frame_bursts(master_df, data_dict)
+
+    # Filter checked data
+    if exclude_incomplete:
+        excluded_dates = []
+
+        for dt, swath_dict in checked_data.items():
+            for swath, slc_dict in swath_dict.items():
+                if len(slc_dict["missing_master_bursts"]) > 0:
+                    excluded_dates.append(dt)
+                    break
+
+        for dt in excluded_dates:
+            del checked_data[dt]
+
+    return checked_data
 
 
 def query_slc_inputs(

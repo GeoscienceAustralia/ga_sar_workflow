@@ -104,7 +104,8 @@ def get_scenes(burst_data_csv):
                     complete_frame = False
 
         # HACK: Until we implement https://github.com/GeoscienceAustralia/gamma_insar/issues/200
-        # - this simply refuses to present any scene with missing bursts to the luigi workflow
+        # - this assert son't even fail as long as the #200 hack is in place
+        # - (and once it's removed, this should assert - basically a reminder for the issue)
         assert(complete_frame)
 
         dt = datetime.datetime.strptime(_date, "%Y-%m-%d")

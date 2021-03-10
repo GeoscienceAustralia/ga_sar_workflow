@@ -9,7 +9,6 @@ from pathlib import Path
 import structlog
 from PIL import Image
 import numpy as np
-import geopandas
 
 from insar.py_gamma_ga import GammaInterface, auto_logging_decorator, subprocess_wrapper
 from insar.subprocess_utils import working_directory, run_command
@@ -629,17 +628,17 @@ class CoregisterDem:
             self._set_attrs()
 
         # Read land center coordinates from shape file
-        rpos, azpos = read_land_center_coords(self.r_dem_master_mli_par, Path(self.shapefile))
+        land_center = read_land_center_coords(pg, self.r_dem_master_mli_par, Path(self.shapefile))
 
-        if rpos is not None and azpos is not None:
+        if land_center is not None:
             _LOG.info(
-                "Scene center for DEM coregistration determined from shape file",
-                r_dem_master_mli=self.r_dem_master_mli,
-                north_lat=north_lat,
-                east_lon=east_lon,
-                rpos=rpos,
-                azpos=azpos
+                "Land center for DEM coregistration determined from shape file",
+                mli=self.r_dem_master_mli,
+                shapefile=self.shapefile,
+                land_center=land_center
             )
+
+            rpos, azpos = land_center
 
         else:
             rpos, azpos = None, None

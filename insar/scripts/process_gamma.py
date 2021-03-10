@@ -1242,7 +1242,7 @@ class ProcessIFG(luigi.Task):
         # This is to allow processing to fail without stopping the Luigi pipeline, and thus
         # allows as many scenes as possible to fully process even if some scenes fail.
         try:
-            ic = IfgFileNames(proc_config, self.vector_file, self.master_date, self.slave_date, self.outdir)
+            ic = IfgFileNames(proc_config, Path(self.vector_file), self.master_date, self.slave_date, self.outdir)
             dc = DEMFileNames(proc_config, self.outdir)
             tc = TempFileConfig(ic)
 

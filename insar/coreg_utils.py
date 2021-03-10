@@ -2,6 +2,10 @@
 
 import datetime
 from insar.constant import SCENE_DATE_FMT
+from pathlib import Path
+import geopandas
+
+import insar.constant as const
 
 
 def parse_date(scene_name):
@@ -108,15 +112,18 @@ def coreg_candidates_before_master_scene(
     return coregistration_scenes
 
 
-def read_land_center_coords(mli_par: Path, shapefile: Path):
+def read_land_center_coords(pg, mli_par: Path, shapefile: Path):
     """
     Reads the land center coordinates from a shapefile and converts it into pixel coordinates for a multilook image
 
+    :param pg: the PyGamma wrapper object used to dispatch gamma commands
+    :param mli_par: the path to the .mli.par file in which the pixel coordinates should be for
+    :param shapefie: the path to the shape file for the scene
     :return (range/altitude, line/azimuth) pixel coordinates
     """
 
     # Load the land center from shape file
-    dbf = geopandas.GeoDataFrame.from_file(Path(shapefile).with_suffix(".dbf"))
+    dbf = geopandas.GeoDataFrame.from_file(shapefile.with_suffix(".dbf"))
 
     north_lat, east_lon = None, None
 
@@ -130,21 +137,27 @@ def read_land_center_coords(mli_par: Path, shapefile: Path):
         north_lat = None if north_lat == "0" else north_lat
         east_lon = None if east_lon == "0" else east_lon
 
-    if north_lat is not None and east_lon is not None:
-        _, cout, _ = pg.coord_to_sarpix(
-            mli_par,
-            const.NOT_PROVIDED,
-            const.NOT_PROVIDED,
-            north_lat,
-            east_lon,
-            const.NOT_PROVIDED,  # hgt
-        )
+    # We return None if we don't have both values, doesn't make much
+    # sense to try and support land columns/rows, we need an exact pixel.
+    if north_lat is None or east_lon is None:
+        return None
 
-        # Extract pixel coordinates from stdout
-        # Example: SLC/MLI range, azimuth pixel (int):         7340        17060
-        matched = [i for i in cout if i.startswith("SLC/MLI range, azimuth pixel (int):")]
-        if len(matched) != 1:
-            error_msg = "Failed to convert scene land center from lat/lon into pixel coordinates!"
-            raise Exception(error_msg)
+    # Convert lat/long to pixel coords
+    _, cout, _ = pg.coord_to_sarpix(
+        mli_par,
+        const.NOT_PROVIDED,
+        const.NOT_PROVIDED,
+        north_lat,
+        east_lon,
+        const.NOT_PROVIDED,  # hgt
+    )
 
-        rpos, azpos = matched[0].split()[-2:]
+    # Extract pixel coordinates from stdout
+    # Example: SLC/MLI range, azimuth pixel (int):         7340        17060
+    matched = [i for i in cout if i.startswith("SLC/MLI range, azimuth pixel (int):")]
+    if len(matched) != 1:
+        error_msg = "Failed to convert scene land center from lat/lon into pixel coordinates!"
+        raise Exception(error_msg)
+
+    rpos, azpos = matched[0].split()[-2:]
+    return (int(rpos), int(azpos))

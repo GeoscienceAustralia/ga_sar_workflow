@@ -573,9 +573,12 @@ class IfgFileNames:
         "ifg_filt_geocode_out_tiff",
         "ifg_flat_coh_geocode_out_tiff",
         "ifg_filt_coh_geocode_out_tiff",
+        "shapefile",
     ]
 
-    def __init__(self, proc, master, slave, out_dir = None):
+    def __init__(self, proc, shapefile, master, slave, out_dir = None):
+        self.shapefile = shapefile
+
         if not out_dir:
             out_dir = proc.proj_dir / proc.track
 

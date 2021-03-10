@@ -106,3 +106,45 @@ def coreg_candidates_before_master_scene(
                     tmp_list.append(scene)
             coregistration_scenes[master] = tmp_list
     return coregistration_scenes
+
+
+def read_land_center_coords(mli_par: Path, shapefile: Path):
+    """
+    Reads the land center coordinates from a shapefile and converts it into pixel coordinates for a multilook image
+
+    :return (range/altitude, line/azimuth) pixel coordinates
+    """
+
+    # Load the land center from shape file
+    dbf = geopandas.GeoDataFrame.from_file(Path(shapefile).with_suffix(".dbf"))
+
+    north_lat, east_lon = None, None
+
+    if hasattr(dbf, "land_cen_l") and hasattr(dbf, "land_cen_1"):
+        # Note: land center is duplicated for every burst,
+        # we just take the first value since they're all the same
+        north_lat = dbf.land_cen_l[0]
+        east_lon = dbf.land_cen_1[0]
+
+        # "0" values are interpreted as "no value" / None
+        north_lat = None if north_lat == "0" else north_lat
+        east_lon = None if east_lon == "0" else east_lon
+
+    if north_lat is not None and east_lon is not None:
+        _, cout, _ = pg.coord_to_sarpix(
+            mli_par,
+            const.NOT_PROVIDED,
+            const.NOT_PROVIDED,
+            north_lat,
+            east_lon,
+            const.NOT_PROVIDED,  # hgt
+        )
+
+        # Extract pixel coordinates from stdout
+        # Example: SLC/MLI range, azimuth pixel (int):         7340        17060
+        matched = [i for i in cout if i.startswith("SLC/MLI range, azimuth pixel (int):")]
+        if len(matched) != 1:
+            error_msg = "Failed to convert scene land center from lat/lon into pixel coordinates!"
+            raise Exception(error_msg)
+
+        rpos, azpos = matched[0].split()[-2:]

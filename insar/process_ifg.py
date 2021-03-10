@@ -1,12 +1,13 @@
 import io
 import pathlib
 import subprocess
-from typing import Union
+from typing import Union, Tuple, Optional
 from PIL import Image
 import numpy as np
 
 import structlog
 from insar.project import ProcConfig, IfgFileNames, DEMFileNames
+from insar.coreg_utils import read_land_center_coords
 import insar.constant as const
 
 from insar.py_gamma_ga import GammaInterface, auto_logging_decorator, subprocess_wrapper
@@ -86,12 +87,23 @@ def run_workflow(
     with working_directory(ic.ifg_dir):
         _validate_input_files(ic)
 
+        # Extract land center coordinates
+        land_center = read_land_center_coords(pg, ic.r_slave_mli_par, ic.shapefile)
+
+        if land_center is not None:
+            _LOG.info(
+                "Land center for IFG slave",
+                mli=ic.r_slave_mli,
+                shapefile=ic.shapefile,
+                land_center=land_center
+            )
+
         # future version might want to allow selection of steps (skipped for simplicity Oct 2020)
         calc_int(pc, ic)
         generate_init_flattened_ifg(pc, ic, dc)
-        generate_final_flattened_ifg(pc, ic, dc, tc, ifg_width)
+        generate_final_flattened_ifg(pc, ic, dc, tc, ifg_width, land_center)
         calc_filt(pc, ic, ifg_width)
-        calc_unw(pc, ic, tc, ifg_width)  # this calls unw thinning
+        calc_unw(pc, ic, tc, ifg_width, land_center)  # this calls unw thinning
         do_geocode(pc, ic, dc, tc, ifg_width)
 
 
@@ -290,6 +302,7 @@ def generate_final_flattened_ifg(
     dc: DEMFileNames,
     tc: TempFileConfig,
     ifg_width: int,
+    land_center: Optional[Tuple[int, int]] = None
 ):
     """
     Perform refinement of baseline model using ground control points
@@ -346,6 +359,14 @@ def generate_final_flattened_ifg(
     )
 
     # Perform unwrapping
+    roff = const.NOT_PROVIDED
+    loff = const.NOT_PROVIDED
+
+    if land_center is not None:
+        # divided by multilook, as that's what ifg_flat10 is
+        roff = land_center[0] / const.NUM_RANGE_LOOKS
+        loff = land_center[1] / const.NUM_AZIMUTH_LOOKS
+
     pg.mcf(
         ic.ifg_flat10,
         ic.ifg_flat_coh10,
@@ -353,8 +374,8 @@ def generate_final_flattened_ifg(
         tc.ifg_flat10_unw,
         width10,
         const.TRIANGULATION_MODE_DELAUNAY,
-        const.NOT_PROVIDED,  # roff: offset to starting range of section to unwrap
-        const.NOT_PROVIDED,  # loff: offset to starting line of section to unwrap
+        roff,
+        loff,
         const.NOT_PROVIDED,
         const.NOT_PROVIDED,
         const.NUM_RANGE_PATCHES,
@@ -565,7 +586,11 @@ def calc_filt(pc: ProcConfig, ic: IfgFileNames, ifg_width: int):
 
 
 def calc_unw(
-    pc: ProcConfig, ic: IfgFileNames, tc: TempFileConfig, ifg_width: int
+    pc: ProcConfig,
+    ic: IfgFileNames,
+    tc: TempFileConfig,
+    ifg_width: int,
+    land_center: Optional[Tuple[int, int]] = None
 ):
     """
     TODO: docs, does unw == unwrapped/unwrapping?
@@ -634,6 +659,7 @@ def calc_unw_thinning(
     tc: TempFileConfig,
     ifg_width: int,
     num_sampling_reduction_runs: int = 3,
+    land_center: Optional[Tuple[int, int]] = None
 ):
     """
     TODO docs
@@ -668,8 +694,8 @@ def calc_unw_thinning(
         ic.ifg_unw_thin,  # (output) unwrapped phase image (*_unw) (float)
         ifg_width,  # number of samples per row
         const.TRIANGULATION_MODE_DELAUNAY,
-        const.NOT_PROVIDED,  # r offset
-        const.NOT_PROVIDED,  # l offset
+        land_center[0] if land_center else const.NOT_PROVIDED,  # range offset
+        land_center[1] if land_center else const.NOT_PROVIDED,  # line offset
         const.NOT_PROVIDED,  # num of range samples
         const.NOT_PROVIDED,  # nlines
         pc.ifg_patches_range,  # number of patches (tiles?) in range

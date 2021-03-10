@@ -346,9 +346,7 @@ class InitialSetup(luigi.Task):
 
     def run(self):
         log = STATUS_LOGGER.bind(track_frame=f"{self.track}_{self.frame}")
-        log.info("initial setup task")
-        if self.sensor:
-            log.info("sensor: " + self.sensor)
+        log.info("initial setup task", sensor_filter=self.sensor)
 
         # get the relative orbit number, which is int value of the numeric part of the track name
         rel_orbit = int(re.findall(r"\d+", str(self.track))[0])
@@ -431,7 +429,6 @@ class CreateGammaDem(luigi.Task):
     dem_img = luigi.Parameter()
 
     def output(self):
-
         return luigi.LocalTarget(
             Path(self.workdir).joinpath(
                 f"{self.track}_{self.frame}_creategammadem_status_logs.out"
@@ -868,7 +865,6 @@ class CalcInitialBaseline(luigi.Task):
     master_scene_polarization = luigi.Parameter(default="VV")
 
     def output(self):
-
         return luigi.LocalTarget(
             Path(self.workdir).joinpath(
                 f"{self.track}_{self.frame}_calcinitialbaseline_status_logs.out"
@@ -938,7 +934,6 @@ class CoregisterDemMaster(luigi.Task):
     master_scene = luigi.Parameter(default=None)
 
     def output(self):
-
         return luigi.LocalTarget(
             Path(self.workdir).joinpath(
                 f"{self.track}_{self.frame}_coregisterdemmaster_status_logs.out"
@@ -1227,6 +1222,7 @@ class ProcessIFG(luigi.Task):
     """
 
     proc_file = luigi.Parameter()
+    vector_file = luigi.Parameter()
     track = luigi.Parameter()
     frame = luigi.Parameter()
     outdir = luigi.Parameter()
@@ -1254,7 +1250,7 @@ class ProcessIFG(luigi.Task):
         # This is to allow processing to fail without stopping the Luigi pipeline, and thus
         # allows as many scenes as possible to fully process even if some scenes fail.
         try:
-            ic = IfgFileNames(proc_config, self.master_date, self.slave_date, self.outdir)
+            ic = IfgFileNames(proc_config, Path(self.vector_file), self.master_date, self.slave_date, self.outdir)
             dc = DEMFileNames(proc_config, self.outdir)
             tc = TempFileConfig(ic)
 
@@ -1285,6 +1281,7 @@ class CreateProcessIFGs(luigi.Task):
     """
 
     proc_file = luigi.Parameter()
+    vector_file = luigi.Parameter()
     track = luigi.Parameter()
     frame = luigi.Parameter()
     outdir = luigi.Parameter()
@@ -1314,6 +1311,7 @@ class CreateProcessIFGs(luigi.Task):
             jobs.append(
                 ProcessIFG(
                     proc_file=self.proc_file,
+                    vector_file=self.vector_file,
                     track=self.track,
                     frame=self.frame,
                     outdir=self.outdir,

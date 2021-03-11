@@ -609,7 +609,7 @@ class IfgFileNames:
             slave, proc.polarisation, proc.range_looks
         )
         self.r_slave_mli = self.r_slave_mli_name.with_suffix(".mli")
-        self.r_slave_mli_par = self.r_slave_mli.with_suffix(".par")
+        self.r_slave_mli_par = self.r_slave_mli.with_suffix(".mli.par")
 
         # use intermed str as pathlib.Path doesn't handle filename concatenation
         _master_slave_name = "{}-{}_{}_{}rlks".format(

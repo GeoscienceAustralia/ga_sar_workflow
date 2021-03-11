@@ -364,8 +364,8 @@ def generate_final_flattened_ifg(
 
     if land_center is not None:
         # divided by multilook, as that's what ifg_flat10 is
-        roff = land_center[0] / const.NUM_RANGE_LOOKS
-        loff = land_center[1] / const.NUM_AZIMUTH_LOOKS
+        roff = int(land_center[0] / const.NUM_RANGE_LOOKS + 0.5)
+        loff = int(land_center[1] / const.NUM_AZIMUTH_LOOKS + 0.5)
 
     pg.mcf(
         ic.ifg_flat10,
@@ -631,7 +631,7 @@ def calc_unw(
         <= int(pc.multi_look)
         <= const.RASCC_THINNING_THRESHOLD
     ):
-        unwrapped_tmp = calc_unw_thinning(pc, ic, tc, ifg_width)
+        unwrapped_tmp = calc_unw_thinning(pc, ic, tc, ifg_width, land_center=land_center)
     else:
         msg = (
             "Processing for unwrapping the full interferogram without masking not implemented. "

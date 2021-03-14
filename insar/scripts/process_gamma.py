@@ -266,6 +266,14 @@ class ListParameter(luigi.Parameter):
         return arguments.split(",")
 
 
+def mk_clean_dir(path: Path):
+    # Clear directory in case it has incomplete data from an interrupted run we've resumed
+    if path.exists():
+        shutil.rmtree(path)
+
+    path.mkdir(parents=True, exist_ok=True)
+
+
 class SlcDataDownload(luigi.Task):
     """
     Runs single slc scene extraction task
@@ -293,9 +301,12 @@ class SlcDataDownload(luigi.Task):
             Path(str(self.resorb_path)),
         )
         failed = False
-        os.makedirs(str(self.output_dir), exist_ok=True)
+
+        outdir = Path(self.output_dir)
+        mk_clean_dir(outdir)
+
         try:
-            download_obj.slc_download(Path(str(self.output_dir)))
+            download_obj.slc_download(outdir)
         except (zipfile.BadZipFile, zlib.error):
             failed = True
         finally:
@@ -338,9 +349,7 @@ class InitialSetup(luigi.Task):
 
     def run(self):
         log = STATUS_LOGGER.bind(track_frame=f"{self.track}_{self.frame}")
-        log.info("initial setup task")
-        if self.sensor:
-            log.info("sensor: " + self.sensor)
+        log.info("initial setup task", sensor=self.sensor)
 
         # get the relative orbit number, which is int value of the numeric part of the track name
         rel_orbit = int(re.findall(r"\d+", str(self.track))[0])
@@ -392,9 +401,8 @@ class InitialSetup(luigi.Task):
             )
         yield download_tasks
 
-        # TODO decide if we terminate if scenes in a stack fails to extract
-        # TODO or continue to processing after removing a failed scenes
-        # currently processing removing failed scenes
+        # Detect scenes w/ incomplete/bad raw data, and remove those scenes from
+        # processing while logging the situation for post-processing analysis.
         for _task in download_tasks:
             with open(_task.output().path) as fid:
                 out_name = fid.readline().rstrip()
@@ -435,8 +443,7 @@ class CreateGammaDem(luigi.Task):
         log.info("create gamma dem task")
 
         gamma_dem_dir = Path(self.outdir).joinpath(__DEM_GAMMA__)
-
-        os.makedirs(gamma_dem_dir, exist_ok=True)
+        mk_clean_dir(gamma_dem_dir)
 
         kwargs = {
             "gamma_dem_dir": gamma_dem_dir,
@@ -471,6 +478,8 @@ class ProcessSlc(luigi.Task):
         )
 
     def run(self):
+        mk_clean_dir(Path(self.slc_dir) / str(scene_date))
+
         slc_job = SlcProcess(
             str(self.raw_path),
             str(self.slc_dir),
@@ -542,8 +551,8 @@ class CreateFullSlc(luigi.Task):
         # The frame definition were generated using all sentinel-1 acquisition dataset, thus
         # only processing a temporal subset might encounter stacks with all scene's frame
         # not forming a complete master frame.
-        # TODO implement a method to resize a stacks to new frames definition
-        # TODO Generate a new reference frame using scene that has least number of missing burst
+        # TODO: Generate a new reference frame using scene that has least number of bursts
+        # (as we can't subset smaller scenes to larger)
         if resize_master_tab is None:
             raise ValueError(
                 f"Not a  single complete frames were available {self.track}_{self.frame}"
@@ -569,13 +578,11 @@ class CreateFullSlc(luigi.Task):
                     )
                 )
         yield slc_tasks
-        # TODO decide if we terminate if scenes in a stack fails to process slc
-        # TODO or continue to processing after removing failed scenes
-        # currently processing removing failed scenes
+
+        # Remove any failed scenes from upstream processing if SLC files fail processing
         slc_inputs_df = pd.read_csv(self.burst_data_csv)
         rewrite = False
         for _slc_task in slc_tasks:
-            print("THIS IS slc task")
             with open(_slc_task.output().path) as fid:
                 slc_date = fid.readline().rstrip()
                 if re.match(r"^[0-9]{8}", slc_date):
@@ -598,10 +605,9 @@ class CreateFullSlc(luigi.Task):
             out_fid.write("")
 
 
-
-class ProcessSlcSubset(luigi.Task):
+class ProcessSlcMosaic(luigi.Task):
     """
-    Runs single slc processing task
+    This task runs the final SLC mosaic step using the mean rlks/alks values
     """
 
     scene_date = luigi.Parameter()
@@ -632,14 +638,14 @@ class ProcessSlcSubset(luigi.Task):
             self.ref_master_tab,
         )
 
-        slc_job.main_subset(int(self.rlks), int(self.alks))
+        slc_job.main_mosaic(int(self.rlks), int(self.alks))
 
         with self.output().open("w") as f:
             f.write("")
 
 
 @requires(CreateFullSlc)
-class CreateSlcSubset(luigi.Task):
+class CreateSlcMosaic(luigi.Task):
     """
     Runs the slc subsetting tasks
     """
@@ -650,7 +656,7 @@ class CreateSlcSubset(luigi.Task):
     def output(self):
         return luigi.LocalTarget(
             Path(self.workdir).joinpath(
-                f"{self.track}_{self.frame}_createslcsubset_status_logs.out"
+                f"{self.track}_{self.frame}_createSlcMosaic_status_logs.out"
             )
         )
 
@@ -693,7 +699,7 @@ class CreateSlcSubset(luigi.Task):
             slc_scene = _dt.strftime(__DATE_FMT__)
             for _pol in _pols:
                 if status_frame:
-                    resize_task = ProcessSlcSubset(
+                    resize_task = ProcessSlcMosaic(
                         scene_date=slc_scene,
                         raw_path=Path(self.outdir).joinpath(__RAW__),
                         polarization=_pol,
@@ -735,7 +741,7 @@ class CreateSlcSubset(luigi.Task):
                 if slc_scene == resize_master_scene and _pol == resize_master_pol:
                     continue
                 slc_tasks.append(
-                    ProcessSlcSubset(
+                    ProcessSlcMosaic(
                         scene_date=slc_scene,
                         raw_path=Path(self.outdir).joinpath(__RAW__),
                         polarization=_pol,
@@ -786,7 +792,7 @@ class Multilook(luigi.Task):
             f.write("")
 
 
-@requires(CreateSlcSubset)
+@requires(CreateSlcMosaic)
 class CreateMultilook(luigi.Task):
     """
     Runs creation of multi-look image task
@@ -860,7 +866,6 @@ class CalcInitialBaseline(luigi.Task):
     master_scene_polarization = luigi.Parameter(default="VV")
 
     def output(self):
-
         return luigi.LocalTarget(
             Path(self.workdir).joinpath(
                 f"{self.track}_{self.frame}_calcinitialbaseline_status_logs.out"
@@ -912,7 +917,6 @@ class CalcInitialBaseline(luigi.Task):
         )
 
         # creates a ifg list based on sbas-network
-        # TODO confirm with InSAR team if sbas-network is the default ifg list?
         baseline.sbas_list(nmin=int(proc_config.min_connect), nmax=int(proc_config.max_connect))
 
         with self.output().open("w") as out_fid:
@@ -977,6 +981,9 @@ class CoregisterDemMaster(luigi.Task):
         )
         dem_par = dem.with_suffix(dem.suffix + ".par")
 
+        dem_outdir = Path(self.outdir) / __DEM__
+        mk_clean_dir(dem_outdir)
+
         coreg = CoregisterDem(
             rlks=rlks,
             alks=alks,
@@ -985,7 +992,7 @@ class CoregisterDemMaster(luigi.Task):
             slc=Path(master_slc),
             dem_par=dem_par,
             slc_par=master_slc_par,
-            dem_outdir=Path(self.outdir).joinpath(__DEM__),
+            dem_outdir=dem_outdir,
             multi_look=self.multi_look,
         )
 
@@ -1018,7 +1025,7 @@ class CoregisterSlave(luigi.Task):
 
     def output(self):
         return luigi.LocalTarget(
-            Path(str(self.work_dir)).joinpath(
+            Path(self.workdir).joinpath(
                 f"{Path(str(self.slc_master)).stem}_{Path(str(self.slc_slave)).stem}_coreg_logs.out"
             )
         )
@@ -1030,6 +1037,8 @@ class CoregisterSlave(luigi.Task):
         # Load the gamma proc config file
         with open(str(self.proc_file), "r") as proc_fileobj:
             proc_config = ProcConfig.from_file(proc_fileobj, self.outdir)
+
+        failed = False
 
         # Run SLC coreg in an exception handler that doesn't propagate exception into Luigi
         # This is to allow processing to fail without stopping the Luigi pipeline, and thus
@@ -1055,10 +1064,14 @@ class CoregisterSlave(luigi.Task):
             log.info("SLC coregistration complete")
         except Exception as e:
             log.error("SLC coregistration failed with exception", exc_info=True)
+            failed = True
         finally:
             # We flag a task as complete no matter if the scene failed or not!
+            # - however we do write if the scene failed, so it can be reprocessed
+            # - later automatically if need be.
             with self.output().open("w") as f:
-                f.write("")
+                f.write("FAILED" if failed else "")
+
 
 @requires(CoregisterDemMaster)
 class CreateCoregisterSlaves(luigi.Task):
@@ -1079,6 +1092,20 @@ class CreateCoregisterSlaves(luigi.Task):
                 f"{self.track}_{self.frame}_coregister_slaves_status_logs.out"
             )
         )
+
+    def trigger_resume(self, reprocess_failed_scenes=True):
+        # Remove our output to re-trigger this job, which will trigger CoregisterSlave
+        # for all dates, however only those missing outputs will run.
+        output().remove()
+
+        if reprocess_failed_scenes:
+            # Remove completion status files for any failed SLC coreg tasks
+            for status_out in Path(self.workdir).glob("*_coreg_logs.out"):
+                with status_out.open("r") as file:
+                    contents = file.read().splitlines()
+
+                if len(contents) > 0 and "FAILED" in contents[0]:
+                    status_out.unlink()
 
     def run(self):
         log = STATUS_LOGGER.bind(track_frame=f"{self.track}_{self.frame}")
@@ -1245,6 +1272,7 @@ class ProcessIFG(luigi.Task):
         # Run IFG processing in an exception handler that doesn't propagate exception into Luigi
         # This is to allow processing to fail without stopping the Luigi pipeline, and thus
         # allows as many scenes as possible to fully process even if some scenes fail.
+        failed = False
         try:
             ic = IfgFileNames(proc_config, self.master_date, self.slave_date, self.outdir)
             dc = DEMFileNames(proc_config, self.outdir)
@@ -1253,6 +1281,10 @@ class ProcessIFG(luigi.Task):
             # Run interferogram processing workflow w/ ifg width specified in r_master_mli par file
             with open(Path(self.outdir) / ic.r_master_mli_par, 'r') as fileobj:
                 ifg_width = get_ifg_width(fileobj)
+
+            # Make sure output IFG dir is clean/empty, in case
+            # we're resuming an incomplete/partial job.
+            mk_clean_dir(ic.ifg_dir)
 
             run_workflow(
                 proc_config,
@@ -1264,10 +1296,11 @@ class ProcessIFG(luigi.Task):
             log.info("Interferogram complete")
         except Exception as e:
             log.error("Interferogram failed with exception", exc_info=True)
+            failed = True
         finally:
             # We flag a task as complete no matter if the scene failed or not!
             with self.output().open("w") as f:
-                f.write("")
+                f.write("FAILED" if failed else "")
 
 
 @requires(CreateCoregisterSlaves)
@@ -1288,6 +1321,20 @@ class CreateProcessIFGs(luigi.Task):
                 f"{self.track}_{self.frame}_create_ifgs_status_logs.out"
             )
         )
+
+    def trigger_resume(self, reprocess_failed_scenes=True):
+        # Remove our output to re-trigger this job, which will trigger ProcessIFGs
+        # for all date pairs, however only those missing IFG outputs will run.
+        output().remove()
+
+        if reprocess_failed_scenes:
+            # Remove completion status files for any failed SLC coreg tasks
+            for status_out in Path(self.workdir).glob("*_ifg_*_status_logs.out"):
+                with status_out.open("r") as file:
+                    contents = file.read().splitlines()
+
+                if len(contents) > 0 and "FAILED" in contents[0]:
+                    status_out.unlink()
 
     def run(self):
         log = STATUS_LOGGER.bind(track_frame=f"{self.track}_{self.frame}")

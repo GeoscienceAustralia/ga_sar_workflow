@@ -1086,6 +1086,9 @@ class CreateCoregisterSlaves(luigi.Task):
     master_scene_polarization = luigi.Parameter(default="VV")
     master_scene = luigi.Parameter(default=None)
 
+    resume = luigi.BoolParameter()
+    resume_failed = luigi.BoolParameter()
+
     def output(self):
         return luigi.LocalTarget(
             Path(self.workdir).joinpath(
@@ -1315,6 +1318,9 @@ class CreateProcessIFGs(luigi.Task):
     outdir = luigi.Parameter()
     workdir = luigi.Parameter()
 
+    resume = luigi.BoolParameter()
+    resume_failed = luigi.BoolParameter()
+
     def output(self):
         return luigi.LocalTarget(
             Path(self.workdir).joinpath(
@@ -1405,6 +1411,12 @@ class ARD(luigi.WrapperTask):
     multi_look = luigi.IntParameter()
     poeorb_path = luigi.Parameter()
     resorb_path = luigi.Parameter()
+    resume = luigi.BoolParameter(
+        default=False, significant=False, parsing=luigi.BoolParameter.EXPLICIT_PARSING
+    )
+    resume_failed = luigi.BoolParameter(
+        default=False, significant=False, parsing=luigi.BoolParameter.EXPLICIT_PARSING
+    )
 
     def requires(self):
         log = STATUS_LOGGER.bind(vector_file_list=Path(self.vector_file_list).stem)
@@ -1472,10 +1484,20 @@ class ARD(luigi.WrapperTask):
 
                 selected_sensors = "_".join(sorted(selected_sensors))
 
-                outdir = Path(str(self.outdir)).joinpath(f"{track}_{frame}_{selected_sensors}")
-                workdir = Path(str(self.workdir)).joinpath(f"{track}_{frame}_{selected_sensors}")
+                tfs = f"{track}_{frame}_{selected_sensors}"
+                outdir = Path(str(self.outdir)).joinpath(tfs)
+                workdir = Path(str(self.workdir)).joinpath(tfs)
 
                 self.output_dirs.append(outdir)
+
+                # If we haven't been told to resume, double check our out/work dirs are empty
+                # so we don't over-write existing job data!
+                if not self.resume:
+                    if len(list(outdir.iterdir())) > 0:
+                        raise ValueError(f'Output directory for {tfs} is not empty!')
+
+                    if len(list(workdir.iterdir())) > 0:
+                        raise ValueError(f'Work directory for {tfs} not empty!')
 
                 os.makedirs(outdir / 'lists', exist_ok=True)
                 os.makedirs(workdir, exist_ok=True)
@@ -1511,9 +1533,19 @@ class ARD(luigi.WrapperTask):
                     "multi_look": self.multi_look,
                     "burst_data_csv": pjoin(outdir, f"{track}_{frame}_burst_data.csv"),
                     "cleanup": self.cleanup,
+                    "resume": self.resume,
+                    "resume_failed": self.resume_failed,
                 }
 
-                ard_tasks.append(CreateProcessIFGs(**kwargs))
+                slc_coreg_task = CreateCoregisterSlaves(**kwargs)
+                ifgs_task = CreateProcessIFGs(**kwargs)
+
+                # Trigger resumption if required
+                if self.resume:
+                    slc_coreg_task.trigger_resume(self.resume_failed)
+                    ifgs_task.trigger_resume(self.resume_failed)
+
+                ard_tasks.append(ifgs_task)
 
         yield ard_tasks
 

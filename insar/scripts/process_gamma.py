@@ -1087,7 +1087,7 @@ class CreateCoregisterSlaves(luigi.Task):
     master_scene = luigi.Parameter(default=None)
 
     resume = luigi.BoolParameter()
-    resume_failed = luigi.BoolParameter()
+    reprocess_failed = luigi.BoolParameter()
 
     def output(self):
         return luigi.LocalTarget(
@@ -1319,7 +1319,7 @@ class CreateProcessIFGs(luigi.Task):
     workdir = luigi.Parameter()
 
     resume = luigi.BoolParameter()
-    resume_failed = luigi.BoolParameter()
+    reprocess_failed = luigi.BoolParameter()
 
     def output(self):
         return luigi.LocalTarget(
@@ -1414,7 +1414,7 @@ class ARD(luigi.WrapperTask):
     resume = luigi.BoolParameter(
         default=False, significant=False, parsing=luigi.BoolParameter.EXPLICIT_PARSING
     )
-    resume_failed = luigi.BoolParameter(
+    reprocess_failed = luigi.BoolParameter(
         default=False, significant=False, parsing=luigi.BoolParameter.EXPLICIT_PARSING
     )
 
@@ -1534,7 +1534,7 @@ class ARD(luigi.WrapperTask):
                     "burst_data_csv": pjoin(outdir, f"{track}_{frame}_burst_data.csv"),
                     "cleanup": self.cleanup,
                     "resume": self.resume,
-                    "resume_failed": self.resume_failed,
+                    "reprocess_failed": self.reprocess_failed,
                 }
 
                 slc_coreg_task = CreateCoregisterSlaves(**kwargs)
@@ -1542,8 +1542,8 @@ class ARD(luigi.WrapperTask):
 
                 # Trigger resumption if required
                 if self.resume:
-                    slc_coreg_task.trigger_resume(self.resume_failed)
-                    ifgs_task.trigger_resume(self.resume_failed)
+                    slc_coreg_task.trigger_resume(self.reprocess_failed)
+                    ifgs_task.trigger_resume(self.reprocess_failed)
 
                 ard_tasks.append(ifgs_task)
 

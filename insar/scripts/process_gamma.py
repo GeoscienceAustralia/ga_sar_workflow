@@ -1099,7 +1099,10 @@ class CreateCoregisterSlaves(luigi.Task):
     def trigger_resume(self, reprocess_failed_scenes=True):
         # Remove our output to re-trigger this job, which will trigger CoregisterSlave
         # for all dates, however only those missing outputs will run.
-        self.output().remove()
+        output = self.output()
+
+        if output.exists():
+            output().remove()
 
         if reprocess_failed_scenes:
             # Remove completion status files for any failed SLC coreg tasks
@@ -1331,7 +1334,10 @@ class CreateProcessIFGs(luigi.Task):
     def trigger_resume(self, reprocess_failed_scenes=True):
         # Remove our output to re-trigger this job, which will trigger ProcessIFGs
         # for all date pairs, however only those missing IFG outputs will run.
-        self.output().remove()
+        output = self.output()
+
+        if output.exists():
+            output().remove()
 
         if reprocess_failed_scenes:
             # Remove completion status files for any failed SLC coreg tasks

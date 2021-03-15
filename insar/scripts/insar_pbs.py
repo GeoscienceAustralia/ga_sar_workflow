@@ -289,14 +289,14 @@ def _submit_pbs(pbs_scripts, test):
 @click.option(
     "--resume",
     type=click.BOOL,
-    is_flag=False,
+    is_flag=True,
     help="If we are resuming an existing job, or if this is a brand new job otherwise.",
     default=False
 )
 @click.option(
     "--reprocess-failed",
     type=click.BOOL,
-    is_flag=False,
+    is_flag=True,
     help="If enabled, failed scenes will be reprocessed when resuming a job.",
     default=False
 )

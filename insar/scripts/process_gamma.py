@@ -1021,7 +1021,7 @@ class CoregisterSlave(luigi.Task):
     geo_dem_par = luigi.Parameter()
     dem_lt_fine = luigi.Parameter()
     outdir = luigi.Parameter()
-    work_dir = luigi.Parameter()
+    workdir = luigi.Parameter()
 
     def output(self):
         return luigi.LocalTarget(
@@ -1186,7 +1186,7 @@ class CreateCoregisterSlaves(luigi.Task):
             "geo_dem_par": dem_filenames["geo_dem_par"],
             "dem_lt_fine": dem_filenames["dem_lt_fine"],
             "outdir": self.outdir,
-            "work_dir": Path(self.workdir),
+            "workdir": Path(self.workdir),
         }
 
         slave_coreg_jobs = []

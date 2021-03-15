@@ -402,12 +402,12 @@ def ard_insar(
         # Note: We can probably remove this, but it's needed right now for compatibility
         # with existing jobs we need to operate on.
         if nodes == 1:
-            scattered_jobs = [(job_name, i) for idx, i in iterate(scattered_tasklist)]
+            scattered_jobs = [(job_name, i) for idx, i in enumerate(scattered_tasklist)]
         else:
-            scattered_jobs = [(f"{job_name}-{idx+1}", i) for idx, i in iterate(scattered_tasklist)]
+            scattered_jobs = [(f"{job_name}-{idx+1}", i) for idx, i in enumerate(scattered_tasklist)]
 
     else:
-        scattered_jobs = [(f"{uuid.uuid4().hex[0:6]}-{idx+1}", i) for idx, i in iterate(scattered_tasklist)]
+        scattered_jobs = [(f"{uuid.uuid4().hex[0:6]}-{idx+1}", i) for idx, i in enumerate(scattered_tasklist)]
 
     pbs_scripts = _gen_pbs(
         proc_file,

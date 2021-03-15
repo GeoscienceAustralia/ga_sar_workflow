@@ -152,6 +152,7 @@ def _gen_pbs(
                 src.writelines(pbs)
                 src.write("\n")
 
+            print('Resuming existing job:', out_fname.parent)
             pbs_scripts.append(resume_fname)
 
         # Otherwise, create the new fresh job script

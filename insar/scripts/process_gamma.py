@@ -1108,7 +1108,7 @@ class CreateCoregisterSlaves(luigi.Task):
         output = self.output()
 
         if output.exists():
-            output().remove()
+            output.remove()
 
         if reprocess_failed_scenes:
             # Remove completion status files for any failed SLC coreg tasks
@@ -1345,7 +1345,7 @@ class CreateProcessIFGs(luigi.Task):
         output = self.output()
 
         if output.exists():
-            output().remove()
+            output.remove()
 
         if reprocess_failed_scenes:
             # Remove completion status files for any failed SLC coreg tasks

@@ -23,7 +23,7 @@ from insar.coregister_dem import CoregisterDem
 from insar.coregister_slc import CoregisterSlc
 from insar.make_gamma_dem import create_gamma_dem
 from insar.process_s1_slc import SlcProcess
-from insar.process_ifg import run_workflow, get_ifg_width, TempFileConfig
+from insar.process_ifg import run_workflow, get_ifg_width, TempFileConfig, validate_ifg_input_files
 from insar.project import ProcConfig, DEMFileNames, IfgFileNames
 
 from insar.meta_data.s1_slc import S1DataDownload
@@ -1340,6 +1340,10 @@ class CreateProcessIFGs(luigi.Task):
         )
 
     def trigger_resume(self, reprocess_failed_scenes=True):
+        # Load the gamma proc config file
+        with open(str(self.proc_file), 'r') as proc_fileobj:
+            proc_config = ProcConfig.from_file(proc_fileobj, self.outdir)
+
         # Remove our output to re-trigger this job, which will trigger ProcessIFGs
         # for all date pairs, however only those missing IFG outputs will run.
         output = self.output()
@@ -1347,14 +1351,52 @@ class CreateProcessIFGs(luigi.Task):
         if output.exists():
             output.remove()
 
+        # Remove completion status files for IFGs tasks that are missing outputs
+        # - this is distinct from those that raised errors explicitly, to handle
+        # - cases people have manually deleted outputs (accidentally or intentionally)
+        # - and cases where jobs have been terminated mid processing.
+        reprocess_pairs = []
+
+        ifgs_list = Path(self.outdir) / proc_config.list_dir / proc_config.ifg_list
+        if ifgs_list.exists():
+            with open(ifgs_list) as ifg_list_file:
+                ifgs_list = [dates.split(",") for dates in ifg_list_file.read().splitlines()]
+
+            for master_date, slave_date in ifgs_list:
+                ic = IfgFileNames(proc_config, Path(self.vector_file), master_date, slave_date, self.outdir)
+
+                # Check for existence of filtered coh geocode files, if neither exist we need to re-run.
+                if not ic.ifg_filt_coh_geocode_out.exists() and not ic.ifg_filt_coh_geocode_out_tiff.exists():
+                    reprocess_pairs.append((master_date, slave_date))
+
+        # Remove completion status files for any failed SLC coreg tasks.
+        # This is probably slightly redundant, but we 'do' write FAILED to status outs
+        # in the error handler, thus for cases this occurs but the above logic doesn't
+        # apply, we have this as well just in case.
         if reprocess_failed_scenes:
-            # Remove completion status files for any failed SLC coreg tasks
             for status_out in Path(self.workdir).glob("*_ifg_*_status_logs.out"):
                 with status_out.open("r") as file:
                     contents = file.read().splitlines()
 
                 if len(contents) > 0 and "FAILED" in contents[0]:
-                    status_out.unlink()
+                    master_date, slave_date = re.split("[-_]", status_out.stem)[2:3]
+                    reprocess_pairs.append((master_date, slave_date))
+
+        reprocess_pairs = set(reprocess_pairs)
+
+        # Any pairs that need reprocessing, we remove the status file of + clean the tree
+        for master_date, slave_date in reprocess_pairs:
+            status_file = self.workdir / f"{self.track}_{self.frame}_ifg_{master_date}-{slave_date}_status_logs.out"
+
+            # Remove Luigi status file
+            if status_file.exists():
+                status_file.unlink()
+
+            # Clean output dir
+            ic = IfgFileNames(proc_config, Path(self.vector_file), master_date, slave_date, self.outdir)
+            mk_clean_dir(ic.ifg_dir)
+
+        return reprocess_pairs
 
     def run(self):
         log = STATUS_LOGGER.bind(track_frame=f"{self.track}_{self.frame}")
@@ -1435,6 +1477,10 @@ class ARD(luigi.WrapperTask):
 
     def requires(self):
         log = STATUS_LOGGER.bind(vector_file_list=Path(self.vector_file_list).stem)
+
+        # Load the gamma proc config file
+        with open(str(self.proc_file), 'r') as proc_fileobj:
+            proc_config = ProcConfig.from_file(proc_fileobj, self.outdir)
 
         # Coregistration processing
         ard_tasks = []
@@ -1558,10 +1604,42 @@ class ARD(luigi.WrapperTask):
                 # Trigger resumption if required
                 if self.resume:
                     log.info(f"Resuming {tfs}")
-                    slc_coreg_task.trigger_resume(self.reprocess_failed)
-                    ifgs_task.trigger_resume(self.reprocess_failed)
 
-                ard_tasks.append(ifgs_task)
+                    # Trigger IFGs resume, this will tell us what pairs are being reprocessed
+                    reprocessed_ifgs = ifgs_task.trigger_resume(self.reprocess_failed)
+                    info.log("Re-processing IFGs", list=reprocessed_ifgs)
+
+                    # We need to verify the SLC inputs still exist for these IFGs... if not, reprocess
+                    reprocessed_slc_coregs = []
+
+                    for master_date, slave_date in reprocessed_ifgs:
+                        ic = IfgFileNames(proc_config, Path(vector_file), master_date, slave_date, outdir)
+
+                        # We re-use ifg's own input handling to detect this
+                        try:
+                            validate_ifg_input_files(ic)
+                        except ProcessIfgException:
+                            pol = proc_config.polarisation
+                            status_out = f"{master_date}_{pol}_{slave_date}_{pol}_coreg_logs.out"
+                            status_out = Path(workdir) / status_out
+
+                            if status_out.exists():
+                                status_out.unlink()
+
+                            # Note: We intentionally don't clean master/slave SLC dirs as they
+                            # contain files besides coreg we don't want to remove. SLC coreg
+                            # can be safely re-run over it's existing files deterministically.
+
+                            reprocessed_slc_coregs.append(master_date)
+                            reprocessed_slc_coregs.append(slave_date)
+
+                    if len(reprocessed_slc_coregs) > 0:
+                        info.log("Re-processing SLC coregs", list=reprocessed_slc_coregs)
+
+                    # Finally trigger SLC coreg resumption (which will process related to above)
+                    slc_coreg_task.trigger_resume(self.reprocess_failed)
+
+                ard_tasks.append(CreateProcessIFGs(**kwargs))
 
         yield ard_tasks
 

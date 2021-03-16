@@ -1478,10 +1478,6 @@ class ARD(luigi.WrapperTask):
     def requires(self):
         log = STATUS_LOGGER.bind(vector_file_list=Path(self.vector_file_list).stem)
 
-        # Load the gamma proc config file
-        with open(str(self.proc_file), 'r') as proc_fileobj:
-            proc_config = ProcConfig.from_file(proc_fileobj, self.outdir)
-
         # Coregistration processing
         ard_tasks = []
         self.output_dirs = []
@@ -1597,6 +1593,10 @@ class ARD(luigi.WrapperTask):
                     "resume": self.resume,
                     "reprocess_failed": self.reprocess_failed,
                 }
+
+                # Load the gamma proc config file
+                with open(str(self.proc_file), 'r') as proc_fileobj:
+                    proc_config = ProcConfig.from_file(proc_fileobj, outdir)
 
                 slc_coreg_task = CreateCoregisterSlaves(**kwargs)
                 ifgs_task = CreateProcessIFGs(**kwargs)

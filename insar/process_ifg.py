@@ -84,7 +84,7 @@ def run_workflow(
         ic.ifg_dir.mkdir(parents=True)
 
     with working_directory(ic.ifg_dir):
-        _validate_input_files(ic)
+        validate_ifg_input_files(ic)
 
         # future version might want to allow selection of steps (skipped for simplicity Oct 2020)
         calc_int(pc, ic)
@@ -95,7 +95,7 @@ def run_workflow(
         do_geocode(pc, ic, dc, tc, ifg_width)
 
 
-def _validate_input_files(ic: IfgFileNames):
+def validate_ifg_input_files(ic: IfgFileNames):
     msg = "Cannot locate resampled {}. Run 'coregister_DEM' then 'coregister_slave SLC' steps for each acquisition"
 
     if not ic.r_master_slc.exists():

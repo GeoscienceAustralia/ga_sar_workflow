@@ -15,7 +15,7 @@ import zlib
 import structlog
 import shutil
 
-from insar.constant import SCENE_DATE_FMT
+from insar.constant import SCENE_DATE_FMT, SlcFilenames
 from insar.generate_slc_inputs import query_slc_inputs, slc_inputs
 from insar.calc_baselines_new import BaselineProcess
 from insar.calc_multilook_values import multilook, calculate_mean_look_values
@@ -823,12 +823,15 @@ class ReprocessSingleSLC(luigi.Task):
         # Read scenes CSV and schedule SLC download via URLs
         slc_inputs_df = pd.read_csv(self.burst_data_csv)
 
+        download_dir = Path(str(self.outdir)).joinpath(__RAW__)
+        os.makedirs(download_dir, exist_ok=True)
+
         download_list = slc_inputs_df.url.unique()
         download_tasks = []
         for slc_url in download_list:
             url_scene_date = Path(slc_url).name.split("_")[5].split("T")[0]
 
-            if url_scene_date == scene_date:
+            if url_scene_date == self.scene_date:
                 download_tasks.append(
                     SlcDataDownload(
                         slc_scene=slc_url.rstrip(),
@@ -846,23 +849,28 @@ class ReprocessSingleSLC(luigi.Task):
         slc = slc_dir / SlcFilenames.SLC_PAR_FILENAME.value.format(self.scene_date, self.polarization.upper())
         slc_par = slc.with_suffix(".slc.par")
 
-        yield ProcessSlc(
-            scene_date=slc_scene,
+        slc_task = ProcessSlc(
+            scene_date=self.scene_date,
             raw_path=Path(self.outdir).joinpath(__RAW__),
-            polarization=_pol,
+            polarization=self.polarization,
             burst_data=self.burst_data_csv,
             slc_dir=slc_dir,
             workdir=self.workdir,
             ref_master_tab=self.ref_master_tab,
         )
 
+        if slc_task.output().exists():
+            slc_task.output().remove()
+
+        yield slc_task
+
         if not slc.exists():
             raise ValueError(f'Critical failure reprocessing SLC, slc file not found: {slc}')
 
-        yield ProcessSlcMosaic(
-            scene_date=slc_scene,
+        mosaic_task = ProcessSlcMosaic(
+            scene_date=self.scene_date,
             raw_path=Path(self.outdir).joinpath(__RAW__),
-            polarization=_pol,
+            polarization=self.polarization,
             burst_data=self.burst_data_csv,
             slc_dir=slc_dir,
             workdir=self.workdir,
@@ -871,13 +879,23 @@ class ReprocessSingleSLC(luigi.Task):
             alks=alks,
         )
 
-        yield Multilook(
+        if mosaic_task.output().exists():
+            mosaic_task.output().remove()
+
+        yield mosaic_task
+
+        mli_task = Multilook(
             slc=slc,
             slc_par=slc_par,
             rlks=rlks,
             alks=alks,
             workdir=self.workdir,
         )
+
+        if mli_task.output().exists():
+            mli_task.output().remove()
+
+        yield mli_task
 
         with self.output().open("w") as f:
             f.write(str(datetime.datetime.now()))
@@ -1750,19 +1768,19 @@ class ARD(luigi.WrapperTask):
                             # TODO: Check if .slc and .mli files and pars exist or not
 
                             if missing_slc_inputs:
-                                slc_reprocess = ReprocessSingleSLC({
-                                    "proc_file": self.proc_file,
-                                    "track": self.track,
-                                    "frame": self.frame,
-                                    "polarization": proc_config.polarisation,
-                                    "burst_data_csv": outdir / f"{track}_{frame}_burst_data.csv",
-                                    "poeorb_path": self.poeorb_path,
-                                    "resorb_path": self.resorb_path,
-                                    "scene_date": date,
-                                    "ref_master_tab": None,  # FIXME: GH issue #200
-                                    "outdir": outdir,
-                                    "workdir": workdir,
-                                })
+                                slc_reprocess = ReprocessSingleSLC(
+                                    proc_file = self.proc_file,
+                                    track = track,
+                                    frame = frame,
+                                    polarization = proc_config.polarisation,
+                                    burst_data_csv = outdir / f"{track}_{frame}_burst_data.csv",
+                                    poeorb_path = self.poeorb_path,
+                                    resorb_path = self.resorb_path,
+                                    scene_date = date,
+                                    ref_master_tab = None,  # FIXME: GH issue #200
+                                    outdir = outdir,
+                                    workdir = workdir,
+                                )
 
                                 # No matter what, we need this to reprocess, so delete output
                                 if slc_reprocess.output().exists():

@@ -496,7 +496,7 @@ class ProcessSlc(luigi.Task):
         )
 
     def run(self):
-        mk_clean_dir(Path(self.slc_dir) / str(scene_date))
+        mk_clean_dir(Path(self.slc_dir) / str(self.scene_date))
 
         slc_job = SlcProcess(
             str(self.raw_path),
@@ -810,6 +810,8 @@ class ReprocessSingleSLC(luigi.Task):
     outdir = luigi.Parameter()
     workdir = luigi.Parameter()
 
+    token = luigi.Parameter()
+
     def output(self):
         return luigi.LocalTarget(
             Path(self.workdir).joinpath(
@@ -835,20 +837,25 @@ class ReprocessSingleSLC(luigi.Task):
 
         download_list = slc_inputs_df.url.unique()
         download_tasks = []
+
         for slc_url in download_list:
             url_scene_date = Path(slc_url).name.split("_")[5].split("T")[0]
 
             if url_scene_date == self.scene_date:
-                download_tasks.append(
-                    SlcDataDownload(
-                        slc_scene=slc_url.rstrip(),
-                        polarization=self.polarization,
-                        poeorb_path=self.poeorb_path,
-                        resorb_path=self.resorb_path,
-                        workdir=self.workdir,
-                        output_dir=Path(download_dir).joinpath(url_scene_date),
-                    )
+                download_task = SlcDataDownload(
+                    slc_scene=slc_url.rstrip(),
+                    polarization=self.polarization,
+                    poeorb_path=self.poeorb_path,
+                    resorb_path=self.resorb_path,
+                    workdir=self.workdir,
+                    output_dir=Path(download_dir).joinpath(url_scene_date),
                 )
+
+                # Force re-download, we clean raw data so the output status file is a lie...
+                if download_task.output().exists():
+                    download_task.output().remove()
+
+                download_tasks.append(download_task)
 
         yield download_tasks
 
@@ -1605,6 +1612,11 @@ class ARD(luigi.WrapperTask):
     def requires(self):
         log = STATUS_LOGGER.bind(vector_file_list=Path(self.vector_file_list).stem)
 
+        # generate (just once) a unique token for tasks that need to re-run
+        if self.resume:
+            if not hasattr(self, 'resume_token'):
+                self.resume_token = str(datetime.datetime.now())
+
         # Coregistration processing
         ard_tasks = []
         self.output_dirs = []
@@ -1790,11 +1802,10 @@ class ARD(luigi.WrapperTask):
                                     ref_master_tab = None,  # FIXME: GH issue #200
                                     outdir = outdir,
                                     workdir = workdir,
+                                    # This is to prevent tasks from prior resumes from clashing with
+                                    # future resumes.
+                                    token = self.resume_token
                                 )
-
-                                # No matter what, we need this to reprocess, so delete output
-                                if slc_reprocess.output().exists():
-                                    slc_reprocess.output().remove()
 
                                 ard_tasks.append(slc_reprocess)
 

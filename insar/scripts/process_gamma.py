@@ -314,11 +314,16 @@ class SlcDataDownload(luigi.Task):
         failed = False
 
         outdir = Path(self.output_dir)
-        mk_clean_dir(outdir)
+        outdir.mkdir(parents=True, exist_ok=True)
 
         try:
             download_obj.slc_download(outdir)
+<<<<<<< Updated upstream
         except (zipfile.BadZipFile, zlib.error):
+=======
+        except:
+            log.error("SLC download failed with exception", exc_info=True)
+>>>>>>> Stashed changes
             failed = True
         finally:
             with self.output().open("w") as f:
@@ -1464,6 +1469,13 @@ class CreateProcessIFGs(luigi.Task):
             )
         )
 
+    def requires(self):
+        if self.resume:
+            params = {k:v for k,v in self.get_params()}
+            params['resume_token'] = str(datetime.datetime.now())
+
+            yield TriggerResume(**params)
+
     def trigger_resume(self, reprocess_failed_scenes=True):
         # Load the gamma proc config file
         with open(str(self.proc_file), 'r') as proc_fileobj:
@@ -1518,8 +1530,9 @@ class CreateProcessIFGs(luigi.Task):
                 status_file.unlink()
 
             # Clean output dir
-            ic = IfgFileNames(proc_config, Path(self.vector_file), master_date, slave_date, self.outdir)
-            mk_clean_dir(ic.ifg_dir)
+            # redundant?  will happen by the task itself because status file is gone
+            #ic = IfgFileNames(proc_config, Path(self.vector_file), master_date, slave_date, self.outdir)
+            #mk_clean_dir(ic.ifg_dir)
 
         return reprocess_pairs
 
@@ -1554,6 +1567,117 @@ class CreateProcessIFGs(luigi.Task):
         with self.output().open("w") as f:
             f.write("")
 
+
+class TriggerResume(luigi.Task):
+    """
+    This job triggers resumption of processing for a specific track/frame/sensor/polarisation over a date range
+    """
+
+    track = luigi.Parameter()
+    frame = luigi.Parameter()
+
+    # Note: This task needs to take all the parameters the others do,
+    # so we can re-create the other tasks for resuming
+    proc_file = luigi.Parameter()
+    vector_file = luigi.Parameter()
+    start_date = luigi.DateParameter()
+    end_date = luigi.DateParameter()
+    sensor = luigi.Parameter()
+    polarization = luigi.ListParameter()
+    cleanup = luigi.BoolParameter()
+    outdir = luigi.Parameter()
+    workdir = luigi.Parameter()
+    database_name = luigi.Parameter()
+    orbit = luigi.Parameter()
+    dem_img = luigi.Parameter()
+    multi_look = luigi.IntParameter()
+    poeorb_path = luigi.Parameter()
+    resorb_path = luigi.Parameter()
+    reprocess_failed = luigi.BoolParameter()
+    resume_token = luigi.Parameter()
+
+    def run(self):
+        kwargs = {k:v for k,v in self.get_params()}
+
+        # Load the gamma proc config file
+        with open(str(self.proc_file), 'r') as proc_fileobj:
+            proc_config = ProcConfig.from_file(proc_fileobj, self.outdir.parent)
+
+        slc_coreg_task = CreateCoregisterSlaves(**kwargs)
+        ifgs_task = CreateProcessIFGs(**kwargs)
+
+        tfs = self.outdir.name
+        log.info(f"Resuming {tfs}")
+
+        # Trigger IFGs resume, this will tell us what pairs are being reprocessed
+        reprocessed_ifgs = ifgs_task.trigger_resume(self.reprocess_failed)
+        log.info("Re-processing IFGs", list=reprocessed_ifgs)
+
+        # We need to verify the SLC inputs still exist for these IFGs... if not, reprocess
+        reprocessed_slc_coregs = []
+
+        for master_date, slave_date in reprocessed_ifgs:
+            ic = IfgFileNames(proc_config, Path(vector_file), master_date, slave_date, self.outdir)
+
+            # We re-use ifg's own input handling to detect this
+            try:
+                validate_ifg_input_files(ic)
+            except ProcessIfgException:
+                pol = proc_config.polarisation
+                status_out = f"{master_date}_{pol}_{slave_date}_{pol}_coreg_logs.out"
+                status_out = Path(self.workdir) / status_out
+
+                if status_out.exists():
+                    status_out.unlink()
+
+                # Note: We intentionally don't clean master/slave SLC dirs as they
+                # contain files besides coreg we don't want to remove. SLC coreg
+                # can be safely re-run over it's existing files deterministically.
+
+                reprocessed_slc_coregs.append(master_date)
+                reprocessed_slc_coregs.append(slave_date)
+
+        reprocessed_slc_coregs = set(reprocessed_slc_coregs)
+
+        if len(reprocessed_slc_coregs) > 0:
+            log.info("Re-processing SLC coregs", list=reprocessed_slc_coregs)
+
+            # Unfortunately if we're missing SLC coregs, we may also need to reprocess the SLC
+            #
+            # Note: As the ARD task really only supports all-or-nothing for SLC processing,
+            # the fact we have ifgs that need reprocessing implies we got well and truly past SLC
+            # processing successfully in previous run(s) as the (ifgs list / sbas baseline can't
+            # exist without having completed SLC processing...
+            #
+            # so we literally just need to reproduce the SLC files for coreg again, nothing else.
+            for date in reprocessed_slc_coregs:
+                missing_slc_inputs = True
+                # TODO: Check if .slc and .mli files and pars exist or not
+
+                if missing_slc_inputs:
+                    slc_reprocess = ReprocessSingleSLC(
+                        proc_file = self.proc_file,
+                        track = track,
+                        frame = frame,
+                        polarization = proc_config.polarisation,
+                        burst_data_csv = self.outdir / f"{track}_{frame}_burst_data.csv",
+                        poeorb_path = self.poeorb_path,
+                        resorb_path = self.resorb_path,
+                        scene_date = date,
+                        ref_master_tab = None,  # FIXME: GH issue #200
+                        outdir = self.outdir,
+                        workdir = self.workdir,
+                        # This is to prevent tasks from prior resumes from clashing with
+                        # future resumes.
+                        token = self.resume_token
+                    )
+
+                    tasks.append(slc_reprocess)
+
+        # Finally trigger SLC coreg resumption (which will process related to above)
+        slc_coreg_task.trigger_resume(self.reprocess_failed)
+
+        yield tasks
 
 class ARD(luigi.WrapperTask):
     """
@@ -1731,7 +1855,7 @@ class ARD(luigi.WrapperTask):
                 ifgs_task = CreateProcessIFGs(**kwargs)
 
                 # Trigger resumption if required
-                if self.resume:
+                if False: # self.resume:
                     log.info(f"Resuming {tfs}")
 
                     # Trigger IFGs resume, this will tell us what pairs are being reprocessed

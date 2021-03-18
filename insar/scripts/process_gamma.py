@@ -810,14 +810,27 @@ class ReprocessSingleSLC(luigi.Task):
     outdir = luigi.Parameter()
     workdir = luigi.Parameter()
 
-    token = luigi.Parameter()
+    resume_token = luigi.Parameter()
+
+    def output_path(self):
+        return f"{self.track}_{self.frame}_reprocess_{self.scene_date}_{self.polarization}_{self.resume_token}_status.out"
+
+    def progress_path(self):
+        return (Path(self.workdir) / self.output_path()).with_suffix(".progress")
 
     def output(self):
-        return luigi.LocalTarget(
-            Path(self.workdir).joinpath(
-                f"{self.track}_{self.frame}_reprocess_{self.scene_date}_{self.polarization}_status_logs.out"
-            )
-        )
+        return luigi.LocalTarget(self.output_path())
+
+    def progress(self):
+        if not self.progress_path().exists():
+            return None
+
+        with self.progress_path().open() as file:
+            return file.read().strip()
+
+    def set_progress(self, value):
+        with self.progress_path().open("w") as file:
+            return file.write(value)
 
     def run(self):
         workdir = Path(self.workdir)
@@ -830,86 +843,99 @@ class ReprocessSingleSLC(luigi.Task):
         rlks, alks = read_rlks_alks(mlk_status)
 
         # Read scenes CSV and schedule SLC download via URLs
-        slc_inputs_df = pd.read_csv(self.burst_data_csv)
+        if self.progress() is None:
+            slc_inputs_df = pd.read_csv(self.burst_data_csv)
 
-        download_dir = Path(str(self.outdir)).joinpath(__RAW__)
-        os.makedirs(download_dir, exist_ok=True)
+            download_dir = Path(str(self.outdir)).joinpath(__RAW__)
+            os.makedirs(download_dir, exist_ok=True)
 
-        download_list = slc_inputs_df.url.unique()
-        download_tasks = []
+            download_list = slc_inputs_df.url.unique()
+            download_tasks = []
 
-        for slc_url in download_list:
-            url_scene_date = Path(slc_url).name.split("_")[5].split("T")[0]
+            for slc_url in download_list:
+                url_scene_date = Path(slc_url).name.split("_")[5].split("T")[0]
 
-            if url_scene_date == self.scene_date:
-                download_task = SlcDataDownload(
-                    slc_scene=slc_url.rstrip(),
-                    polarization=self.polarization,
-                    poeorb_path=self.poeorb_path,
-                    resorb_path=self.resorb_path,
-                    workdir=self.workdir,
-                    output_dir=Path(download_dir).joinpath(url_scene_date),
-                )
+                if url_scene_date == self.scene_date:
+                    download_task = SlcDataDownload(
+                        slc_scene=slc_url.rstrip(),
+                        polarization=self.polarization,
+                        poeorb_path=self.poeorb_path,
+                        resorb_path=self.resorb_path,
+                        workdir=self.workdir,
+                        output_dir=Path(download_dir).joinpath(url_scene_date),
+                    )
 
-                # Force re-download, we clean raw data so the output status file is a lie...
-                if download_task.output().exists():
-                    download_task.output().remove()
+                    # Force re-download, we clean raw data so the output status file is a lie...
+                    if download_task.output().exists():
+                        download_task.output().remove()
 
-                download_tasks.append(download_task)
+                    download_tasks.append(download_task)
 
-        yield download_tasks
+            self.set_progress("download_tasks")
+            yield download_tasks
 
-        slc_dir = Path(self.outdir).joinpath(__SLC__)
-        slc = slc_dir / SlcFilenames.SLC_PAR_FILENAME.value.format(self.scene_date, self.polarization.upper())
-        slc_par = slc.with_suffix(".slc.par")
+        slc_dir = Path(self.outdir).joinpath(__SLC__) / self.scene_date
+        slc = slc_dir / SlcFilenames.SLC_FILENAME.value.format(self.scene_date, self.polarization.upper())
+        slc_par = slc_dir / SlcFilenames.SLC_PAR_FILENAME.value.format(self.scene_date, self.polarization.upper())
 
-        slc_task = ProcessSlc(
-            scene_date=self.scene_date,
-            raw_path=Path(self.outdir).joinpath(__RAW__),
-            polarization=self.polarization,
-            burst_data=self.burst_data_csv,
-            slc_dir=slc_dir,
-            workdir=self.workdir,
-            ref_master_tab=self.ref_master_tab,
-        )
+        if self.progress() == "download_tasks":
+            slc_task = ProcessSlc(
+                scene_date=self.scene_date,
+                raw_path=Path(self.outdir).joinpath(__RAW__),
+                polarization=self.polarization,
+                burst_data=self.burst_data_csv,
+                slc_dir=slc_dir,
+                workdir=self.workdir,
+                ref_master_tab=self.ref_master_tab,
+            )
 
-        if slc_task.output().exists():
-            slc_task.output().remove()
+            if slc_task.output().exists():
+                slc_task.output().remove()
 
-        yield slc_task
+            self.set_progress("slc_task")
+            yield slc_task
 
         if not slc.exists():
             raise ValueError(f'Critical failure reprocessing SLC, slc file not found: {slc}')
 
-        mosaic_task = ProcessSlcMosaic(
-            scene_date=self.scene_date,
-            raw_path=Path(self.outdir).joinpath(__RAW__),
-            polarization=self.polarization,
-            burst_data=self.burst_data_csv,
-            slc_dir=slc_dir,
-            workdir=self.workdir,
-            ref_master_tab=self.ref_master_tab,
-            rlks=rlks,
-            alks=alks,
-        )
+        if self.progress() == "slc_task":
+            mosaic_task = ProcessSlcMosaic(
+                scene_date=self.scene_date,
+                raw_path=Path(self.outdir).joinpath(__RAW__),
+                polarization=self.polarization,
+                burst_data=self.burst_data_csv,
+                slc_dir=slc_dir,
+                outdir=self.outdir,
+                workdir=self.workdir,
+                ref_master_tab=self.ref_master_tab,
+                rlks=rlks,
+                alks=alks,
+            )
 
-        if mosaic_task.output().exists():
-            mosaic_task.output().remove()
+            if mosaic_task.output().exists():
+                mosaic_task.output().remove()
 
-        yield mosaic_task
+            self.set_progress("mosaic_task")
+            yield mosaic_task
 
-        mli_task = Multilook(
-            slc=slc,
-            slc_par=slc_par,
-            rlks=rlks,
-            alks=alks,
-            workdir=self.workdir,
-        )
+        if self.progress() == "mosaic_task":
+            mli_task = Multilook(
+                slc=slc,
+                slc_par=slc_par,
+                rlks=rlks,
+                alks=alks,
+                workdir=self.workdir,
+            )
 
-        if mli_task.output().exists():
-            mli_task.output().remove()
+            if mli_task.output().exists():
+                mli_task.output().remove()
 
-        yield mli_task
+            self.set_progress("mli_task")
+            yield mli_task
+
+        # Quick sanity check, we shouldn't get this far unless mli_task was scheduled
+        if self.progress() != "mli_task":
+            raise RuntimeError("Unexpected dynamic dependency error in ReprocessSingleSLC task")
 
         with self.output().open("w") as f:
             f.write(str(datetime.datetime.now()))
@@ -1226,9 +1252,6 @@ class CreateCoregisterSlaves(luigi.Task):
     master_scene_polarization = luigi.Parameter(default="VV")
     master_scene = luigi.Parameter(default=None)
 
-    resume = luigi.BoolParameter()
-    reprocess_failed = luigi.BoolParameter()
-
     def output(self):
         return luigi.LocalTarget(
             Path(self.workdir).joinpath(
@@ -1463,9 +1486,6 @@ class CreateProcessIFGs(luigi.Task):
     outdir = luigi.Parameter()
     workdir = luigi.Parameter()
 
-    resume = luigi.BoolParameter()
-    reprocess_failed = luigi.BoolParameter()
-
     def output(self):
         return luigi.LocalTarget(
             Path(self.workdir).joinpath(
@@ -1578,6 +1598,7 @@ class TriggerResume(luigi.Task):
     # so we can re-create the other tasks for resuming
     proc_file = luigi.Parameter()
     vector_file = luigi.Parameter()
+    burst_data_csv = luigi.Parameter()
     start_date = luigi.DateParameter()
     end_date = luigi.DateParameter()
     sensor = luigi.Parameter()
@@ -1591,95 +1612,143 @@ class TriggerResume(luigi.Task):
     multi_look = luigi.IntParameter()
     poeorb_path = luigi.Parameter()
     resorb_path = luigi.Parameter()
+
+    resume = luigi.BoolParameter()
     reprocess_failed = luigi.BoolParameter()
     resume_token = luigi.Parameter()
 
+    def output_path(self):
+        return f"{self.track}_{self.frame}_resume_pipeline_{self.resume_token}_status.out"
+
+    def triggered_path(self):
+        return Path(self.output_path()).with_suffix(".triggered")
+
     def run(self):
-        kwargs = {k:v for k,v in self.get_params()}
+        log = STATUS_LOGGER.bind(outdir=self.outdir, workdir=self.workdir)
+
+        #kwargs = {k:v for k,v in self.get_params()}
+
+        # Remove args that are just for this task
+        #for arg in ["resume", "reprocess_failed", "resume_token"]:
+        #    del kwargs[arg]
+
+        # Note: The above doesn't work, and I'm not too sure why... so we're
+        # manually re-creating kwargs just like the ARD task does...
+        kwargs = {
+            "proc_file": self.proc_file,
+            "vector_file": self.vector_file,
+            "start_date": self.start_date,
+            "end_date": self.end_date,
+            "sensor": self.sensor,
+            "database_name": self.database_name,
+            "polarization": self.polarization,
+            "track": self.track,
+            "frame": self.frame,
+            "outdir": self.outdir,
+            "workdir": self.workdir,
+            "orbit": self.orbit,
+            "dem_img": self.dem_img,
+            "poeorb_path": self.poeorb_path,
+            "resorb_path": self.resorb_path,
+            "multi_look": self.multi_look,
+            "burst_data_csv": self.burst_data_csv,
+            "cleanup": self.cleanup,
+        }
 
         # Load the gamma proc config file
         with open(str(self.proc_file), 'r') as proc_fileobj:
-            proc_config = ProcConfig.from_file(proc_fileobj, self.outdir.parent)
+            proc_config = ProcConfig.from_file(proc_fileobj, self.outdir)
 
         slc_coreg_task = CreateCoregisterSlaves(**kwargs)
         ifgs_task = CreateProcessIFGs(**kwargs)
-        prerequisite_tasks = []
 
-        tfs = self.outdir.name
-        log.info(f"Resuming {tfs}")
+        if not self.triggered_path().exists():
+            prerequisite_tasks = []
 
-        # Trigger IFGs resume, this will tell us what pairs are being reprocessed
-        reprocessed_ifgs = ifgs_task.trigger_resume(self.reprocess_failed)
-        log.info("Re-processing IFGs", list=reprocessed_ifgs)
+            tfs = self.outdir.name
+            log.info(f"Resuming {tfs}")
 
-        # We need to verify the SLC inputs still exist for these IFGs... if not, reprocess
-        reprocessed_slc_coregs = []
+            # Trigger IFGs resume, this will tell us what pairs are being reprocessed
+            reprocessed_ifgs = ifgs_task.trigger_resume(self.reprocess_failed)
+            log.info("Re-processing IFGs", list=reprocessed_ifgs)
 
-        for master_date, slave_date in reprocessed_ifgs:
-            ic = IfgFileNames(proc_config, Path(vector_file), master_date, slave_date, self.outdir)
+            # We need to verify the SLC inputs still exist for these IFGs... if not, reprocess
+            reprocessed_slc_coregs = []
 
-            # We re-use ifg's own input handling to detect this
-            try:
-                validate_ifg_input_files(ic)
-            except ProcessIfgException:
-                pol = proc_config.polarisation
-                status_out = f"{master_date}_{pol}_{slave_date}_{pol}_coreg_logs.out"
-                status_out = Path(self.workdir) / status_out
+            for master_date, slave_date in reprocessed_ifgs:
+                ic = IfgFileNames(proc_config, Path(self.vector_file), master_date, slave_date, self.outdir)
 
-                if status_out.exists():
-                    status_out.unlink()
+                # We re-use ifg's own input handling to detect this
+                try:
+                    validate_ifg_input_files(ic)
+                except ProcessIfgException:
+                    pol = proc_config.polarisation
+                    status_out = f"{master_date}_{pol}_{slave_date}_{pol}_coreg_logs.out"
+                    status_out = Path(self.workdir) / status_out
 
-                # Note: We intentionally don't clean master/slave SLC dirs as they
-                # contain files besides coreg we don't want to remove. SLC coreg
-                # can be safely re-run over it's existing files deterministically.
+                    if status_out.exists():
+                        status_out.unlink()
 
-                reprocessed_slc_coregs.append(master_date)
-                reprocessed_slc_coregs.append(slave_date)
+                    # Note: We intentionally don't clean master/slave SLC dirs as they
+                    # contain files besides coreg we don't want to remove. SLC coreg
+                    # can be safely re-run over it's existing files deterministically.
 
-        reprocessed_slc_coregs = set(reprocessed_slc_coregs)
+                    reprocessed_slc_coregs.append(master_date)
+                    reprocessed_slc_coregs.append(slave_date)
 
-        if len(reprocessed_slc_coregs) > 0:
-            log.info("Re-processing SLC coregs", list=reprocessed_slc_coregs)
+            reprocessed_slc_coregs = set(reprocessed_slc_coregs)
 
-            # Unfortunately if we're missing SLC coregs, we may also need to reprocess the SLC
-            #
-            # Note: As the ARD task really only supports all-or-nothing for SLC processing,
-            # the fact we have ifgs that need reprocessing implies we got well and truly past SLC
-            # processing successfully in previous run(s) as the (ifgs list / sbas baseline can't
-            # exist without having completed SLC processing...
-            #
-            # so we literally just need to reproduce the SLC files for coreg again, nothing else.
-            for date in reprocessed_slc_coregs:
-                missing_slc_inputs = True
-                # TODO: Check if .slc and .mli files and pars exist or not
+            if len(reprocessed_slc_coregs) > 0:
+                log.info("Re-processing SLC coregs", list=reprocessed_slc_coregs)
 
-                if missing_slc_inputs:
-                    slc_reprocess = ReprocessSingleSLC(
-                        proc_file = self.proc_file,
-                        track = track,
-                        frame = frame,
-                        polarization = proc_config.polarisation,
-                        burst_data_csv = self.outdir / f"{track}_{frame}_burst_data.csv",
-                        poeorb_path = self.poeorb_path,
-                        resorb_path = self.resorb_path,
-                        scene_date = date,
-                        ref_master_tab = None,  # FIXME: GH issue #200
-                        outdir = self.outdir,
-                        workdir = self.workdir,
-                        # This is to prevent tasks from prior resumes from clashing with
-                        # future resumes.
-                        token = self.resume_token
-                    )
+                # Unfortunately if we're missing SLC coregs, we may also need to reprocess the SLC
+                #
+                # Note: As the ARD task really only supports all-or-nothing for SLC processing,
+                # the fact we have ifgs that need reprocessing implies we got well and truly past SLC
+                # processing successfully in previous run(s) as the (ifgs list / sbas baseline can't
+                # exist without having completed SLC processing...
+                #
+                # so we literally just need to reproduce the SLC files for coreg again, nothing else.
+                for date in reprocessed_slc_coregs:
+                    missing_slc_inputs = True
+                    # TODO: Check if .slc and .mli files and pars exist or not
 
-                    prerequisite_tasks.append(slc_reprocess)
+                    if missing_slc_inputs:
+                        slc_reprocess = ReprocessSingleSLC(
+                            proc_file = self.proc_file,
+                            track = self.track,
+                            frame = self.frame,
+                            polarization = proc_config.polarisation,
+                            burst_data_csv = self.burst_data_csv,
+                            poeorb_path = self.poeorb_path,
+                            resorb_path = self.resorb_path,
+                            scene_date = date,
+                            ref_master_tab = None,  # FIXME: GH issue #200
+                            outdir = self.outdir,
+                            workdir = self.workdir,
+                            # This is to prevent tasks from prior resumes from clashing with
+                            # future resumes.
+                            resume_token = self.resume_token
+                        )
 
-        # Finally trigger SLC coreg resumption (which will process related to above)
-        slc_coreg_task.trigger_resume(self.reprocess_failed)
+                        prerequisite_tasks.append(slc_reprocess)
 
-        # Yield pre-requisite tasks first
-        yield prerequisite_tasks
-        # and then finally resume the normal processing pipeline
-        yield ifgs_task
+            # Finally trigger SLC coreg resumption (which will process related to above)
+            slc_coreg_task.trigger_resume(self.reprocess_failed)
+
+            # Yield pre-requisite tasks first
+            log.info("Issuing pre-requisite reprocessing tasks")
+            self.triggered_path().touch()
+            yield prerequisite_tasks
+
+        elif not ifgs_task.output().exists():
+            # and then finally resume the normal processing pipeline
+            log.info("Issuing resumption of standard pipeline tasks")
+            yield ifgs_task
+
+        with self.output().open("w") as f:
+            f.write("")
+
 
 class ARD(luigi.WrapperTask):
     """
@@ -1731,7 +1800,7 @@ class ARD(luigi.WrapperTask):
         # generate (just once) a unique token for tasks that need to re-run
         if self.resume:
             if not hasattr(self, 'resume_token'):
-                self.resume_token = str(datetime.datetime.now())
+                self.resume_token = datetime.datetime.now().strftime("%Y%m%d-%H%M")
 
         # Coregistration processing
         ard_tasks = []
@@ -1845,88 +1914,7 @@ class ARD(luigi.WrapperTask):
                     "multi_look": self.multi_look,
                     "burst_data_csv": pjoin(outdir, f"{track}_{frame}_burst_data.csv"),
                     "cleanup": self.cleanup,
-                    "resume": self.resume,
-                    "reprocess_failed": self.reprocess_failed,
                 }
-
-                # Load the gamma proc config file
-                with open(str(self.proc_file), 'r') as proc_fileobj:
-                    proc_config = ProcConfig.from_file(proc_fileobj, outdir)
-
-                slc_coreg_task = CreateCoregisterSlaves(**kwargs)
-                ifgs_task = CreateProcessIFGs(**kwargs)
-
-                # Trigger resumption if required
-                if False: # self.resume:
-                    log.info(f"Resuming {tfs}")
-
-                    # Trigger IFGs resume, this will tell us what pairs are being reprocessed
-                    reprocessed_ifgs = ifgs_task.trigger_resume(self.reprocess_failed)
-                    log.info("Re-processing IFGs", list=reprocessed_ifgs)
-
-                    # We need to verify the SLC inputs still exist for these IFGs... if not, reprocess
-                    reprocessed_slc_coregs = []
-
-                    for master_date, slave_date in reprocessed_ifgs:
-                        ic = IfgFileNames(proc_config, Path(vector_file), master_date, slave_date, outdir)
-
-                        # We re-use ifg's own input handling to detect this
-                        try:
-                            validate_ifg_input_files(ic)
-                        except ProcessIfgException:
-                            pol = proc_config.polarisation
-                            status_out = f"{master_date}_{pol}_{slave_date}_{pol}_coreg_logs.out"
-                            status_out = Path(workdir) / status_out
-
-                            if status_out.exists():
-                                status_out.unlink()
-
-                            # Note: We intentionally don't clean master/slave SLC dirs as they
-                            # contain files besides coreg we don't want to remove. SLC coreg
-                            # can be safely re-run over it's existing files deterministically.
-
-                            reprocessed_slc_coregs.append(master_date)
-                            reprocessed_slc_coregs.append(slave_date)
-
-                    reprocessed_slc_coregs = set(reprocessed_slc_coregs)
-
-                    if len(reprocessed_slc_coregs) > 0:
-                        log.info("Re-processing SLC coregs", list=reprocessed_slc_coregs)
-
-                        # Unfortunately if we're missing SLC coregs, we may also need to reprocess the SLC
-                        #
-                        # Note: As the ARD task really only supports all-or-nothing for SLC processing,
-                        # the fact we have ifgs that need reprocessing implies we got well and truly past SLC
-                        # processing successfully in previous run(s) as the (ifgs list / sbas baseline can't
-                        # exist without having completed SLC processing...
-                        #
-                        # so we literally just need to reproduce the SLC files for coreg again, nothing else.
-                        for date in reprocessed_slc_coregs:
-                            missing_slc_inputs = True
-                            # TODO: Check if .slc and .mli files and pars exist or not
-
-                            if missing_slc_inputs:
-                                slc_reprocess = ReprocessSingleSLC(
-                                    proc_file = self.proc_file,
-                                    track = track,
-                                    frame = frame,
-                                    polarization = proc_config.polarisation,
-                                    burst_data_csv = outdir / f"{track}_{frame}_burst_data.csv",
-                                    poeorb_path = self.poeorb_path,
-                                    resorb_path = self.resorb_path,
-                                    scene_date = date,
-                                    ref_master_tab = None,  # FIXME: GH issue #200
-                                    outdir = outdir,
-                                    workdir = workdir,
-                                    # This is to prevent tasks from prior resumes from clashing with
-                                    # future resumes.
-                                    token = self.resume_token
-                                )
-
-                                ard_tasks.append(slc_reprocess)
-
-                    # Finally trigger SLC coreg resumption (which will process related to above)
-                    slc_coreg_task.trigger_resume(self.reprocess_failed)
 
                 if self.resume:
                     ard_tasks.append(TriggerResume(resume_token=self.resume_token, **kwargs))

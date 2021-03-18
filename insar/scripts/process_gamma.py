@@ -1469,13 +1469,6 @@ class CreateProcessIFGs(luigi.Task):
             )
         )
 
-    def requires(self):
-        if self.resume:
-            params = {k:v for k,v in self.get_params()}
-            params['resume_token'] = str(datetime.datetime.now())
-
-            yield TriggerResume(**params)
-
     def trigger_resume(self, reprocess_failed_scenes=True):
         # Load the gamma proc config file
         with open(str(self.proc_file), 'r') as proc_fileobj:
@@ -1605,6 +1598,7 @@ class TriggerResume(luigi.Task):
 
         slc_coreg_task = CreateCoregisterSlaves(**kwargs)
         ifgs_task = CreateProcessIFGs(**kwargs)
+        prerequisite_tasks = []
 
         tfs = self.outdir.name
         log.info(f"Resuming {tfs}")
@@ -1672,12 +1666,15 @@ class TriggerResume(luigi.Task):
                         token = self.resume_token
                     )
 
-                    tasks.append(slc_reprocess)
+                    prerequisite_tasks.append(slc_reprocess)
 
         # Finally trigger SLC coreg resumption (which will process related to above)
         slc_coreg_task.trigger_resume(self.reprocess_failed)
 
-        yield tasks
+        # Yield pre-requisite tasks first
+        yield prerequisite_tasks
+        # and then finally resume the normal processing pipeline
+        yield ifgs_task
 
 class ARD(luigi.WrapperTask):
     """
@@ -1926,7 +1923,10 @@ class ARD(luigi.WrapperTask):
                     # Finally trigger SLC coreg resumption (which will process related to above)
                     slc_coreg_task.trigger_resume(self.reprocess_failed)
 
-                ard_tasks.append(CreateProcessIFGs(**kwargs))
+                if self.resume:
+                    ard_tasks.append(TriggerResume(resume_token=self.resume_token, **kwargs))
+                else:
+                    ard_tasks.append(CreateProcessIFGs(**kwargs))
 
         yield ard_tasks
 

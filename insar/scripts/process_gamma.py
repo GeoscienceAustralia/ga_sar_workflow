@@ -1322,12 +1322,7 @@ class CreateCoregisterSlaves(luigi.Task):
         ml_file = Path(self.workdir).joinpath(
             f"{self.track}_{self.frame}_createmultilook_status_logs.out"
         )
-        with open(ml_file, "r") as src:
-            for line in src.readlines():
-                if line.startswith("rlks"):
-                    rlks = int(line.strip().split(":")[1])
-                if line.startswith("alks"):
-                    alks = int(line.strip().split(":")[1])
+        rlks, alks = read_rlks_alks(ml_file)
 
         master_scene = master_scene.strftime(__DATE_FMT__)
         master_slc_prefix = (

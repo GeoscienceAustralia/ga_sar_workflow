@@ -1830,6 +1830,8 @@ class ARD(luigi.WrapperTask):
         default=False, significant=False, parsing=luigi.BoolParameter.EXPLICIT_PARSING
     )
 
+    _first_call = True
+
     def requires(self):
         log = STATUS_LOGGER.bind(vector_file_list=Path(self.vector_file_list).stem)
 
@@ -1909,7 +1911,7 @@ class ARD(luigi.WrapperTask):
 
                 # If we haven't been told to resume, double check our out/work dirs are empty
                 # so we don't over-write existing job data!
-                if not self.resume:
+                if not self.resume and _first_call:
                     slc_dir = outdir / __SLC__
                     ifg_dir = outdir / __IFG__
 
@@ -1963,6 +1965,7 @@ class ARD(luigi.WrapperTask):
                 else:
                     ard_tasks.append(CreateProcessIFGs(**kwargs))
 
+        _first_call = False
         yield ard_tasks
 
     def run(self):

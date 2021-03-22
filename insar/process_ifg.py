@@ -6,7 +6,7 @@ from PIL import Image
 import numpy as np
 
 import structlog
-import structlog.contextvars
+import structlog.threadlocal
 from insar.project import ProcConfig, IfgFileNames, DEMFileNames
 from insar.coreg_utils import read_land_center_coords
 import insar.constant as const
@@ -81,9 +81,9 @@ def run_workflow(
     ifg_width: int
 ):
     # Re-bind thread local context to IFG processing state
-    structlog.contextvars.clear_contextvars()
+    structlog.threadlocal.clear_threadlocal()
     master_date, slave_date = ic.ifg_dir.name.split('-')
-    structlog.contextvars.bind_contextvars(
+    structlog.threadlocal.bind_threadlocal(
         task="IFG processing",
         ifg_dir=ic.ifg_dir,
         master_date=master_date,

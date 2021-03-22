@@ -160,7 +160,7 @@ class CoregisterSlc:
         self.slave_lt = None
         self.accuracy_warning = self.out_dir / "ACCURACY_WARNING"
 
-        self.log = _LOG.bind(task="SLC coregistration", slc_slave=self.slc_slave, slc_master=self.slc_master, list_idx=self.list_idx)
+        self.log = _LOG.bind(slc_slave=self.slc_slave, slc_master=self.slc_master, list_idx=self.list_idx)
 
         self.r_dem_master_mli_par = self.r_dem_master_mli.with_suffix(".mli.par")
         if not self.r_dem_master_mli_par.exists():
@@ -1522,6 +1522,17 @@ class CoregisterSlc:
 
     def main(self):
         """Main method to execute methods sequence of methods need for master-slave coregistration."""
+
+        # Re-bind thread local context to IFG processing state
+        structlog.contextvars.clear_contextvars()
+        master_date, slave_date = ic.ifg_dir.name.split('-')
+        structlog.contextvars.bind_contextvars(
+            task="SLC coregistration",
+            slc_dir=self.out_dir,
+            master_date=self.master_date,
+            slave_date=self.slave_date
+        )
+
         with working_directory(self.out_dir):
             self.set_tab_files()
             self.get_lookup()

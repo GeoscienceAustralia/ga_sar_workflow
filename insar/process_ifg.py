@@ -79,6 +79,16 @@ def run_workflow(
     tc: TempFileConfig,
     ifg_width: int
 ):
+    # Re-bind thread local context to IFG processing state
+    structlog.contextvars.clear_contextvars()
+    master_date, slave_date = ic.ifg_dir.name.split('-')
+    structlog.contextvars.bind_contextvars(
+        task="IFG processing",
+        ifg_dir=ic.ifg_dir,
+        master_date=master_date,
+        slave_date=slave_date
+    )
+
     _LOG.info("Running IFG workflow", ifg_width=int(ifg_width))
 
     if not ic.ifg_dir.exists():

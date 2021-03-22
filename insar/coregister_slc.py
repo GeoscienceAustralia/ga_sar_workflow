@@ -13,6 +13,7 @@ from pathlib import Path
 import re
 import shutil
 import structlog
+import structlog.contextvars
 from PIL import Image
 import numpy as np
 import math

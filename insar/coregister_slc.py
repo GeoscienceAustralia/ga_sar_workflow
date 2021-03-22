@@ -13,7 +13,6 @@ from pathlib import Path
 import re
 import shutil
 import structlog
-import structlog.threadlocal
 from PIL import Image
 import numpy as np
 import math

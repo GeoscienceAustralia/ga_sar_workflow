@@ -1820,8 +1820,6 @@ class ARD(luigi.WrapperTask):
         default=False, significant=False, parsing=luigi.BoolParameter.EXPLICIT_PARSING
     )
 
-    _first_call = True
-
     def requires(self):
         log = STATUS_LOGGER.bind(vector_file_list=Path(self.vector_file_list).stem)
 
@@ -1899,21 +1897,6 @@ class ARD(luigi.WrapperTask):
 
                 self.output_dirs.append(outdir)
 
-                # If we haven't been told to resume, double check our out/work dirs are empty
-                # so we don't over-write existing job data!
-                if not self.resume and _first_call:
-                    slc_dir = outdir / __SLC__
-                    ifg_dir = outdir / __IFG__
-
-                    if slc_dir.exists() and len(list(slc_dir.iterdir())) > 0:
-                        raise ValueError(f'Output directory for {tfs} has existing SLC files!')
-
-                    if ifg_dir.exists() and len(list(ifg_dir.iterdir())) > 0:
-                        raise ValueError(f'Output directory for {tfs} has existing IFG files!')
-
-                    if workdir.exists() and len(list(workdir.iterdir())) > 0:
-                        raise ValueError(f'Work directory for {tfs} not empty!')
-
                 os.makedirs(outdir / 'lists', exist_ok=True)
                 os.makedirs(workdir, exist_ok=True)
 
@@ -1955,7 +1938,6 @@ class ARD(luigi.WrapperTask):
                 else:
                     ard_tasks.append(CreateProcessIFGs(**kwargs))
 
-        _first_call = False
         yield ard_tasks
 
     def run(self):

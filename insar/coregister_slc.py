@@ -1543,7 +1543,6 @@ class CoregisterSlc:
 
         # Re-bind thread local context to IFG processing state
         structlog.threadlocal.clear_threadlocal()
-        master_date, slave_date = ic.ifg_dir.name.split('-')
         structlog.threadlocal.bind_threadlocal(
             task="SLC coregistration",
             slc_dir=self.out_dir,

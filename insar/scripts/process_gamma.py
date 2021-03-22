@@ -1287,7 +1287,7 @@ class CreateCoregisterSlaves(luigi.Task):
                 status_out.unlink()
 
     def run(self):
-        log = log.bind(track_frame=f"{self.track}_{self.frame}")
+        log = STATUS_LOGGER.bind(track_frame=f"{self.track}_{self.frame}")
         log.info("co-register master-slaves task")
 
         # Load the gamma proc config file

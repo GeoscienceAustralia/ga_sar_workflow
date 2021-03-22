@@ -6,7 +6,6 @@ from PIL import Image
 import numpy as np
 
 import structlog
-import structlog.threadlocal
 from insar.project import ProcConfig, IfgFileNames, DEMFileNames
 from insar.coreg_utils import read_land_center_coords
 import insar.constant as const

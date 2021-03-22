@@ -1539,10 +1539,7 @@ class ARD(luigi.WrapperTask):
 
 def run():
     with open("insar-log.jsonl", "w") as fobj:
-        structlog.configure(
-            processors=[structlog.threadlocal.merge_threadlocal],
-            logger_factory=structlog.PrintLoggerFactory(fobj)
-        )
+        structlog.configure(logger_factory=structlog.PrintLoggerFactory(fobj))
         luigi.run()
 
 

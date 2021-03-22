@@ -61,10 +61,12 @@ def ic_mock():
 
     mock_path = functools.partial(mock.MagicMock, spec=pathlib.Path)
 
-    # Explicitly set a bunch of path objecst (as the mocked Path objects don't implement / or + correctly)
-    ic.ifg_dir = pathlib.Path(test_dir.name)
-    ic.master_dir = ic.ifg_dir / '20151103'
-    ic.slave_dir = ic.ifg_dir / '20151127'
+    # Explicitly set a bunch of path objecst (as the mocked Path objects don't
+    # implement / or + correctly).   Note: the unit tests are all mocked, the
+    # directories don't have to have valid files or in some cases even exist...
+    ic.ifg_dir = pathlib.Path(test_dir.name).parent / '20151103-20151127'
+    ic.master_dir = pathlib.Path(test_dir.name) / '20151103'
+    ic.slave_dir = pathlib.Path(test_dir.name) / '20151127'
     ic.ifg_unw_geocode_bmp = ic.ifg_dir / 'ifg_unw_geocode.bmp'
     ic.ifg_flat_geocode_bmp = ic.ifg_dir / 'ifg_flat_geocode.bmp'
     ic.ifg_unw_geocode_png = ic.ifg_dir / "test_geo_unw.png"

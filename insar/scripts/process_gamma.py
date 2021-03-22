@@ -1915,8 +1915,14 @@ class ARD(luigi.WrapperTask):
                 # If we haven't been told to resume, double check our out/work dirs are empty
                 # so we don't over-write existing job data!
                 if not self.resume:
-                    if outdir.exists() and len(list(outdir.iterdir())) > 0:
-                        raise ValueError(f'Output directory for {tfs} is not empty!')
+                    slc_dir = outdir / __SLC__
+                    ifg_dir = outdir / __IFG__
+
+                    if slc_dir.exists() and len(list(slc_dir.iterdir())) > 0:
+                        raise ValueError(f'Output directory for {tfs} has existing SLC files!')
+
+                    if ifg_dir.exists() and len(list(ifg_dir.iterdir())) > 0:
+                        raise ValueError(f'Output directory for {tfs} has existing IFG files!')
 
                     if workdir.exists() and len(list(workdir.iterdir())) > 0:
                         raise ValueError(f'Work directory for {tfs} not empty!')

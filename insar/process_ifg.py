@@ -124,9 +124,10 @@ def validate_ifg_input_files(ic: IfgFileNames):
         missing_files.append(ic.r_slave_mli)
 
     # Raise exception with additional info on missing_files
-    ex = ProcessIfgException(msg)
-    ex.missing_files = missing_files
-    raise ex
+    if missing_files:
+        ex = ProcessIfgException(msg)
+        ex.missing_files = missing_files
+        raise ex
 
 
 def get_ifg_width(r_master_mli_par: io.IOBase):

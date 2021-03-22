@@ -180,6 +180,7 @@ class CoregisterSlc:
                 pathname=str(self.r_dem_master_mli_par),
             )
 
+        # Note: the slc_master dir is the correct directory / this matches the bash
         self.r_dem_master_slc_par = self.slc_master.with_suffix(".slc.par")
         self.r_dem_master_slc_par = self.r_dem_master_slc_par.parent / ("r" + self.r_dem_master_slc_par.name)
         if not self.r_dem_master_slc_par.exists():

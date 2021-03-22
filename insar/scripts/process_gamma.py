@@ -266,6 +266,12 @@ class ListParameter(luigi.Parameter):
         return arguments.split(",")
 
 
+def _forward_kwargs(cls, kwargs):
+    ids = cls.get_param_names()
+
+    return {k:v for k,v in kwargs.items() if k in ids}
+
+
 def mk_clean_dir(path: Path):
     # Clear directory in case it has incomplete data from an interrupted run we've resumed
     if path.exists():
@@ -318,12 +324,7 @@ class SlcDataDownload(luigi.Task):
 
         try:
             download_obj.slc_download(outdir)
-<<<<<<< Updated upstream
         except (zipfile.BadZipFile, zlib.error):
-=======
-        except:
-            log.error("SLC download failed with exception", exc_info=True)
->>>>>>> Stashed changes
             failed = True
         finally:
             with self.output().open("w") as f:
@@ -811,10 +812,12 @@ class ReprocessSingleSLC(luigi.Task):
     resume_token = luigi.Parameter()
 
     def output_path(self):
-        return f"{self.track}_{self.frame}_reprocess_{self.scene_date}_{self.polarization}_{self.resume_token}_status.out"
+        return Path(
+            f"{self.track}_{self.frame}_reprocess_{self.scene_date}_{self.polarization}_{self.resume_token}_status.out"
+        )
 
     def progress_path(self):
-        return (Path(self.workdir) / self.output_path()).with_suffix(".progress")
+        return Path(self.workdir) / self.output_path().with_suffix(".progress")
 
     def output(self):
         return luigi.LocalTarget(self.output_path())
@@ -872,9 +875,9 @@ class ReprocessSingleSLC(luigi.Task):
             self.set_progress("download_tasks")
             yield download_tasks
 
-        slc_dir = Path(self.outdir).joinpath(__SLC__) / self.scene_date
-        slc = slc_dir / SlcFilenames.SLC_FILENAME.value.format(self.scene_date, self.polarization.upper())
-        slc_par = slc_dir / SlcFilenames.SLC_PAR_FILENAME.value.format(self.scene_date, self.polarization.upper())
+        slc_dir = Path(self.outdir).joinpath(__SLC__)
+        slc = slc_dir / self.scene_date / SlcFilenames.SLC_FILENAME.value.format(self.scene_date, self.polarization.upper())
+        slc_par = slc_dir / self.scene_date / SlcFilenames.SLC_PAR_FILENAME.value.format(self.scene_date, self.polarization.upper())
 
         if self.progress() == "download_tasks":
             slc_task = ProcessSlc(
@@ -1104,7 +1107,7 @@ class CoregisterDemMaster(luigi.Task):
 
     multi_look = luigi.IntParameter()
     master_scene_polarization = luigi.Parameter(default="VV")
-    master_scene = luigi.Parameter(default=None)
+    master_scene = luigi.OptionalParameter(default=None)
 
     def output(self):
         return luigi.LocalTarget(
@@ -1248,7 +1251,7 @@ class CreateCoregisterSlaves(luigi.Task):
 
     proc_file = luigi.Parameter()
     master_scene_polarization = luigi.Parameter(default="VV")
-    master_scene = luigi.Parameter(default=None)
+    master_scene = luigi.OptionalParameter(default=None)
 
     def output(self):
         return luigi.LocalTarget(
@@ -1257,7 +1260,9 @@ class CreateCoregisterSlaves(luigi.Task):
             )
         )
 
-    def trigger_resume(self, reprocess_failed_scenes=True):
+    def trigger_resume(self, reprocess_dates, reprocess_failed_scenes):
+        log = STATUS_LOGGER.bind(track_frame=f"{self.track}_{self.frame}")
+
         # Remove our output to re-trigger this job, which will trigger CoregisterSlave
         # for all dates, however only those missing outputs will run.
         output = self.output()
@@ -1265,17 +1270,24 @@ class CreateCoregisterSlaves(luigi.Task):
         if output.exists():
             output.remove()
 
+        # Remove completion status files for any failed SLC coreg tasks
         if reprocess_failed_scenes:
-            # Remove completion status files for any failed SLC coreg tasks
             for status_out in Path(self.workdir).glob("*_coreg_logs.out"):
                 with status_out.open("r") as file:
                     contents = file.read().splitlines()
 
                 if len(contents) > 0 and "FAILED" in contents[0]:
+                    log.info(f"Resuming coreg ({status_out.name}) because of FAILED processing")
                     status_out.unlink()
 
+        # Remove completion status files for any we're asked to
+        for date in reprocess_dates:
+            for status_out in Path(self.workdir).glob(f"*_*_{date}_*_coreg_logs.out"):
+                log.info(f"Resuming coreg ({status_out.name}) because of dependency")
+                status_out.unlink()
+
     def run(self):
-        log = STATUS_LOGGER.bind(track_frame=f"{self.track}_{self.frame}")
+        log = log.bind(track_frame=f"{self.track}_{self.frame}")
         log.info("co-register master-slaves task")
 
         # Load the gamma proc config file
@@ -1490,6 +1502,8 @@ class CreateProcessIFGs(luigi.Task):
         )
 
     def trigger_resume(self, reprocess_failed_scenes=True):
+        log = STATUS_LOGGER.bind(track_frame=f"{self.track}_{self.frame}")
+
         # Load the gamma proc config file
         with open(str(self.proc_file), 'r') as proc_fileobj:
             proc_config = ProcConfig.from_file(proc_fileobj, self.outdir)
@@ -1516,7 +1530,11 @@ class CreateProcessIFGs(luigi.Task):
                 ic = IfgFileNames(proc_config, Path(self.vector_file), master_date, slave_date, self.outdir)
 
                 # Check for existence of filtered coh geocode files, if neither exist we need to re-run.
-                if not ic.ifg_filt_coh_geocode_out.exists() and not ic.ifg_filt_coh_geocode_out_tiff.exists():
+                ifg_filt_coh_geo_out = ic.ifg_dir / ic.ifg_filt_coh_geocode_out
+                ifg_filt_coh_geo_out_tiff = ic.ifg_dir / ic.ifg_filt_coh_geocode_out_tiff
+
+                if not ic.ifg_filt_coh_geocode_out.exists() and not ifg_filt_coh_geo_out_tiff.exists():
+                    log.info(f"Resuming IFG ({master_date},{slave_date}) because of missing geocode outputs")
                     reprocess_pairs.append((master_date, slave_date))
 
         # Remove completion status files for any failed SLC coreg tasks.
@@ -1530,6 +1548,8 @@ class CreateProcessIFGs(luigi.Task):
 
                 if len(contents) > 0 and "FAILED" in contents[0]:
                     master_date, slave_date = re.split("[-_]", status_out.stem)[2:3]
+
+                    log.info(f"Resuming IFG ({master_date},{slave_date}) because of FAILED processing")
                     reprocess_pairs.append((master_date, slave_date))
 
         reprocess_pairs = set(reprocess_pairs)
@@ -1541,11 +1561,6 @@ class CreateProcessIFGs(luigi.Task):
             # Remove Luigi status file
             if status_file.exists():
                 status_file.unlink()
-
-            # Clean output dir
-            # redundant?  will happen by the task itself because status file is gone
-            #ic = IfgFileNames(proc_config, Path(self.vector_file), master_date, slave_date, self.outdir)
-            #mk_clean_dir(ic.ifg_dir)
 
         return reprocess_pairs
 
@@ -1589,6 +1604,8 @@ class TriggerResume(luigi.Task):
     track = luigi.Parameter()
     frame = luigi.Parameter()
 
+    master_scene = luigi.OptionalParameter(default=None)
+
     # Note: This task needs to take all the parameters the others do,
     # so we can re-create the other tasks for resuming
     proc_file = luigi.Parameter()
@@ -1613,10 +1630,13 @@ class TriggerResume(luigi.Task):
     resume_token = luigi.Parameter()
 
     def output_path(self):
-        return f"{self.track}_{self.frame}_resume_pipeline_{self.resume_token}_status.out"
+        return Path(f"{self.track}_{self.frame}_resume_pipeline_{self.resume_token}_status.out")
+
+    def output(self):
+        return luigi.LocalTarget(Path(self.workdir) / self.output_path())
 
     def triggered_path(self):
-        return Path(self.output_path()).with_suffix(".triggered")
+        return Path(self.workdir) / self.output_path().with_suffix(".triggered")
 
     def run(self):
         log = STATUS_LOGGER.bind(outdir=self.outdir, workdir=self.workdir)
@@ -1676,10 +1696,12 @@ class TriggerResume(luigi.Task):
                 # We re-use ifg's own input handling to detect this
                 try:
                     validate_ifg_input_files(ic)
-                except ProcessIfgException:
+                except ProcessIfgException as e:
                     pol = proc_config.polarisation
                     status_out = f"{master_date}_{pol}_{slave_date}_{pol}_coreg_logs.out"
                     status_out = Path(self.workdir) / status_out
+
+                    log.info("Triggering SLC reprocessing as coregistrations missing", missing=e.missing_files)
 
                     if status_out.exists():
                         status_out.unlink()
@@ -1703,7 +1725,7 @@ class TriggerResume(luigi.Task):
                 # processing successfully in previous run(s) as the (ifgs list / sbas baseline can't
                 # exist without having completed SLC processing...
                 #
-                # so we literally just need to reproduce the SLC files for coreg again, nothing else.
+                # so we literally just need to reproduce the DEM+SLC files for coreg again.
                 for date in reprocessed_slc_coregs:
                     missing_slc_inputs = True
                     # TODO: Check if .slc and .mli files and pars exist or not
@@ -1728,15 +1750,29 @@ class TriggerResume(luigi.Task):
 
                         prerequisite_tasks.append(slc_reprocess)
 
+                # Trigger DEM tasks if we're re-processing SLC coreg as well
+                #
+                # Note: We don't add this to pre-requisite tasks, it's implied by
+                # CreateCoregisterSlaves's @requires
+                dem_task = CreateGammaDem(**_forward_kwargs(CreateGammaDem, kwargs))
+                coreg_dem_task = CoregisterDemMaster(**_forward_kwargs(CoregisterDemMaster, kwargs))
+
+                if dem_task.output().exists():
+                    dem_task.output().remove()
+
+                if coreg_dem_task.output().exists():
+                    coreg_dem_task.output().remove()
+
             # Finally trigger SLC coreg resumption (which will process related to above)
-            slc_coreg_task.trigger_resume(self.reprocess_failed)
+            slc_coreg_task.trigger_resume(reprocessed_slc_coregs, self.reprocess_failed)
+            self.triggered_path().touch()
 
             # Yield pre-requisite tasks first
-            log.info("Issuing pre-requisite reprocessing tasks")
-            self.triggered_path().touch()
-            yield prerequisite_tasks
+            if prerequisite_tasks:
+                log.info("Issuing pre-requisite reprocessing tasks")
+                yield prerequisite_tasks
 
-        elif not ifgs_task.output().exists():
+        if not ifgs_task.output().exists():
             # and then finally resume the normal processing pipeline
             log.info("Issuing resumption of standard pipeline tasks")
             yield ifgs_task
@@ -1869,10 +1905,10 @@ class ARD(luigi.WrapperTask):
                 # If we haven't been told to resume, double check our out/work dirs are empty
                 # so we don't over-write existing job data!
                 if not self.resume:
-                    if len(list(outdir.iterdir())) > 0:
+                    if outdir.exists() and len(list(outdir.iterdir())) > 0:
                         raise ValueError(f'Output directory for {tfs} is not empty!')
 
-                    if len(list(workdir.iterdir())) > 0:
+                    if workdir.exists() and len(list(workdir.iterdir())) > 0:
                         raise ValueError(f'Work directory for {tfs} not empty!')
 
                 os.makedirs(outdir / 'lists', exist_ok=True)

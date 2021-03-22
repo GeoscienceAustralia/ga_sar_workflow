@@ -13,7 +13,7 @@ from pathlib import Path
 import re
 import shutil
 import structlog
-import structlog.contextvars
+import structlog.threadlocal
 from PIL import Image
 import numpy as np
 
@@ -1525,9 +1525,9 @@ class CoregisterSlc:
         """Main method to execute methods sequence of methods need for master-slave coregistration."""
 
         # Re-bind thread local context to IFG processing state
-        structlog.contextvars.clear_contextvars()
+        structlog.threadlocal.clear_threadlocal()
         master_date, slave_date = ic.ifg_dir.name.split('-')
-        structlog.contextvars.bind_contextvars(
+        structlog.threadlocal.bind_threadlocal(
             task="SLC coregistration",
             slc_dir=self.out_dir,
             master_date=self.master_date,

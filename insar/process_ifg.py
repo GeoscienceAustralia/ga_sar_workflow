@@ -6,7 +6,6 @@ from PIL import Image
 import numpy as np
 
 import structlog
-import structlog.threadlocal
 from insar.project import ProcConfig, IfgFileNames, DEMFileNames
 import insar.constant as const
 

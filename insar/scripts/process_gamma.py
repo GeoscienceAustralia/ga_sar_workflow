@@ -1711,7 +1711,6 @@ class TriggerResume(luigi.Task):
             reprocessed_slc_coregs = set(reprocessed_slc_coregs)
 
             if len(reprocessed_slc_coregs) > 0:
-                log.info("Re-processing SLC coregs", list=reprocessed_slc_coregs)
                 # Unfortunately if we're missing SLC coregs, we may also need to reprocess the SLC
                 #
                 # Note: As the ARD task really only supports all-or-nothing for SLC processing,
@@ -1731,6 +1730,8 @@ class TriggerResume(luigi.Task):
 
                 # Trigger SLC processing for master scene (for master DEM coreg)
                 reprocessed_slc_coregs.add(master_scene.strftime(__DATE_FMT__))
+
+                log.info("Re-processing SLC coregs", list=reprocessed_slc_coregs)
 
                 # Trigger SLC processing for other scenes (for SLC coreg)
                 for date in reprocessed_slc_coregs:

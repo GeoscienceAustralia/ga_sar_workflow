@@ -1730,7 +1730,7 @@ class TriggerResume(luigi.Task):
                     )
 
                 # Trigger SLC processing for master scene (for master DEM coreg)
-                reprocessed_slc_coregs.add(master_scene)
+                reprocessed_slc_coregs.add(master_scene.strftime(__DATE_FMT__))
 
                 # Trigger SLC processing for other scenes (for SLC coreg)
                 for date in reprocessed_slc_coregs:

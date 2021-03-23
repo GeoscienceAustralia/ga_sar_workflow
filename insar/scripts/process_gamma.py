@@ -1295,10 +1295,8 @@ class CreateCoregisterSlaves(luigi.Task):
                 log.info(f"Resuming coreg ({status_out.name}) because of dependency")
                 status_out.unlink()
 
-    def run(self):
-        log = STATUS_LOGGER.bind(track_frame=f"{self.track}_{self.frame}")
-        log.info("co-register master-slaves task")
 
+    def get_base_kwargs(self):
         # Load the gamma proc config file
         with open(str(self.proc_file), "r") as proc_fileobj:
             proc_config = ProcConfig.from_file(proc_fileobj, self.outdir)
@@ -1309,22 +1307,6 @@ class CreateCoregisterSlaves(luigi.Task):
         if master_scene is None:
             master_scene = calculate_master(
                 [dt.strftime(__DATE_FMT__) for dt, *_ in slc_frames]
-            )
-
-        coreg_tree = create_slave_coreg_tree(
-            master_scene, [dt for dt, _, _ in slc_frames]
-        )
-
-        master_polarizations = [
-            pols for dt, _, pols in slc_frames if dt.date() == master_scene
-        ]
-        assert len(master_polarizations) == 1
-
-        # TODO if master polarization data does not exist in SLC archive then
-        # TODO choose other polarization or raise Error.
-        if self.master_scene_polarization not in master_polarizations[0]:
-            raise ValueError(
-                f"{self.master_scene_polarization}  not available in SLC data for {master_scene}"
             )
 
         # get range and azimuth looked values
@@ -1366,6 +1348,51 @@ class CreateCoregisterSlaves(luigi.Task):
             "workdir": Path(self.workdir),
         }
 
+        return kwargs
+
+    def run(self):
+        log = STATUS_LOGGER.bind(track_frame=f"{self.track}_{self.frame}")
+        log.info("co-register master-slaves task")
+
+        # Load the gamma proc config file
+        with open(str(self.proc_file), "r") as proc_fileobj:
+            proc_config = ProcConfig.from_file(proc_fileobj, self.outdir)
+
+        slc_frames = get_scenes(self.burst_data_csv)
+
+        master_scene = self.master_scene
+        if master_scene is None:
+            master_scene = calculate_master(
+                [dt.strftime(__DATE_FMT__) for dt, *_ in slc_frames]
+            )
+
+        master_polarizations = [
+            pols for dt, _, pols in slc_frames if dt.date() == master_scene
+        ]
+        assert len(master_polarizations) == 1
+
+        # TODO if master polarization data does not exist in SLC archive then
+        # TODO choose other polarization or raise Error.
+        if self.master_scene_polarization not in master_polarizations[0]:
+            raise ValueError(
+                f"{self.master_scene_polarization}  not available in SLC data for {master_scene}"
+            )
+
+        # get range and azimuth looked values
+        ml_file = Path(self.workdir).joinpath(
+            f"{self.track}_{self.frame}_createmultilook_status_logs.out"
+        )
+        rlks, alks = read_rlks_alks(ml_file)
+
+        master_scene = master_scene.strftime(__DATE_FMT__)
+        master_slc_prefix = (
+            f"{master_scene}_{str(self.master_scene_polarization).upper()}"
+        )
+
+        slc_master_dir = Path(pjoin(self.outdir, __SLC__, master_scene))
+
+        kwargs = self.get_base_kwargs()
+
         slave_coreg_jobs = []
 
         # need to account for master scene with polarization different than
@@ -1380,6 +1407,10 @@ class CreateCoregisterSlaves(luigi.Task):
                 f"{master_slc_prefix}_{rlks}rlks.mli"
             )
             slave_coreg_jobs.append(CoregisterSlave(**kwargs))
+
+        coreg_tree = create_slave_coreg_tree(
+            master_scene, [dt for dt, _, _ in slc_frames]
+        )
 
         for list_index, list_dates in enumerate(coreg_tree):
             list_index += 1  # list index is 1-based
@@ -1719,6 +1750,21 @@ class TriggerResume(luigi.Task):
 
                     reprocessed_slc_coregs.append(master_date)
                     reprocessed_slc_coregs.append(slave_date)
+
+                    # Add tertiary scene (if any)
+                    for slc_scene in [master_date, slave_date]:
+                        coreg_kwargs = slc_coreg_task.get_base_kwargs()
+
+                        slave_dir = Path(self.outdir) / __SLC__ / slc_scene
+                        slave_slc_prefix = f"{slc_scene}_{pol}"
+                        coreg_kwargs["slc_slave"] = slave_dir / f"{slave_slc_prefix}.slc"
+                        coreg_kwargs["slave_mli"] = slave_dir / f"{slave_slc_prefix}_{rlks}rlks.mli"
+                        coreg_task = CoregisterSlave(**coreg_kwargs)
+                        tertiary_date = coreg_task.get_tertiary_coreg_scene()
+
+                        if tertiary_date:
+                            reprocessed_slc_coregs.append(tertiary_date)
+
 
             reprocessed_slc_coregs = set(reprocessed_slc_coregs)
 

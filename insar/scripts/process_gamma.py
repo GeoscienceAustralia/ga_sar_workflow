@@ -1715,6 +1715,19 @@ class TriggerResume(luigi.Task):
         slc_coreg_task = CreateCoregisterSlaves(**kwargs)
         ifgs_task = CreateProcessIFGs(**kwargs)
 
+        # Read rlks/alks
+        ml_file = Path(self.workdir).joinpath(
+            f"{self.track}_{self.frame}_createmultilook_status_logs.out"
+        )
+
+        if ml_file.exists():
+            rlks, alks = read_rlks_alks(ml_file)
+
+        # But if multilook hasn't been run, we never did IFGs/SLC coreg...
+        # thus we should simply resume the normal pipeline.
+        else:
+            self.triggered_path().touch()
+
         if not self.triggered_path().exists():
             prerequisite_tasks = []
 

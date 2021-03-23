@@ -636,7 +636,17 @@ class CoregisterSlc:
             return (IW1_result, IW2_result, IW3_result)
 
 
-    def get_tertiary_coreg_scene(self):
+    def get_tertiary_coreg_scene(
+        self,
+        slave = None,
+        list_idx = None
+    ):
+        if slave is None:
+            slave = self.slave_date
+
+        if list_idx is None:
+            list_idx = self.list_idx
+
         # slc_slave is something like:
         # /g/data/dz56/insar_initial_processing/T147D_F28S_S1A/SLC/20180220/20180220_VV.slc.par
         list_dir = Path(self.slc_slave).parent.parent.parent / self.proc.list_dir
@@ -644,10 +654,10 @@ class CoregisterSlc:
         coreg_slave = None
 
         # coregister to nearest slave if list_idx is given
-        if self.list_idx == const.NOT_PROVIDED:  # coregister to master
+        if list_idx == const.NOT_PROVIDED:  # coregister to master
             coreg_slave = None
 
-        elif self.list_idx == "0":  # coregister to adjacent slave
+        elif list_idx == "0":  # coregister to adjacent slave
             # get slave position in slaves.list
             # slave_pos=`grep -n $slave $slave_list | cut -f1 -d:`
             slave_pos = self._get_matching_lineno(self.proc.slave_list, slave)
@@ -661,12 +671,12 @@ class CoregisterSlc:
             # coreg_slave=`head -n $coreg_pos $slave_list | tail -1`
             coreg_slave = self._read_line(self.proc.slave_list, coreg_pos)
 
-        elif int(self.list_idx) > 20140000:  # coregister to particular slave
-            coreg_slave = self.list_idx
+        elif int(list_idx) > 20140000:  # coregister to particular slave
+            coreg_slave = list_idx
 
         else:  # coregister to slave image with short temporal baseline
             # take the first/last slave of the previous list for coregistration
-            prev_list_idx = int(self.list_idx) - 1
+            prev_list_idx = int(list_idx) - 1
 
             if int(slave) < int(self.proc.ref_master_scene):
                 # coreg_slave=`head $list_dir/slaves$prev_list_idx.list -n1`

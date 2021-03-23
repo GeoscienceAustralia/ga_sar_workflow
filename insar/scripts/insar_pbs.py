@@ -399,13 +399,7 @@ def ard_insar(
 
     # Assign job names to each node's job
     if job_name:
-        # Note: We can probably remove this, but it's needed right now for compatibility
-        # with existing jobs we need to operate on.
-        if nodes == 1:
-            scattered_jobs = [(job_name, i) for idx, i in enumerate(scattered_tasklist)]
-        else:
-            scattered_jobs = [(f"{job_name}-{idx+1}", i) for idx, i in enumerate(scattered_tasklist)]
-
+        scattered_jobs = [(f"{job_name}-{idx+1}", i) for idx, i in enumerate(scattered_tasklist)]
     else:
         scattered_jobs = [(f"{uuid.uuid4().hex[0:6]}-{idx+1}", i) for idx, i in enumerate(scattered_tasklist)]
 

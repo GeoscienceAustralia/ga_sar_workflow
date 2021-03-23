@@ -1712,7 +1712,6 @@ class TriggerResume(luigi.Task):
 
             if len(reprocessed_slc_coregs) > 0:
                 log.info("Re-processing SLC coregs", list=reprocessed_slc_coregs)
-
                 # Unfortunately if we're missing SLC coregs, we may also need to reprocess the SLC
                 #
                 # Note: As the ARD task really only supports all-or-nothing for SLC processing,
@@ -1721,6 +1720,19 @@ class TriggerResume(luigi.Task):
                 # exist without having completed SLC processing...
                 #
                 # so we literally just need to reproduce the DEM+SLC files for coreg again.
+
+                # Compute master scene
+                master_scene = self.master_scene
+                if master_scene is None:
+                    slc_frames = get_scenes(self.burst_data_csv)
+                    master_scene = calculate_master(
+                        [dt.strftime(__DATE_FMT__) for dt, *_ in slc_frames]
+                    )
+
+                # Trigger SLC processing for master scene (for master DEM coreg)
+                reprocessed_slc_coregs.append(master_scene)
+
+                # Trigger SLC processing for other scenes (for SLC coreg)
                 for date in reprocessed_slc_coregs:
                     missing_slc_inputs = True
                     # TODO: Check if .slc and .mli files and pars exist or not

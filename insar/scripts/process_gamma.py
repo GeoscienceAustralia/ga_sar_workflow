@@ -1755,12 +1755,28 @@ class TriggerResume(luigi.Task):
                     # Add tertiary scene (if any)
                     for slc_scene in [master_date, slave_date]:
                         coreg_kwargs = slc_coreg_task.get_base_kwargs()
+                        list_idx = "-"
+
+                        for list_file_path in (Path(self.outdir) / proc_config.list_dir).glob("slaves*.list"):
+                            list_file_idx = int(list_file_path.stem[6:])
+
+                            with list_file_path.open('r') as file:
+                               list_dates = file.read().splitlines()
+
+                            if slc_scene in list_dates:
+                                if list_file_idx > 1:
+                                    list_idx = list_file_idx
+
+                                break
+
+                        coreg_kwargs["list_idx"] = list_idx
 
                         slave_dir = Path(self.outdir) / __SLC__ / slc_scene
                         slave_slc_prefix = f"{slc_scene}_{pol}"
                         coreg_kwargs["slc_slave"] = slave_dir / f"{slave_slc_prefix}.slc"
                         coreg_kwargs["slave_mli"] = slave_dir / f"{slave_slc_prefix}_{rlks}rlks.mli"
-                        coreg_task = CoregisterSlave(**coreg_kwargs)
+                        coreg_slave = CoregisterSlc(proc=proc_config, **coreg_kwargs)
+
                         tertiary_date = coreg_task.get_tertiary_coreg_scene()
 
                         if tertiary_date:

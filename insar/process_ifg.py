@@ -706,24 +706,24 @@ def calc_unw_thinning(
         thresh_max,
     )
 
-    # Unwrapping with validity mask (Phase unwrapping using Minimum Cost Flow (MCF) triangulation)
+    # Phase unwrapping using Minimum Cost Flow (MCF) and triangulation
     pg.mcf(
-        ic.ifg_filt,  # interferogram
-        ic.ifg_filt_coh,  # weight factors file (float)
-        ic.ifg_mask_thin,  # validity mask file
-        ic.ifg_unw_thin,  # (output) unwrapped phase image (*_unw) (float)
-        ifg_width,  # number of samples per row
-        const.TRIANGULATION_MODE_DELAUNAY,
-        const.NOT_PROVIDED,  # range offset
-        const.NOT_PROVIDED,  # line offset
-        const.NOT_PROVIDED,  # num of range samples
-        const.NOT_PROVIDED,  # nlines
-        pc.ifg_patches_range,  # number of patches (tiles?) in range
-        pc.ifg_patches_azimuth,  # num of lines of section to unwrap
-        const.NOT_PROVIDED,  # overlap between patches in pixels
-        land_center[0] if land_center else pc.ifg_ref_point_range,  # phase reference range offset
-        land_center[1] if land_center else pc.ifg_ref_point_azimuth,  # phase reference azimuth offset
-        const.INIT_FLAG_SET_PHASE_0_AT_INITIAL,
+        ic.ifg_filt,  # interf: interferogram
+        ic.ifg_filt_coh,  # wgt: weight factors file (float)
+        ic.ifg_mask_thin,  # mask: validity mask file
+        ic.ifg_unw_thin,  # unw: (output) unwrapped phase image (*_unw) (float)
+        ifg_width,  # width: number of samples per row
+        const.TRIANGULATION_MODE_DELAUNAY, # tri_mode: triangulation mode, 0: filled triangular mesh 1: Delaunay
+        const.NOT_PROVIDED,  # roff: offset to starting range of section to unwrap (default: 0)
+        const.NOT_PROVIDED,  # loff: offset to starting line of section to unwrap (default: 0)
+        const.NOT_PROVIDED,  # nr: number of range samples of section to unwrap (default(-): width-roff)
+        const.NOT_PROVIDED,  # nlines: number of lines of section to unwrap (default(-): total number of lines -loff)
+        pc.ifg_patches_range,  # npat_r: number of patches (tiles) in range
+        pc.ifg_patches_azimuth,  # npat_az: number of patches (tiles) in azimuth
+        const.NOT_PROVIDED,  # ovrlap: overlap between patches in pixels (>= 7, default(-): 512)
+        land_center[0] if land_center else pc.ifg_ref_point_range,  # r_init: phase reference range offset (default(-): roff)
+        land_center[1] if land_center else pc.ifg_ref_point_azimuth,  # az_init: phase reference azimuth offset (default(-): loff)
+        const.INIT_FLAG_SET_PHASE_0_AT_INITIAL, # init_flag: flag to set phase at reference point (default 0: use initial point phase value)
     )
 
     # Interpolate sparse unwrapped points to give unwrapping model

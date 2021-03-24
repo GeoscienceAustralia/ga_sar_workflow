@@ -504,7 +504,7 @@ class ProcessSlc(luigi.Task):
         )
 
     def run(self):
-        mk_clean_dir(Path(self.slc_dir) / str(self.scene_date))
+        (Path(self.slc_dir) / str(self.scene_date)).mkdir(parents=True, exist_ok=True)
 
         slc_job = SlcProcess(
             str(self.raw_path),
@@ -1280,20 +1280,34 @@ class CreateCoregisterSlaves(luigi.Task):
             output.remove()
 
         # Remove completion status files for any failed SLC coreg tasks
+        triggered_pairs = []
+
         if reprocess_failed_scenes:
             for status_out in Path(self.workdir).glob("*_coreg_logs.out"):
                 with status_out.open("r") as file:
                     contents = file.read().splitlines()
 
                 if len(contents) > 0 and "FAILED" in contents[0]:
-                    log.info(f"Resuming coreg ({status_out.name}) because of FAILED processing")
+                    parts = status_out.name.split("_")
+                    master_date, slave_date = parts[0], parts[2]
+
+                    triggered_pairs.append((master_date, slave_date))
+
+                    log.info(f"Resuming coreg ({master_date}, {slave_date}) because of FAILED processing")
                     status_out.unlink()
 
         # Remove completion status files for any we're asked to
         for date in reprocess_dates:
             for status_out in Path(self.workdir).glob(f"*_*_{date}_*_coreg_logs.out"):
+                parts = status_out.name.split("_")
+                master_date, slave_date = parts[0], parts[2]
+
+                triggered_pairs.append((master_date, slave_date))
+
                 log.info(f"Resuming coreg ({status_out.name}) because of dependency")
                 status_out.unlink()
+
+        return triggered_pairs
 
 
     def get_base_kwargs(self):
@@ -1366,6 +1380,10 @@ class CreateCoregisterSlaves(luigi.Task):
                 [dt.strftime(__DATE_FMT__) for dt, *_ in slc_frames]
             )
 
+        coreg_tree = create_slave_coreg_tree(
+            master_scene, [dt for dt, _, _ in slc_frames]
+        )
+
         master_polarizations = [
             pols for dt, _, pols in slc_frames if dt.date() == master_scene
         ]
@@ -1407,10 +1425,6 @@ class CreateCoregisterSlaves(luigi.Task):
                 f"{master_slc_prefix}_{rlks}rlks.mli"
             )
             slave_coreg_jobs.append(CoregisterSlave(**kwargs))
-
-        coreg_tree = create_slave_coreg_tree(
-            master_scene, [dt for dt, _, _ in slc_frames]
-        )
 
         for list_index, list_dates in enumerate(coreg_tree):
             list_index += 1  # list index is 1-based
@@ -1740,6 +1754,7 @@ class TriggerResume(luigi.Task):
 
             # We need to verify the SLC inputs still exist for these IFGs... if not, reprocess
             reprocessed_slc_coregs = []
+            reprocessed_single_slcs = []
 
             for master_date, slave_date in reprocessed_ifgs:
                 ic = IfgFileNames(proc_config, Path(self.vector_file), master_date, slave_date, self.outdir)
@@ -1766,7 +1781,11 @@ class TriggerResume(luigi.Task):
 
                     # Add tertiary scene (if any)
                     for slc_scene in [master_date, slave_date]:
+                        # Re-use slc coreg task for parameter acquisition
                         coreg_kwargs = slc_coreg_task.get_base_kwargs()
+                        del coreg_kwargs["proc_file"]
+                        del coreg_kwargs["outdir"]
+                        del coreg_kwargs["workdir"]
                         list_idx = "-"
 
                         for list_file_path in (Path(self.outdir) / proc_config.list_dir).glob("slaves*.list"):
@@ -1787,17 +1806,25 @@ class TriggerResume(luigi.Task):
                         slave_slc_prefix = f"{slc_scene}_{pol}"
                         coreg_kwargs["slc_slave"] = slave_dir / f"{slave_slc_prefix}.slc"
                         coreg_kwargs["slave_mli"] = slave_dir / f"{slave_slc_prefix}_{rlks}rlks.mli"
-                        coreg_slave = CoregisterSlc(proc=proc_config, **coreg_kwargs)
+                        coreg_task = CoregisterSlc(proc=proc_config, **coreg_kwargs)
 
                         tertiary_date = coreg_task.get_tertiary_coreg_scene()
 
                         if tertiary_date:
-                            reprocessed_slc_coregs.append(tertiary_date)
+                            reprocessed_single_slcs.append(tertiary_date)
 
+            # Finally trigger SLC coreg resumption (which will process related to above)
+            triggered_slc_coregs = slc_coreg_task.trigger_resume(reprocessed_slc_coregs, self.reprocess_failed)
+            for master_date, slave_date in triggered_slc_coregs:
+                reprocessed_slc_coregs.append(slave_date)
+
+                reprocessed_single_slcs.append(master_date)
+                reprocessed_single_slcs.append(slave_date)
 
             reprocessed_slc_coregs = set(reprocessed_slc_coregs)
+            reprocessed_single_slcs = set(reprocessed_single_slcs) | reprocessed_slc_coregs
 
-            if len(reprocessed_slc_coregs) > 0:
+            if len(reprocessed_single_slcs) > 0:
                 # Unfortunately if we're missing SLC coregs, we may also need to reprocess the SLC
                 #
                 # Note: As the ARD task really only supports all-or-nothing for SLC processing,
@@ -1816,12 +1843,13 @@ class TriggerResume(luigi.Task):
                     )
 
                 # Trigger SLC processing for master scene (for master DEM coreg)
-                reprocessed_slc_coregs.add(master_scene.strftime(__DATE_FMT__))
+                reprocessed_single_slcs.add(master_scene.strftime(__DATE_FMT__))
 
-                log.info("Re-processing SLC coregs", list=reprocessed_slc_coregs)
+                log.info("Re-processing singular SLCs", list=reprocessed_single_slcs)
+                log.info("Re-processing SLC coregistrations", list=reprocessed_slc_coregs)
 
                 # Trigger SLC processing for other scenes (for SLC coreg)
-                for date in reprocessed_slc_coregs:
+                for date in reprocessed_single_slcs:
                     missing_slc_inputs = True
                     # TODO: Check if .slc and .mli files and pars exist or not
 
@@ -1858,8 +1886,6 @@ class TriggerResume(luigi.Task):
                 if coreg_dem_task.output().exists():
                     coreg_dem_task.output().remove()
 
-            # Finally trigger SLC coreg resumption (which will process related to above)
-            slc_coreg_task.trigger_resume(reprocessed_slc_coregs, self.reprocess_failed)
             self.triggered_path().touch()
 
             # Yield pre-requisite tasks first

@@ -1293,7 +1293,7 @@ class CreateCoregisterSlaves(luigi.Task):
 
                     triggered_pairs.append((master_date, slave_date))
 
-                    log.info(f"Resuming coreg ({master_date}, {slave_date}) because of FAILED processing")
+                    log.info(f"Resuming SLC coregistration ({master_date}, {slave_date}) because of FAILED processing")
                     status_out.unlink()
 
         # Remove completion status files for any we're asked to
@@ -1304,7 +1304,7 @@ class CreateCoregisterSlaves(luigi.Task):
 
                 triggered_pairs.append((master_date, slave_date))
 
-                log.info(f"Resuming coreg ({status_out.name}) because of dependency")
+                log.info(f"Resuming SLC coregistration ({master_date}, {slave_date}) because of dependency")
                 status_out.unlink()
 
         return triggered_pairs

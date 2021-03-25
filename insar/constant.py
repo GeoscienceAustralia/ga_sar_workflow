@@ -194,7 +194,6 @@ TEMP_FILE_GLOBS = [
     "*sim0*",
     "*sim1*",
     "*int1*",
-    "*.ras",
 ]
 
 

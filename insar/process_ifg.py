@@ -359,13 +359,13 @@ def generate_final_flattened_ifg(
     )
 
     # Perform unwrapping
-    roff = const.NOT_PROVIDED
-    loff = const.NOT_PROVIDED
+    r_init = const.NOT_PROVIDED
+    az_init = const.NOT_PROVIDED
 
     if land_center is not None:
         # divided by multilook, as that's what ifg_flat10 is
-        roff = int(land_center[0] / const.NUM_RANGE_LOOKS + 0.5)
-        loff = int(land_center[1] / const.NUM_AZIMUTH_LOOKS + 0.5)
+        r_init = int(land_center[0] / const.NUM_RANGE_LOOKS + 0.5)
+        az_init = int(land_center[1] / const.NUM_AZIMUTH_LOOKS + 0.5)
 
     pg.mcf(
         ic.ifg_flat10,
@@ -374,12 +374,15 @@ def generate_final_flattened_ifg(
         tc.ifg_flat10_unw,
         width10,
         const.TRIANGULATION_MODE_DELAUNAY,
-        roff,
-        loff,
+        const.NOT_PROVIDED,
+        const.NOT_PROVIDED,
         const.NOT_PROVIDED,
         const.NOT_PROVIDED,
         const.NUM_RANGE_PATCHES,
         const.NUM_AZIMUTH_PATCHES,
+        const.NOT_PROVIDED,
+        r_init,
+        az_init,
     )
 
     # Oversample unwrapped interferogram to original resolution
@@ -577,7 +580,7 @@ def calc_filt(pc: ProcConfig, ic: IfgFileNames, ifg_width: int):
         ifg_width,
         pc.ifg_exponent,
         pc.ifg_filtering_window,
-        pc.ifg_coherence_window,
+        const.NOT_PROVIDED,  # cc_win
         const.NOT_PROVIDED,  # step
         const.NOT_PROVIDED,  # loff
         const.NOT_PROVIDED,  # nlines
@@ -694,15 +697,15 @@ def calc_unw_thinning(
         ic.ifg_unw_thin,  # (output) unwrapped phase image (*_unw) (float)
         ifg_width,  # number of samples per row
         const.TRIANGULATION_MODE_DELAUNAY,
-        land_center[0] if land_center else const.NOT_PROVIDED,  # range offset
-        land_center[1] if land_center else const.NOT_PROVIDED,  # line offset
+        const.NOT_PROVIDED,  # range offset
+        const.NOT_PROVIDED,  # line offset
         const.NOT_PROVIDED,  # num of range samples
         const.NOT_PROVIDED,  # nlines
         pc.ifg_patches_range,  # number of patches (tiles?) in range
         pc.ifg_patches_azimuth,  # num of lines of section to unwrap
         const.NOT_PROVIDED,  # overlap between patches in pixels
-        pc.ifg_ref_point_range,  # phase reference range offset
-        pc.ifg_ref_point_azimuth,  # phase reference azimuth offset
+        land_center[0] if land_center else pc.ifg_ref_point_range,  # phase reference range offset
+        land_center[1] if land_center else pc.ifg_ref_point_azimuth,  # phase reference azimuth offset
         const.INIT_FLAG_SET_PHASE_0_AT_INITIAL,
     )
 

@@ -152,16 +152,20 @@ def _check_slc_input_data(
 
     checked_data = _check_frame_bursts(master_df, data_dict)
 
-    # Filter checked data
+    # Filter checked data (removing any incomplete scenes)
     if exclude_incomplete:
         excluded_dates = []
 
+        # Check for any swathes missing bursts...
         for dt, swath_dict in checked_data.items():
             for swath, slc_dict in swath_dict.items():
-                if len(slc_dict["missing_master_bursts"]) > 0:
+                is_missing_bursts = len(slc_dict["missing_master_bursts"]) > 0
+
+                if is_missing_bursts:
                     excluded_dates.append(dt)
                     break
 
+        # ... and remove them from the resulting dict
         for dt in excluded_dates:
             del checked_data[dt]
 

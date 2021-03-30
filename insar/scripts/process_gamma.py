@@ -880,7 +880,7 @@ class ReprocessSingleSLC(luigi.Task):
         with self.progress_path().open("w") as file:
             return file.write(value)
 
-    def get_key_outputs():
+    def get_key_outputs(self):
         # Read rlks/alks from multilook status
         mlk_status = workdir / f"{self.track}_{self.frame}_createmultilook_status_logs.out"
         if not mlk_status.exists():

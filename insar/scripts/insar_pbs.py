@@ -43,7 +43,8 @@ gamma_insar ARD \
     --polarization '{json_polar}' \
     --workers {worker} \
     --local-scheduler \
-    --cleanup {cleanup}"""
+    --cleanup {cleanup} \
+    --workflow {workflow}"""
 
 PBS_PACKAGE_TEMPLATE = r"""{pbs_resources}
 
@@ -88,7 +89,8 @@ def _gen_pbs(
     sensor,
     cleanup,
     resume,
-    reprocess_failed
+    reprocess_failed,
+    workflow
 ):
     """
     Generates a pbs scripts
@@ -117,7 +119,8 @@ def _gen_pbs(
             json_polar=json_polar,
             worker=num_workers,
             num_threads=num_threads,
-            cleanup="true" if cleanup else "false"
+            cleanup="true" if cleanup else "false",
+            workflow=workflow
         )
 
         # Append onto the end of this script any optional params
@@ -313,6 +316,13 @@ def _submit_pbs(pbs_scripts, test):
     help="An optional name to assign to the job (instead of a random name by default)",
     required=False
 )
+@click.option(
+    "--workflow",
+    type=click.STRING,
+    help="The workflow to run (backscatter, interferogram)",
+    required=False,
+    default="interferogram"
+)
 def ard_insar(
     proc_file: click.Path,
     taskfile: click.Path,
@@ -338,7 +348,8 @@ def ard_insar(
     sensor: click.STRING,
     resume: click.BOOL,
     reprocess_failed: click.BOOL,
-    job_name: click.STRING
+    job_name: click.STRING,
+    workflow: click.STRING
 ):
     """
     consolidates batch processing job script creation and submission of pbs jobs
@@ -426,7 +437,8 @@ def ard_insar(
         sensor,
         cleanup,
         resume,
-        reprocess_failed
+        reprocess_failed,
+        workflow
     )
 
     _submit_pbs(pbs_scripts, test)

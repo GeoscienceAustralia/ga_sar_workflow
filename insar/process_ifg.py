@@ -85,7 +85,7 @@ def run_workflow(
         ic.ifg_dir.mkdir(parents=True)
 
     with working_directory(ic.ifg_dir):
-        _validate_input_files(ic)
+        validate_ifg_input_files(ic)
 
         # Extract land center coordinates
         land_center = read_land_center_coords(pg, ic.r_slave_mli_par, ic.shapefile)
@@ -107,20 +107,27 @@ def run_workflow(
         do_geocode(pc, ic, dc, tc, ifg_width)
 
 
-def _validate_input_files(ic: IfgFileNames):
-    msg = "Cannot locate resampled {}. Run 'coregister_DEM' then 'coregister_slave SLC' steps for each acquisition"
+def validate_ifg_input_files(ic: IfgFileNames):
+    msg = "Cannot locate input files. Run SLC coregistration steps for each acquisition."
+    missing_files = []
 
     if not ic.r_master_slc.exists():
-        raise ProcessIfgException(msg.format("master SLC"))
+        missing_files.append(ic.r_master_slc)
 
     if not ic.r_master_mli.exists():
-        raise ProcessIfgException(msg.format("master MLI"))
+        missing_files.append(ic.r_master_mli)
 
     if not ic.r_slave_slc.exists():
-        raise ProcessIfgException(msg.format("slave SLC"))
+        missing_files.append(ic.r_slave_slc)
 
     if not ic.r_slave_mli.exists():
-        raise ProcessIfgException(msg.format("slave MLI"))
+        missing_files.append(ic.r_slave_mli)
+
+    # Raise exception with additional info on missing_files
+    if missing_files:
+        ex = ProcessIfgException(msg)
+        ex.missing_files = missing_files
+        raise ex
 
 
 def get_ifg_width(r_master_mli_par: io.IOBase):

@@ -657,6 +657,7 @@ class S1DataDownload(SlcMetadata):
 
         if not acq_orbit_file:
             return
+
         if len(acq_orbit_file) > 1:
             acq_orbit_file = sorted(
                 acq_orbit_file,
@@ -735,27 +736,57 @@ class S1DataDownload(SlcMetadata):
         )
 
         files_download.append(self.manifest_file)
-        for target_file in files_download:
-            path_inzip = os.path.dirname(target_file)
-            path_copy_target = pjoin(output_dir, path_inzip)
-            # Note:
-            #  path_inzip = S1A_IW_SLC__1SDV_20180106T193808_{blah}_8674.SAFE/measurement
-            #  path_copy_target = directory where the target files (tiff) are copied to.
-            self.extract_archive_tofile(
-                target_file=target_file, outdir=path_copy_target, retry=retry
-            )
 
         # get a base slc directory where files will be downloaded
         base_dir = pjoin(output_dir, os.path.commonprefix(files_download))
 
+        try:
+            for target_file in files_download:
+                path_inzip = os.path.dirname(target_file)
+                path_copy_target = pjoin(output_dir, path_inzip)
+                # Note:
+                #  path_inzip = S1A_IW_SLC__1SDV_20180106T193808_{blah}_8674.SAFE/measurement
+                #  path_copy_target = directory where the target files (tiff) are copied to.
+                self.extract_archive_tofile(
+                    target_file=target_file, outdir=path_copy_target, retry=retry
+                )
+
+        # In case of an error during extraction (eg: corrupt zip files), log the failure
+        # and clean up the base directory so there's no partial/incomplete raw data for
+        # the S1 SLC processing to misinterpret.
+        except Exception as e:
+            _LOG.error(
+                "SLC download failed extraction due to exception, cleaning up...",
+                exc_info=True,
+                base_dir=base_dir)
+
+            shutil.rmtree(base_dir)
+            raise e
+
         # download orbit files with precise orbit as first choice
         orbit_source_file = self.get_poeorb_orbit_file()
-        orbit_destination_file = pjoin(base_dir, os.path.basename(orbit_source_file))
 
-        if not orbit_source_file:
+        start_datetime = datetime.datetime.strptime(self.acquisition_start_time, self.dt_fmt_1)
+
+        if orbit_source_file is not None:
+            orbit_destination_file = pjoin(base_dir, os.path.basename(orbit_source_file))
+
+        else:
+            start_date = (start_datetime - datetime.timedelta(days=1)).strftime(self.date_fmt)
+            end_date = (start_datetime + datetime.timedelta(days=1)).strftime(self.date_fmt)
+
+            msg = f"Missing precise orbit file for {self.raw_data_path}\n"
+            msg += f"Searched directory: {self.s1_orbits_poeorb_path}/{self.sensor}\n"
+            msg += f"with pattern: *V{start_date}*_{end_date}*.EOF"
+            _LOG.warning(msg)
+
             orbit_source_file = self.get_resorb_orbit_file()
+
             if not orbit_source_file:
-                _LOG.error("no orbit files found", slc_scene=self.scene)
+                msg = f"No orbit files found for {start_datetime}"
+                _LOG.error(msg, slc_scene=self.scene)
+                raise SlcException(msg)
+
             orbit_destination_file = pjoin(base_dir, os.path.basename(orbit_source_file))
 
         if not os.path.exists(orbit_destination_file):

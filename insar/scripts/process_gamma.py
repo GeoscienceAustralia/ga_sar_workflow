@@ -382,7 +382,7 @@ class InitialSetup(luigi.Task):
 
     def run(self):
         log = STATUS_LOGGER.bind(track_frame=f"{self.track}_{self.frame}")
-        log.info("initial setup task", sensor_filter=self.sensor)
+        log.info("initial setup task", sensor=self.sensor)
 
         outdir = Path(self.outdir)
 

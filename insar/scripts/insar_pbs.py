@@ -274,10 +274,12 @@ def _submit_pbs(pbs_scripts, test):
     help="Project storage you wish to use in PBS jobs",
 )
 @click.option(
-    "--project", type=click.STRING, help="Project to compute under",
+    "--project", type=click.STRING, required=True,
+    help="Project to compute under",
 )
 @click.option(
-    "--env", type=click.Path(exists=True), help="Environment script to source.",
+    "--env", type=click.Path(exists=True), required=True,
+    help="Environment script to source.",
 )
 @click.option(
     "--test",

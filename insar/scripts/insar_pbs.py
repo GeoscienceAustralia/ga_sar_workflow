@@ -15,6 +15,7 @@ import warnings
 import subprocess
 from pathlib import Path
 from os.path import join as pjoin, dirname, exists, basename
+from insar.scripts.process_gamma import ARDWorkflow
 
 # Note that {email} is absent from PBS_RESOURCES
 PBS_RESOURCES = """#!/bin/bash
@@ -322,8 +323,8 @@ def _submit_pbs(pbs_scripts, test):
 )
 @click.option(
     "--workflow",
-    type=click.STRING,
-    help="The workflow to run (backscatter, interferogram)",
+    type=click.Choice([o.name for o in ARDWorkflow], case_sensitive=False),
+    help="The workflow to run",
     required=False,
     default="interferogram"
 )

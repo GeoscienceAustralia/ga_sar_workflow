@@ -108,7 +108,7 @@ def _gen_pbs(
 
         # Convert workflow from whatever human formatting was used
         # into Capitalised formatting to match enum
-        workflow = workflow[0].upper() + workflow[1:].lower()
+        workflow = workflow.capitalize()
 
         # Create PBS script from a template w/ all required params
         pbs = PBS_TEMPLATE.format(

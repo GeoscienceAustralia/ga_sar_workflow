@@ -173,8 +173,6 @@ class CoregisterSlc:
             list_idx=self.list_idx
         )
 
-        self.log = _LOG.bind(task="SLC coregistration", slc_slave=self.slc_slave, slc_master=self.slc_master, list_idx=self.list_idx)
-
         self.r_dem_master_mli_par = self.r_dem_master_mli.with_suffix(".mli.par")
         if not self.r_dem_master_mli_par.exists():
             self.log.error(

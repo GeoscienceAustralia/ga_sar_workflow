@@ -582,7 +582,7 @@ def ard_package(
         track, frame, sensor = shp_task.stem.split("_")
 
         jobid = uuid.uuid4().hex[0:6]
-        in_dir = Path(workdir).joinpath(f"{track}_{frame}")
+        in_dir = Path(workdir).joinpath(f"{track}_{frame}_{sensor}")
         job_dir = Path(workdir).joinpath(f"{track}_{frame}-pkg-{jobid}")
 
         # In the old code, indir=task, where task is the shapefile.

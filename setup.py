@@ -63,7 +63,7 @@ setup(
         "structlog>=16.1.0",
         "shapely>=1.5.13",
         "spatialist==0.4",
-        "eodatasets3",
+        "eodatasets3>=0.18.0",
         "simplekml>=1.3.3" "",
     ],
     license="Apache Software License 2.0",

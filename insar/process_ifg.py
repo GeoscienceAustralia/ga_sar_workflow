@@ -213,14 +213,18 @@ def generate_init_flattened_ifg(
     pc: ProcConfig, ic: IfgFileNames, dc: DEMFileNames
 ):
     """
-    TODO: docs
+    Generate initial flattened interferogram by:
+        i) calculating initial baseline model using orbit state vectors;
+        ii) simulate phase due to orbital geometry and topography; 
+        iii) form the initial flattened interferogram.
     :param pc: ProcConfig obj
     :param ic: IfgFileNames obj
     :param dc: DEMFileNames obj
     """
 
-    # calculate initial baseline of interferogram (i.e. the spatial distance between the two
-    # satellite positions at the time of acquisition of first and second image).
+    # calculate initial baseline of interferogram using the annotated orbital state vectors
+    # the baseline is the spatial distance between the two satellite positions at the time of
+    # acquisition of first and second images.
     pg.base_orbit(
         ic.r_master_slc_par, ic.r_slave_slc_par, ic.ifg_base_init,
     )

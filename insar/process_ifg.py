@@ -111,8 +111,10 @@ def run_workflow(
         # future version might want to allow selection of steps (skipped for simplicity Oct 2020)
         calc_int(pc, ic)
         initial_flattened_ifg(pc, ic, dc)
-        refined_flattened_ifg(pc, ic, dc)
-        precise_flattened_ifg(pc, ic, dc, tc, ifg_width, land_center)
+# TODO: make these two following steps an optional part of the workflow.
+# MG: They are not needed for Sentinel-1 processing when using the precise orbit files (POEORB)
+#        refined_flattened_ifg(pc, ic, dc)
+#        precise_flattened_ifg(pc, ic, dc, tc, ifg_width, land_center)
         calc_bperp_coh_filt(pc, ic, ifg_width)
         calc_unw(pc, ic, tc, ifg_width, land_center)  # this calls unw thinning
         do_geocode(pc, ic, dc, tc, ifg_width)
@@ -578,6 +580,15 @@ def calc_bperp_coh_filt(pc: ProcConfig, ic: IfgFileNames, ifg_width: int):
     :param ifg_width:
     :return:
     """
+    # Three flattened interferogram functions:
+    # A = initial; B = refined; C = precise
+    #
+    # Running combinations could be:
+    # i)   A only
+    # ii)  A + B
+    # iii) A + B + C
+    #
+    # TODO: This function needs to take the correct ifg_flat and ifg_base files as input depending on whether i), ii) or iii) was run
     if not ic.ifg_flat.exists():
         msg = "cannot locate (*.flat) flattened interferogram: {}. Was FLAT executed?".format(
             ic.ifg_flat

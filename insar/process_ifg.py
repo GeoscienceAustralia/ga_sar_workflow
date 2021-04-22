@@ -113,8 +113,7 @@ def run_workflow(
         initial_flattened_ifg(pc, ic, dc)
         refined_flattened_ifg(pc, ic, dc)
         precise_flattened_ifg(pc, ic, dc, tc, ifg_width, land_center)
-        calc_bperp_and_coh(pb, ic, ifg_width)
-        calc_filt(pc, ic, ifg_width)
+        calc_bperp_coh_filt(pc, ic, ifg_width)
         calc_unw(pc, ic, tc, ifg_width, land_center)  # this calls unw thinning
         do_geocode(pc, ic, dc, tc, ifg_width)
 
@@ -552,17 +551,40 @@ def precise_flattened_ifg(
     )
 
 
-def calc_bperp_and_coh(
-    pc: ProcConfig,
-    ic: IfgFileNames,
-    ifg_width: int,
-):
+def get_width10(ifg_off10_path: pathlib.Path):
     """
-    Calculate perpendicular baselines and generate coherence from flattened interferogram
+    Return range/sample width from ifg_off10
+    :param ifg_off10_path: Path type obj
+    :return: width as integer
+    """
+    with ifg_off10_path.open() as f:
+        for line in f.readlines():
+            if const.MatchStrings.IFG_RANGE_SAMPLES.value in line:
+                _, value = line.split()
+                return int(value)
+
+    msg = 'Cannot locate "{}" value in ifg offsets10 file'
+    raise ProcessIfgException(msg.format(const.MatchStrings.IFG_RANGE_SAMPLES.value))
+
+
+def calc_bperp_coh_filt(pc: ProcConfig, ic: IfgFileNames, ifg_width: int):
+    """
+    Calculate:
+        i) perpendicular baselines from baseline model; 
+        ii) interferometric coherence of the flattened interferogram;
+        iii) filtered interferogram.
     :param pc: ProcConfig obj
     :param ic: IfgFileNames obj
     :param ifg_width:
+    :return:
     """
+    if not ic.ifg_flat.exists():
+        msg = "cannot locate (*.flat) flattened interferogram: {}. Was FLAT executed?".format(
+            ic.ifg_flat
+        )
+        _LOG.error(msg, missing_file=ic.ifg_flat)
+        raise ProcessIfgException(msg)
+
     # Calculate perpendicular baselines
     _, cout, _ = pg.base_perp(ic.ifg_base, ic.r_master_slc_par, ic.ifg_off,)
 
@@ -587,40 +609,7 @@ def calc_bperp_and_coh(
         pc.ifg_coherence_window,  # estimation window size in lines
         const.ESTIMATION_WINDOW_TRIANGULAR,  # estimation window "shape/style"
     )
-
-
-def get_width10(ifg_off10_path: pathlib.Path):
-    """
-    Return range/sample width from ifg_off10
-    :param ifg_off10_path: Path type obj
-    :return: width as integer
-    """
-    with ifg_off10_path.open() as f:
-        for line in f.readlines():
-            if const.MatchStrings.IFG_RANGE_SAMPLES.value in line:
-                _, value = line.split()
-                return int(value)
-
-    msg = 'Cannot locate "{}" value in ifg offsets10 file'
-    raise ProcessIfgException(msg.format(const.MatchStrings.IFG_RANGE_SAMPLES.value))
-
-
-def calc_filt(pc: ProcConfig, ic: IfgFileNames, ifg_width: int):
-    """
-    TODO docs
-    :param pc: ProcConfig obj
-    :param ic: IfgFileNames obj
-    :param ifg_width:
-    :return:
-    """
-    if not ic.ifg_flat.exists():
-        msg = "cannot locate (*.flat) flattened interferogram: {}. Was FLAT executed?".format(
-            ic.ifg_flat
-        )
-        _LOG.error(msg, missing_file=ic.ifg_flat)
-        raise ProcessIfgException(msg)
-
-    # Smooth the phase by Goldstein-Werner filter
+    # Smooth the flattened interferogram using a Goldstein-Werner filter
     pg.adf(
         ic.ifg_flat,
         ic.ifg_filt,

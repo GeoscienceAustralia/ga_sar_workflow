@@ -150,7 +150,7 @@ def test_run_workflow_full(
     # check some of the funcs in each step are called
     assert m_pygamma.create_offset.called
     assert m_pygamma.base_orbit.called
-    assert m_pygamma.multi_cpx.called
+    # assert m_pygamma.multi_cpx.called  - only called if refinement enabled
     assert m_pygamma.adf.called
     assert m_pygamma.rascc_mask.called
     assert m_pygamma.interp_ad.called
@@ -285,6 +285,8 @@ def pg_flat_mock():
     pg_mock.multi_cpx.return_value = PG_RETURN_VALUE
     pg_mock.multi_real.return_value = PG_RETURN_VALUE
     pg_mock.extract_gcp.return_value = PG_RETURN_VALUE
+
+    pg_mock.base_perp.return_value = PG_RETURN_VALUE
     return pg_mock
 
 
@@ -384,7 +386,7 @@ def test_precise_flattened_ifg(
 #    assert pg_flat_mock.base_perp.call_count == 1
 
 
-def test_precise_flattened_ifg_bperp_write_fail(
+def test_calc_bperp_coh_filt_write_fail(
     monkeypatch, pg_flat_mock, pc_mock, ic_mock, dc_mock, tc_mock
 ):
     monkeypatch.setattr(process_ifg, "get_width10", lambda _: 52)
@@ -393,8 +395,8 @@ def test_precise_flattened_ifg_bperp_write_fail(
 
     with pytest.raises(IOError):
         fake_ifg_width = 99
-        process_ifg.precise_flattened_ifg(
-            pc_mock, ic_mock, dc_mock, tc_mock, fake_ifg_width
+        process_ifg.calc_bperp_coh_filt(
+            pc_mock, ic_mock, fake_ifg_width
         )
 
 

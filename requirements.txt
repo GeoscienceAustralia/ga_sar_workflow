@@ -29,3 +29,4 @@ PyYAML~=5.3
 six~=1.13.0
 spatialist~=0.4
 structlog~=21.1.0
+eodatasets3~=0.18

@@ -77,7 +77,8 @@ def run_workflow(
     ic: IfgFileNames,
     dc: DEMFileNames,
     tc: TempFileConfig,
-    ifg_width: int
+    ifg_width: int,
+    enable_refinement: bool = False
 ):
     # Re-bind thread local context to IFG processing state
     structlog.threadlocal.clear_threadlocal()
@@ -111,10 +112,12 @@ def run_workflow(
         # future version might want to allow selection of steps (skipped for simplicity Oct 2020)
         calc_int(pc, ic)
         initial_flattened_ifg(pc, ic, dc)
-# TODO: make these two following steps an optional part of the workflow.
-# MG: They are not needed for Sentinel-1 processing when using the precise orbit files (POEORB)
-#        refined_flattened_ifg(pc, ic, dc)
-#        precise_flattened_ifg(pc, ic, dc, tc, ifg_width, land_center)
+
+        # Note: These are not needed for Sentinel-1 processing
+        if enable_refinement:
+            refined_flattened_ifg(pc, ic, dc)
+            precise_flattened_ifg(pc, ic, dc, tc, ifg_width, land_center)
+
         calc_bperp_coh_filt(pc, ic, ifg_width)
         calc_unw(pc, ic, tc, ifg_width, land_center)  # this calls unw thinning
         do_geocode(pc, ic, dc, tc, ifg_width)
@@ -218,7 +221,7 @@ def initial_flattened_ifg(
     """
     Generate initial flattened interferogram by:
         i) calculating initial baseline model using orbit state vectors;
-        ii) simulate phase due to orbital geometry and topography; 
+        ii) simulate phase due to orbital geometry and topography;
         iii) form the initial flattened interferogram.
     :param pc: ProcConfig obj
     :param ic: IfgFileNames obj
@@ -572,7 +575,7 @@ def get_width10(ifg_off10_path: pathlib.Path):
 def calc_bperp_coh_filt(pc: ProcConfig, ic: IfgFileNames, ifg_width: int):
     """
     Calculate:
-        i) perpendicular baselines from baseline model; 
+        i) perpendicular baselines from baseline model;
         ii) interferometric coherence of the flattened interferogram;
         iii) filtered interferogram.
     :param pc: ProcConfig obj

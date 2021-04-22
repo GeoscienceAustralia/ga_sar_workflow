@@ -296,7 +296,7 @@ def dc_mock():
     return dcm
 
 
-def test_generate_init_flattened_ifg(
+def test_initial_flattened_ifg(
     monkeypatch, pg_flat_mock, pc_mock, ic_mock, dc_mock
 ):
     monkeypatch.setattr(process_ifg, "pg", pg_flat_mock)
@@ -304,21 +304,45 @@ def test_generate_init_flattened_ifg(
     assert pg_flat_mock.base_orbit.called is False
     assert pg_flat_mock.phase_sim_orb.called is False
     assert pg_flat_mock.SLC_diff_intf.called is False
-    assert pg_flat_mock.base_init.called is False
-    assert pg_flat_mock.base_add.called is False
-    assert pg_flat_mock.phase_sim.called is False
+#    assert pg_flat_mock.base_init.called is False
+#    assert pg_flat_mock.base_add.called is False
+#    assert pg_flat_mock.phase_sim.called is False
 
-    process_ifg.generate_init_flattened_ifg(pc_mock, ic_mock, dc_mock)
+    process_ifg.initial_flattened_ifg(pc_mock, ic_mock, dc_mock)
 
     assert pg_flat_mock.base_orbit.called
     assert pg_flat_mock.phase_sim_orb.called
-    assert pg_flat_mock.SLC_diff_intf.call_count == 2
+    assert pg_flat_mock.SLC_diff_intf.called
+#    assert pg_flat_mock.SLC_diff_intf.call_count == 2
+#    assert pg_flat_mock.base_init.called
+#    assert pg_flat_mock.base_add.called
+#    assert pg_flat_mock.phase_sim.called
+
+
+def test_refined_flattened_ifg(
+    monkeypatch, pg_flat_mock, pc_mock, ic_mock, dc_mock
+):
+    monkeypatch.setattr(process_ifg, "pg", pg_flat_mock)
+
+#    assert pg_flat_mock.base_orbit.called is False
+#    assert pg_flat_mock.phase_sim_orb.called is False
+    assert pg_flat_mock.base_init.called is False
+    assert pg_flat_mock.base_add.called is False
+    assert pg_flat_mock.phase_sim.called is False
+    assert pg_flat_mock.SLC_diff_intf.called is False
+
+    process_ifg.refined_flattened_ifg(pc_mock, ic_mock, dc_mock)
+
+#    assert pg_flat_mock.base_orbit.called
+#    assert pg_flat_mock.phase_sim_orb.called
+#    assert pg_flat_mock.SLC_diff_intf.call_count == 2
     assert pg_flat_mock.base_init.called
     assert pg_flat_mock.base_add.called
     assert pg_flat_mock.phase_sim.called
+    assert pg_flat_mock.SLC_diff_intf.called
 
 
-def test_generate_final_flattened_ifg(
+def test_precise_flattened_ifg(
     monkeypatch, pg_flat_mock, pc_mock, ic_mock, dc_mock, tc_mock
 ):
     # test refinement of baseline model using ground control points
@@ -342,7 +366,7 @@ def test_generate_final_flattened_ifg(
     monkeypatch.setattr(process_ifg, "get_width10", m_get_width10)
 
     fake_ifg_width = 99
-    process_ifg.generate_final_flattened_ifg(
+    process_ifg.precise_flattened_ifg(
         pc_mock, ic_mock, dc_mock, tc_mock, fake_ifg_width
     )
 
@@ -360,7 +384,7 @@ def test_generate_final_flattened_ifg(
     assert pg_flat_mock.base_perp.call_count == 1
 
 
-def test_generate_final_flattened_ifg_bperp_write_fail(
+def test_precise_flattened_ifg_bperp_write_fail(
     monkeypatch, pg_flat_mock, pc_mock, ic_mock, dc_mock, tc_mock
 ):
     monkeypatch.setattr(process_ifg, "get_width10", lambda _: 52)
@@ -369,7 +393,7 @@ def test_generate_final_flattened_ifg_bperp_write_fail(
 
     with pytest.raises(IOError):
         fake_ifg_width = 99
-        process_ifg.generate_final_flattened_ifg(
+        process_ifg.precise_flattened_ifg(
             pc_mock, ic_mock, dc_mock, tc_mock, fake_ifg_width
         )
 

@@ -110,8 +110,10 @@ def run_workflow(
 
         # future version might want to allow selection of steps (skipped for simplicity Oct 2020)
         calc_int(pc, ic)
-        generate_init_flattened_ifg(pc, ic, dc)
-        generate_final_flattened_ifg(pc, ic, dc, tc, ifg_width, land_center)
+        initial_flattened_ifg(pc, ic, dc)
+        refined_flattened_ifg(pc, ic, dc)
+        precise_flattened_ifg(pc, ic, dc, tc, ifg_width, land_center)
+        calc_bperp_and_coh(pb, ic, ifg_width)
         calc_filt(pc, ic, ifg_width)
         calc_unw(pc, ic, tc, ifg_width, land_center)  # this calls unw thinning
         do_geocode(pc, ic, dc, tc, ifg_width)
@@ -194,7 +196,7 @@ def calc_int(pc: ProcConfig, ic: IfgFileNames):
         pg.offset_fit(
             ic.ifg_offs,
             ic.ifg_ccp,
-            ic.ifg_off,  # TODO: should ifg_off be renamed ifg_off_par in settings?
+            ic.ifg_off,  # TODO: should ifg_off be renamed ifg_off_par in settings? MG: good idea, it is a 'par' file
             ic.ifg_coffs,
             ic.ifg_coffsets,
         )
@@ -209,7 +211,7 @@ def calc_int(pc: ProcConfig, ic: IfgFileNames):
     )
 
 
-def generate_init_flattened_ifg(
+def initial_flattened_ifg(
     pc: ProcConfig, ic: IfgFileNames, dc: DEMFileNames
 ):
     """
@@ -264,7 +266,20 @@ def generate_init_flattened_ifg(
         const.SLC_2_RANGE_PHASE_MODE_REF_FUNCTION_CENTRE,
     )
 
-    # Estimate residual baseline using fringe rate of differential interferogram
+
+def refined_flattened_ifg(
+    pc: ProcConfig, ic: IfgFileNames, dc: DEMFileNames
+):
+    """
+    Generate refined flattened interferogram by:
+        i) refining the initial baseline model by analysing the fringe rate in initial flattened interferogram;
+        ii) simulate phase due to refined baseline and topography;
+        iii) form a refined flattened interferogram.
+    :param pc: ProcConfig obj
+    :param ic: IfgFileNames obj
+    :param dc: DEMFileNames obj
+    """
+    # Estimate residual baseline from the fringe rate of differential interferogram (using FFT)
     pg.base_init(
         ic.r_master_slc_par,
         const.NOT_PROVIDED,
@@ -280,8 +295,6 @@ def generate_init_flattened_ifg(
     )
 
     # Simulate the phase from the DEM and refined baseline model
-    # simulate unwrapped interferometric phase using DEM height, linear baseline model, and linear
-    # deformation rate for single or repeat-pass interferograms
     pg.phase_sim(
         ic.r_master_slc_par,
         ic.ifg_off,
@@ -297,7 +310,7 @@ def generate_init_flattened_ifg(
         const.PH_MODE_ABSOLUTE_PHASE,
     )
 
-    # Calculate second flattened interferogram (baselines refined using fringe rate)
+    # Calculate second refined flattened interferogram (baselines refined using fringe rate)
     pg.SLC_diff_intf(
         ic.r_master_slc,
         ic.r_slave_slc,
@@ -317,7 +330,7 @@ def generate_init_flattened_ifg(
 
 
 # NB: this function is a bit long and ugly due to the volume of chained calls for the workflow
-def generate_final_flattened_ifg(
+def precise_flattened_ifg(
     pc: ProcConfig,
     ic: IfgFileNames,
     dc: DEMFileNames,
@@ -326,7 +339,12 @@ def generate_final_flattened_ifg(
     land_center: Optional[Tuple[int, int]] = None
 ):
     """
-    Perform refinement of baseline model using ground control points
+    Generate precise flattened interferogram by:
+        i) identify ground control points (GCP's) in regions of high coherence;
+        ii) extract unwrapped phase at the GCP's;
+        iii) calculate precision baseline from GCP phase data;
+        iv) simulate phase due to precision baseline and topography;
+        v) form the precise flattened interferogram.
     :param pc: ProcConfig obj
     :param ic: IfgFileNames obj
     :param dc: DEMFileNames obj
@@ -429,8 +447,6 @@ def generate_final_flattened_ifg(
     )
 
     # calculate coherence of original flattened interferogram
-    # MG: WE SHOULD THINK CAREFULLY ABOUT THE WINDOW AND WEIGHTING PARAMETERS, PERHAPS BY PERFORMING
-    # COHERENCE OPTIMISATION
     pg.cc_wave(
         ic.ifg_flat1,
         const.NOT_PROVIDED,
@@ -495,7 +511,6 @@ def generate_final_flattened_ifg(
         const.NOT_PROVIDED,  # bperp_min
     )
 
-    # USE OLD CODE FOR NOW
     # Simulate the phase from the DEM and precision baseline model.
     pg.phase_sim(
         ic.r_master_slc_par,
@@ -536,6 +551,18 @@ def generate_final_flattened_ifg(
         const.NOT_PROVIDED,  # rp2 flag
     )
 
+
+def calc_bperp_and_coh(
+    pc: ProcConfig,
+    ic: IfgFileNames,
+    ifg_width: int,
+):
+    """
+    Calculate perpendicular baselines and generate coherence from flattened interferogram
+    :param pc: ProcConfig obj
+    :param ic: IfgFileNames obj
+    :param ifg_width:
+    """
     # Calculate perpendicular baselines
     _, cout, _ = pg.base_perp(ic.ifg_base, ic.r_master_slc_par, ic.ifg_off,)
 
@@ -549,7 +576,7 @@ def generate_final_flattened_ifg(
         raise ex
 
     # calculate coherence of flattened interferogram
-    # WE SHOULD THINK CAREFULLY ABOUT THE WINDOW AND WEIGHTING PARAMETERS, PERHAPS BY PERFORMING COHERENCE OPTIMISATION
+    # MG: WE SHOULD THINK CAREFULLY ABOUT THE WINDOW AND WEIGHTING PARAMETERS, PERHAPS BY PERFORMING COHERENCE OPTIMISATION
     pg.cc_wave(
         ic.ifg_flat,  # normalised complex interferogram
         ic.r_master_mli,  # multi-look intensity image of the first scene (float)

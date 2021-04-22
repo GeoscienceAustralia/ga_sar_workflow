@@ -150,7 +150,7 @@ def test_run_workflow_full(
     # check some of the funcs in each step are called
     assert m_pygamma.create_offset.called
     assert m_pygamma.base_orbit.called
-    assert m_pygamma.multi_cpx.called
+    # assert m_pygamma.multi_cpx.called  - only called if refinement enabled
     assert m_pygamma.adf.called
     assert m_pygamma.rascc_mask.called
     assert m_pygamma.interp_ad.called
@@ -284,8 +284,9 @@ def pg_flat_mock():
     pg_mock.rascc_mask.return_value = PG_RETURN_VALUE
     pg_mock.multi_cpx.return_value = PG_RETURN_VALUE
     pg_mock.multi_real.return_value = PG_RETURN_VALUE
-    pg_mock.base_perp.return_value = PG_RETURN_VALUE
     pg_mock.extract_gcp.return_value = PG_RETURN_VALUE
+
+    pg_mock.base_perp.return_value = PG_RETURN_VALUE
     return pg_mock
 
 
@@ -296,7 +297,7 @@ def dc_mock():
     return dcm
 
 
-def test_generate_init_flattened_ifg(
+def test_initial_flattened_ifg(
     monkeypatch, pg_flat_mock, pc_mock, ic_mock, dc_mock
 ):
     monkeypatch.setattr(process_ifg, "pg", pg_flat_mock)
@@ -304,21 +305,45 @@ def test_generate_init_flattened_ifg(
     assert pg_flat_mock.base_orbit.called is False
     assert pg_flat_mock.phase_sim_orb.called is False
     assert pg_flat_mock.SLC_diff_intf.called is False
-    assert pg_flat_mock.base_init.called is False
-    assert pg_flat_mock.base_add.called is False
-    assert pg_flat_mock.phase_sim.called is False
+#    assert pg_flat_mock.base_init.called is False
+#    assert pg_flat_mock.base_add.called is False
+#    assert pg_flat_mock.phase_sim.called is False
 
-    process_ifg.generate_init_flattened_ifg(pc_mock, ic_mock, dc_mock)
+    process_ifg.initial_flattened_ifg(pc_mock, ic_mock, dc_mock)
 
     assert pg_flat_mock.base_orbit.called
     assert pg_flat_mock.phase_sim_orb.called
-    assert pg_flat_mock.SLC_diff_intf.call_count == 2
+    assert pg_flat_mock.SLC_diff_intf.called
+#    assert pg_flat_mock.SLC_diff_intf.call_count == 2
+#    assert pg_flat_mock.base_init.called
+#    assert pg_flat_mock.base_add.called
+#    assert pg_flat_mock.phase_sim.called
+
+
+def test_refined_flattened_ifg(
+    monkeypatch, pg_flat_mock, pc_mock, ic_mock, dc_mock
+):
+    monkeypatch.setattr(process_ifg, "pg", pg_flat_mock)
+
+#    assert pg_flat_mock.base_orbit.called is False
+#    assert pg_flat_mock.phase_sim_orb.called is False
+    assert pg_flat_mock.base_init.called is False
+    assert pg_flat_mock.base_add.called is False
+    assert pg_flat_mock.phase_sim.called is False
+    assert pg_flat_mock.SLC_diff_intf.called is False
+
+    process_ifg.refined_flattened_ifg(pc_mock, ic_mock, dc_mock)
+
+#    assert pg_flat_mock.base_orbit.called
+#    assert pg_flat_mock.phase_sim_orb.called
+#    assert pg_flat_mock.SLC_diff_intf.call_count == 2
     assert pg_flat_mock.base_init.called
     assert pg_flat_mock.base_add.called
     assert pg_flat_mock.phase_sim.called
+    assert pg_flat_mock.SLC_diff_intf.called
 
 
-def test_generate_final_flattened_ifg(
+def test_precise_flattened_ifg(
     monkeypatch, pg_flat_mock, pc_mock, ic_mock, dc_mock, tc_mock
 ):
     # test refinement of baseline model using ground control points
@@ -335,19 +360,20 @@ def test_generate_final_flattened_ifg(
     assert pg_flat_mock.base_ls.called is False
     assert pg_flat_mock.phase_sim.called is False
     assert pg_flat_mock.SLC_diff_intf.called is False
-    assert pg_flat_mock.base_perp.called is False
+#    assert pg_flat_mock.base_perp.called is False
 
     fake_width10 = 400
     m_get_width10 = mock.Mock(return_value=fake_width10)
     monkeypatch.setattr(process_ifg, "get_width10", m_get_width10)
 
     fake_ifg_width = 99
-    process_ifg.generate_final_flattened_ifg(
+    process_ifg.precise_flattened_ifg(
         pc_mock, ic_mock, dc_mock, tc_mock, fake_ifg_width
     )
 
     assert pg_flat_mock.multi_cpx.called
-    assert pg_flat_mock.cc_wave.call_count == 3
+    assert pg_flat_mock.cc_wave.call_count == 2
+#    assert pg_flat_mock.cc_wave.call_count == 3
     assert pg_flat_mock.rascc_mask.call_count == 2
     assert pg_flat_mock.mcf.called
     assert pg_flat_mock.multi_real.called
@@ -357,10 +383,10 @@ def test_generate_final_flattened_ifg(
     assert pg_flat_mock.base_ls.called
     assert pg_flat_mock.phase_sim.called
     assert pg_flat_mock.SLC_diff_intf.called
-    assert pg_flat_mock.base_perp.call_count == 1
+#    assert pg_flat_mock.base_perp.call_count == 1
 
 
-def test_generate_final_flattened_ifg_bperp_write_fail(
+def test_calc_bperp_coh_filt_write_fail(
     monkeypatch, pg_flat_mock, pc_mock, ic_mock, dc_mock, tc_mock
 ):
     monkeypatch.setattr(process_ifg, "get_width10", lambda _: 52)
@@ -369,8 +395,8 @@ def test_generate_final_flattened_ifg_bperp_write_fail(
 
     with pytest.raises(IOError):
         fake_ifg_width = 99
-        process_ifg.generate_final_flattened_ifg(
-            pc_mock, ic_mock, dc_mock, tc_mock, fake_ifg_width
+        process_ifg.calc_bperp_coh_filt(
+            pc_mock, ic_mock, fake_ifg_width
         )
 
 
@@ -409,25 +435,31 @@ def test_get_width10_not_found():
 def pg_filt_mock():
     """Create basic mock of the py_gamma module for the FILT processing step."""
     pgm = mock.NonCallableMock()
+    pgm.cc_wave.return_value = PG_RETURN_VALUE
     pgm.adf.return_value = PG_RETURN_VALUE
+    pgm.base_perp.return_value = PG_RETURN_VALUE
     return pgm
 
 
-def test_calc_filt(monkeypatch, pg_filt_mock, pc_mock, ic_mock):
+def test_calc_bperp_coh_filt(monkeypatch, pg_filt_mock, pc_mock, ic_mock):
     monkeypatch.setattr(process_ifg, "pg", pg_filt_mock)
     ic_mock.ifg_flat.exists.return_value = True
 
+    assert pg_filt_mock.base_perp.called is False
+    assert pg_filt_mock.cc_wave.called is False
     assert pg_filt_mock.adf.called is False
-    process_ifg.calc_filt(pc_mock, ic_mock, ifg_width=230)
+    process_ifg.calc_bperp_coh_filt(pc_mock, ic_mock, ifg_width=230)
+    assert pg_filt_mock.base_perp.called
+    assert pg_filt_mock.cc_wave.called
     assert pg_filt_mock.adf.called
 
 
-def test_calc_filt_no_flat_file(monkeypatch, pg_filt_mock, pc_mock, ic_mock):
+def test_calc_bperp_coh_filt_no_flat_file(monkeypatch, pg_filt_mock, pc_mock, ic_mock):
     monkeypatch.setattr(process_ifg, "pg", pg_filt_mock)
     ic_mock.ifg_flat.exists.return_value = False
 
     with pytest.raises(ProcessIfgException):
-        process_ifg.calc_filt(pc_mock, ic_mock, ifg_width=180)
+        process_ifg.calc_bperp_coh_filt(pc_mock, ic_mock, ifg_width=180)
 
 
 @pytest.fixture

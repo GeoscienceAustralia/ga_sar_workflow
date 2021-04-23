@@ -111,14 +111,17 @@ def run_workflow(
 
         # future version might want to allow selection of steps (skipped for simplicity Oct 2020)
         calc_int(pc, ic)
-        initial_flattened_ifg(pc, ic, dc)
+        ifg_file = initial_flattened_ifg(pc, ic, dc)
 
         # Note: These are not needed for Sentinel-1 processing
         if enable_refinement:
-            refined_flattened_ifg(pc, ic, dc)
-            precise_flattened_ifg(pc, ic, dc, tc, ifg_width, land_center)
+            ifg_file = refined_flattened_ifg(pc, ic, dc, ifg_file)
+            ifg_file = precise_flattened_ifg(pc, ic, dc, tc, ifg_file, ifg_width, land_center)
+            ifg_baseline = ic.ifg_base
+        else:
+            ifg_baseline = ic.ifg_base_init
 
-        calc_bperp_coh_filt(pc, ic, ifg_width)
+        calc_bperp_coh_filt(pc, ic, ifg_file, ifg_baseline, ifg_width)
         calc_unw(pc, ic, tc, ifg_width, land_center)  # this calls unw thinning
         do_geocode(pc, ic, dc, tc, ifg_width)
 
@@ -226,6 +229,7 @@ def initial_flattened_ifg(
     :param pc: ProcConfig obj
     :param ic: IfgFileNames obj
     :param dc: DEMFileNames obj
+    :returns: The path to the ifg produced
     """
 
     # calculate initial baseline of interferogram using the annotated orbital state vectors
@@ -270,9 +274,14 @@ def initial_flattened_ifg(
         const.SLC_2_RANGE_PHASE_MODE_REF_FUNCTION_CENTRE,
     )
 
+    return ic.ifg_flat0
+
 
 def refined_flattened_ifg(
-    pc: ProcConfig, ic: IfgFileNames, dc: DEMFileNames
+    pc: ProcConfig,
+    ic: IfgFileNames,
+    dc: DEMFileNames,
+    ifg_file: pathlib.Path
 ):
     """
     Generate refined flattened interferogram by:
@@ -282,13 +291,14 @@ def refined_flattened_ifg(
     :param pc: ProcConfig obj
     :param ic: IfgFileNames obj
     :param dc: DEMFileNames obj
+    :returns: The path to the ifg produced
     """
     # Estimate residual baseline from the fringe rate of differential interferogram (using FFT)
     pg.base_init(
         ic.r_master_slc_par,
         const.NOT_PROVIDED,
         ic.ifg_off,
-        ic.ifg_flat0,
+        ifg_file,
         ic.ifg_base_res,
         const.BASE_INIT_METHOD_4,
     )
@@ -332,6 +342,8 @@ def refined_flattened_ifg(
         const.SLC_2_RANGE_PHASE_MODE_REF_FUNCTION_CENTRE,
     )
 
+    return ic.ifg_flat1
+
 
 # NB: this function is a bit long and ugly due to the volume of chained calls for the workflow
 def precise_flattened_ifg(
@@ -339,6 +351,7 @@ def precise_flattened_ifg(
     ic: IfgFileNames,
     dc: DEMFileNames,
     tc: TempFileConfig,
+    ifg_file: pathlib.Path,
     ifg_width: int,
     land_center: Optional[Tuple[int, int]] = None
 ):
@@ -354,10 +367,11 @@ def precise_flattened_ifg(
     :param dc: DEMFileNames obj
     :param tc: TempFileConfig obj
     :param ifg_width:
+    :returns: The path to the ifg produced
     """
     # multi-look the flattened interferogram 10 times
     pg.multi_cpx(
-        ic.ifg_flat1,
+        ifg_file,
         ic.ifg_off,
         ic.ifg_flat10,
         ic.ifg_off10,
@@ -452,7 +466,7 @@ def precise_flattened_ifg(
 
     # calculate coherence of original flattened interferogram
     pg.cc_wave(
-        ic.ifg_flat1,
+        ifg_file,
         const.NOT_PROVIDED,
         const.NOT_PROVIDED,
         ic.ifg_flat_coh0,
@@ -528,7 +542,7 @@ def precise_flattened_ifg(
 
     # subtract simulated phase ('ifg_flat1' was originally 'ifg', but this file is no longer created)
     pg.sub_phase(
-        ic.ifg_flat1,
+        ifg_file,
         ic.ifg_sim_unw,
         ic.ifg_diff_par,
         ic.ifg_flat,
@@ -555,6 +569,8 @@ def precise_flattened_ifg(
         const.NOT_PROVIDED,  # rp2 flag
     )
 
+    return ic.ifg_flat
+
 
 def get_width10(ifg_off10_path: pathlib.Path):
     """
@@ -572,7 +588,12 @@ def get_width10(ifg_off10_path: pathlib.Path):
     raise ProcessIfgException(msg.format(const.MatchStrings.IFG_RANGE_SAMPLES.value))
 
 
-def calc_bperp_coh_filt(pc: ProcConfig, ic: IfgFileNames, ifg_width: int):
+def calc_bperp_coh_filt(
+    pc: ProcConfig,
+    ic: IfgFileNames,
+    ifg_file: pathlib.Path,
+    ifg_baseline: pathlib.Path,
+    ifg_width: int):
     """
     Calculate:
         i) perpendicular baselines from baseline model;
@@ -580,9 +601,12 @@ def calc_bperp_coh_filt(pc: ProcConfig, ic: IfgFileNames, ifg_width: int):
         iii) filtered interferogram.
     :param pc: ProcConfig obj
     :param ic: IfgFileNames obj
+    :param ifg_file: The path to the input ifg to process
+    :param ifg_baseline: The path to the input baseline file
     :param ifg_width:
     :return:
     """
+
     # Three flattened interferogram functions:
     # A = initial; B = refined; C = precise
     #
@@ -591,16 +615,14 @@ def calc_bperp_coh_filt(pc: ProcConfig, ic: IfgFileNames, ifg_width: int):
     # ii)  A + B
     # iii) A + B + C
     #
-    # TODO: This function needs to take the correct ifg_flat and ifg_base files as input depending on whether i), ii) or iii) was run
-    if not ic.ifg_flat.exists():
-        msg = "cannot locate (*.flat) flattened interferogram: {}. Was FLAT executed?".format(
-            ic.ifg_flat
-        )
-        _LOG.error(msg, missing_file=ic.ifg_flat)
+    # ifg_file should point to the appropriate output depending on what combination was run
+    if not ifg_file.exists():
+        msg = f"cannot locate interferogram: {ifg_file}"
+        _LOG.error(msg, missing_file=ifg_file)
         raise ProcessIfgException(msg)
 
     # Calculate perpendicular baselines
-    _, cout, _ = pg.base_perp(ic.ifg_base, ic.r_master_slc_par, ic.ifg_off,)
+    _, cout, _ = pg.base_perp(ifg_baseline, ic.r_master_slc_par, ic.ifg_off)
 
     # copy content to bperp file instead of rerunning EXE (like the old Bash code)
     try:
@@ -614,7 +636,7 @@ def calc_bperp_coh_filt(pc: ProcConfig, ic: IfgFileNames, ifg_width: int):
     # calculate coherence of flattened interferogram
     # MG: WE SHOULD THINK CAREFULLY ABOUT THE WINDOW AND WEIGHTING PARAMETERS, PERHAPS BY PERFORMING COHERENCE OPTIMISATION
     pg.cc_wave(
-        ic.ifg_flat,  # normalised complex interferogram
+        ifg_file,  # normalised complex interferogram
         ic.r_master_mli,  # multi-look intensity image of the first scene (float)
         ic.r_slave_mli,  # multi-look intensity image of the second scene (float)
         ic.ifg_flat_coh,  # interferometric correlation coefficient (float)
@@ -623,9 +645,10 @@ def calc_bperp_coh_filt(pc: ProcConfig, ic: IfgFileNames, ifg_width: int):
         pc.ifg_coherence_window,  # estimation window size in lines
         const.ESTIMATION_WINDOW_TRIANGULAR,  # estimation window "shape/style"
     )
+
     # Smooth the flattened interferogram using a Goldstein-Werner filter
     pg.adf(
-        ic.ifg_flat,
+        ifg_file,
         ic.ifg_filt,
         ic.ifg_filt_coh,
         ifg_width,
@@ -812,49 +835,67 @@ def do_geocode(
 
     width_out = get_width_out(dc.geo_dem_par.open())
 
-    geocode_unwrapped_ifg(ic, dc, tc, width_in, width_out)
-    geocode_flattened_ifg(ic, dc, tc, width_in, width_out)
-    geocode_filtered_ifg(ic, dc, tc, width_in, width_out)
-    geocode_flat_coherence_file(ic, dc, tc, width_in, width_out)
-    geocode_filtered_coherence_file(ic, dc, tc, width_in, width_out)
+    if ic.ifg_unw.exists():
+        geocode_unwrapped_ifg(ic, dc, tc, width_in, width_out)
+
+    if ic.ifg_flat.exists():
+        geocode_flattened_ifg(ic, dc, tc, width_in, width_out)
+
+    if ic.ifg_filt.exists():
+        geocode_filtered_ifg(ic, dc, tc, width_in, width_out)
+
+    if ic.ifg_flat_coh.exists():
+        geocode_flat_coherence_file(ic, dc, tc, width_in, width_out)
+
+    if ic.ifg_filt_coh.exists():
+        geocode_filtered_coherence_file(ic, dc, tc, width_in, width_out)
 
     # Geotiff geocoded outputs
     if pc.ifg_geotiff.lower() == const.YES:
         # unw
-        pg.data2geotiff(
-            dc.geo_dem_par,
-            ic.ifg_unw_geocode_out,
-            dtype_out,
-            ic.ifg_unw_geocode_out_tiff,
-        )
+        if ic.ifg_unw.exists():
+            pg.data2geotiff(
+                dc.geo_dem_par,
+                ic.ifg_unw_geocode_out,
+                dtype_out,
+                ic.ifg_unw_geocode_out_tiff,
+            )
+
         # flat ifg
-        pg.data2geotiff(
-            dc.geo_dem_par,
-            ic.ifg_flat_geocode_out,
-            dtype_out,
-            ic.ifg_flat_geocode_out_tiff,
-        )
+        if ic.ifg_flat.exists():
+            pg.data2geotiff(
+                dc.geo_dem_par,
+                ic.ifg_flat_geocode_out,
+                dtype_out,
+                ic.ifg_flat_geocode_out_tiff,
+            )
+
         # filt ifg
-        pg.data2geotiff(
-            dc.geo_dem_par,
-            ic.ifg_filt_geocode_out,
-            dtype_out,
-            ic.ifg_filt_geocode_out_tiff,
-        )
-        # flat cc
-        pg.data2geotiff(
-            dc.geo_dem_par,
-            ic.ifg_flat_coh_geocode_out,
-            dtype_out,
-            ic.ifg_flat_coh_geocode_out_tiff,
-        )
-        # filt cc
-        pg.data2geotiff(
-            dc.geo_dem_par,
-            ic.ifg_filt_coh_geocode_out,
-            dtype_out,
-            ic.ifg_filt_coh_geocode_out_tiff,
-        )
+        if ic.ifg_filt.exists():
+            pg.data2geotiff(
+                dc.geo_dem_par,
+                ic.ifg_filt_geocode_out,
+                dtype_out,
+                ic.ifg_filt_geocode_out_tiff,
+            )
+
+        # flat coh
+        if ic.ifg_flat_coh.exists():
+            pg.data2geotiff(
+                dc.geo_dem_par,
+                ic.ifg_flat_coh_geocode_out,
+                dtype_out,
+                ic.ifg_flat_coh_geocode_out_tiff,
+            )
+
+        # filt coh
+        if ic.ifg_filt_coh.exists():
+            pg.data2geotiff(
+                dc.geo_dem_par,
+                ic.ifg_filt_coh_geocode_out,
+                dtype_out,
+                ic.ifg_filt_coh_geocode_out_tiff,
+            )
 
     # TF: also remove all binaries and .ras files to save disc space
     #     keep flat.int since this is currently used as input for stamps processing

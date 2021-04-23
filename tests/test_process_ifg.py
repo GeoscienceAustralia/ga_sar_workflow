@@ -332,7 +332,7 @@ def test_refined_flattened_ifg(
     assert pg_flat_mock.phase_sim.called is False
     assert pg_flat_mock.SLC_diff_intf.called is False
 
-    process_ifg.refined_flattened_ifg(pc_mock, ic_mock, dc_mock)
+    process_ifg.refined_flattened_ifg(pc_mock, ic_mock, dc_mock, ic_mock.ifg_flat0)
 
 #    assert pg_flat_mock.base_orbit.called
 #    assert pg_flat_mock.phase_sim_orb.called
@@ -368,7 +368,7 @@ def test_precise_flattened_ifg(
 
     fake_ifg_width = 99
     process_ifg.precise_flattened_ifg(
-        pc_mock, ic_mock, dc_mock, tc_mock, fake_ifg_width
+        pc_mock, ic_mock, dc_mock, tc_mock, ic_mock.ifg_flat1, fake_ifg_width
     )
 
     assert pg_flat_mock.multi_cpx.called
@@ -396,7 +396,7 @@ def test_calc_bperp_coh_filt_write_fail(
     with pytest.raises(IOError):
         fake_ifg_width = 99
         process_ifg.calc_bperp_coh_filt(
-            pc_mock, ic_mock, fake_ifg_width
+            pc_mock, ic_mock, ic_mock.ifg_flat, ic_mock.ifg_base, fake_ifg_width
         )
 
 
@@ -448,7 +448,7 @@ def test_calc_bperp_coh_filt(monkeypatch, pg_filt_mock, pc_mock, ic_mock):
     assert pg_filt_mock.base_perp.called is False
     assert pg_filt_mock.cc_wave.called is False
     assert pg_filt_mock.adf.called is False
-    process_ifg.calc_bperp_coh_filt(pc_mock, ic_mock, ifg_width=230)
+    process_ifg.calc_bperp_coh_filt(pc_mock, ic_mock, ic_mock.ifg_flat, ic_mock.ifg_base, ifg_width=230)
     assert pg_filt_mock.base_perp.called
     assert pg_filt_mock.cc_wave.called
     assert pg_filt_mock.adf.called
@@ -459,7 +459,7 @@ def test_calc_bperp_coh_filt_no_flat_file(monkeypatch, pg_filt_mock, pc_mock, ic
     ic_mock.ifg_flat.exists.return_value = False
 
     with pytest.raises(ProcessIfgException):
-        process_ifg.calc_bperp_coh_filt(pc_mock, ic_mock, ifg_width=180)
+        process_ifg.calc_bperp_coh_filt(pc_mock, ic_mock, ic_mock.ifg_flat, ic_mock.ifg_base, ifg_width=180)
 
 
 @pytest.fixture

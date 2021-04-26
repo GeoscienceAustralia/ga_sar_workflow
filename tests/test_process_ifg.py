@@ -21,6 +21,7 @@ import pytest
 
 PG_RETURN_VALUE = (0, ["default-cout"], ["default-cerr"])
 PG_RETURN_VALUE_FAIL = (-1, ["cout-with-error"], ["cerr-with-error"])
+PG_RETURN_SARPIX_VALUE = (0, ["SLC/MLI range, azimuth pixel (int):         7340        17060"], [])
 
 test_dir = TemporaryDirectory('test_process_ifg')
 
@@ -61,10 +62,17 @@ def ic_mock():
 
     mock_path = functools.partial(mock.MagicMock, spec=pathlib.Path)
 
-    # Explicitly set a bunch of path objecst (as the mocked Path objects don't implement / or + correctly)
-    ic.ifg_dir = pathlib.Path(test_dir.name)
-    ic.master_dir = ic.ifg_dir / '20151103'
-    ic.slave_dir = ic.ifg_dir / '20151127'
+    # Explicitly set a bunch of path objecst (as the mocked Path objects don't
+    # implement / or + correctly).   Note: the unit tests are all mocked, the
+    # directories don't have to have valid files or in some cases even exist...
+    #
+    # Despite being dummy data, we use semi-realistic paths to keep test errors
+    # easier to understand.
+    base_path = pathlib.Path(test_dir.name)
+
+    ic.ifg_dir = base_path / "INT" / '20151103-20151127'
+    ic.master_dir = base_path / "SLC" / '20151103'
+    ic.slave_dir = base_path / "SLC" / '20151127'
     ic.ifg_unw_geocode_2pi_bmp = ic.ifg_dir / 'geo_unw_2pi.bmp'
     ic.ifg_unw_geocode_6pi_bmp = ic.ifg_dir / 'geo_unw_6pi.bmp'
     ic.ifg_flat_geocode_bmp = ic.ifg_dir / 'ifg_flat_geocode.bmp'
@@ -84,6 +92,9 @@ def ic_mock():
     ic.ifg_flat = mock_path()
     ic.ifg_flat1 = mock_path()
     ic.ifg_flat10 = mock_path()
+
+    ic.shapefile = pathlib.Path(__file__).parent.absolute() / 'data' / 'T147D_F28S_S1A.shp'
+
     return ic
 
 
@@ -113,6 +124,7 @@ def test_run_workflow_full(
 
     m_pygamma = mock.NonCallableMock()
     m_pygamma.base_perp.return_value = PG_RETURN_VALUE
+    m_pygamma.coord_to_sarpix.return_value = PG_RETURN_SARPIX_VALUE
     monkeypatch.setattr(process_ifg, "pg", m_pygamma)
 
     # mock out smaller helper functions (prevent I/O etc)
@@ -143,7 +155,7 @@ def test_run_workflow_full(
     assert m_pygamma.rascc_mask.called
     assert m_pygamma.interp_ad.called
     assert m_pygamma.data2geotiff.called
-    assert remove_mock.call_count > 10
+    assert remove_mock.called
 
 
 def test_run_workflow_missing_r_master_slc(ic_mock, tc_mock):
@@ -495,7 +507,7 @@ def test_calc_unw_thinning(monkeypatch, pg_unw_mock, pc_mock, ic_mock, tc_mock):
     assert pg_unw_mock.interp_ad.called is False
     assert pg_unw_mock.unw_model.called is False
 
-    process_ifg.calc_unw_thinning(pc_mock, ic_mock, tc_mock, ifg_width=17)
+    process_ifg.calc_unw_thinning(pc_mock, ic_mock, tc_mock, 17)
 
     assert pg_unw_mock.rascc_mask_thinning.called
     assert pg_unw_mock.mcf.called

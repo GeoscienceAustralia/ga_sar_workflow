@@ -9,10 +9,10 @@ from pathlib import Path
 import structlog
 from PIL import Image
 import numpy as np
-import geopandas
 
 from insar.py_gamma_ga import GammaInterface, auto_logging_decorator, subprocess_wrapper
 from insar.subprocess_utils import working_directory, run_command
+from insar.coreg_utils import read_land_center_coords
 from insar import constant as const
 
 _LOG = structlog.get_logger("insar")
@@ -27,50 +27,6 @@ pg = GammaInterface(
         subprocess_wrapper, CoregisterDemException, _LOG
     )
 )
-
-
-class SlcParFileParser:
-    def __init__(self, par_file: Union[Path, str],) -> None:
-        """
-        Convenient access fields for SLC image parameter properties.
-        :param par_file:
-            A full path to a SLC parameter file.
-        """
-        self.par_file = Path(par_file).as_posix()
-        self.par_vals = pg.ParFile(self.par_file)
-
-    @property
-    def slc_par_params(self):
-        """
-        Convenient SLC parameter access method needed for SLC-DEM co-registration.
-        """
-        par_params = namedtuple("slc_par_params", ["range_samples", "azimuth_lines"])
-        return par_params(
-            self.par_vals.get_value("range_samples", dtype=int, index=0),
-            self.par_vals.get_value("azimuth_lines", dtype=int, index=0),
-        )
-
-
-class DemParFileParser:
-    def __init__(self, par_file: Union[Path, str],) -> None:
-        """
-        Convenient access fileds for DEM image parameter properties.
-        :param par_file:
-            A full path to a DEM parameter file.
-        """
-        self.par_file = Path(par_file).as_posix()
-        self.dem_par_vals = pg.ParFile(self.par_file)
-
-    @property
-    def dem_par_params(self):
-        """
-        Convenient DEM parameter access method need for SLC-DEM co-registration.
-        """
-        par_params = namedtuple("dem_par_params", ["post_lon", "width"])
-        return par_params(
-            self.dem_par_vals.get_value("post_lon", dtype=float, index=0),
-            self.dem_par_vals.get_value("width", dtype=int, index=0),
-        )
 
 
 class CoregisterDem:
@@ -311,13 +267,13 @@ class CoregisterDem:
         """
 
         if self.r_dem_master_mli_width is None:
-            mli_par = SlcParFileParser(self.r_dem_master_mli_par)
-            self.r_dem_master_mli_width = mli_par.slc_par_params.range_samples
-            self.r_dem_master_mli_length = mli_par.slc_par_params.azimuth_lines
+            mli_par = pg.ParFile(self.r_dem_master_mli_par)
+            self.r_dem_master_mli_width = mli_par.get_value("range_samples", dtype=int, index=0)
+            self.r_dem_master_mli_length = mli_par.get_value("azimuth_lines", dtype=int, index=0)
 
         if self.dem_width is None:
-            geo_dem_params = DemParFileParser(self.geo_dem_par)
-            self.dem_width = geo_dem_params.dem_par_params.width
+            geo_dem_par = pg.ParFile(self.geo_dem_par)
+            self.dem_width = geo_dem_par.get_value("width", dtype=int, index=0)
 
     def adjust_dem_parameters(self) -> None:
         """
@@ -421,10 +377,9 @@ class CoregisterDem:
         # TODO only useful for visual debugging phase.
         # This is redundant in production phase (Consult InSAR team and remove)
         if raster_out:
-            params = SlcParFileParser(self.r_dem_master_mli_par)
-
             pwr_pathname = str(self.r_dem_master_mli)
-            width = params.slc_par_params.range_samples
+            mli_par = pg.ParFile(self.r_dem_master_mli_par)
+            width = mli_par.get_value("range_samples", dtype=int, index=0)
             start = 1
             nlines = 0  # default (to end of file)
             pixavr = 20
@@ -627,49 +582,18 @@ class CoregisterDem:
         ):
             self._set_attrs()
 
-        # Load the land center from shape file
-        dbf = geopandas.GeoDataFrame.from_file(Path(self.shapefile).with_suffix(".dbf"))
+        # Read land center coordinates from shape file
+        land_center = read_land_center_coords(pg, self.r_dem_master_mli_par, Path(self.shapefile))
 
-        north_lat, east_lon = None, None
-
-        if hasattr(dbf, "land_cen_l") and hasattr(dbf, "land_cen_1"):
-            # Note: land center is duplicated for every burst,
-            # we just take the first value since they're all the same
-            north_lat = dbf.land_cen_l[0]
-            east_lon = dbf.land_cen_1[0]
-
-            # "0" values are interpreted as "no value" / None
-            north_lat = None if north_lat == "0" else north_lat
-            east_lon = None if east_lon == "0" else east_lon
-
-        if north_lat is not None and east_lon is not None:
-            _, cout, _ = pg.coord_to_sarpix(
-                self.r_dem_master_mli_par,  # SLC_par
-                const.NOT_PROVIDED,  # OFF_par
-                const.NOT_PROVIDED,  # DEM_par
-                north_lat,
-                east_lon,
-                const.NOT_PROVIDED,  # hgt
-            )
-
-            # Extract pixel coordinates from stdout
-            # Example: SLC/MLI range, azimuth pixel (int):         7340        17060
-            matched = [i for i in cout if i.startswith("SLC/MLI range, azimuth pixel (int):")]
-            if len(matched) != 1:
-                error_msg = "Failed to convert scene land center from lat/lon into pixel coordinates!"
-                _LOG.error(error_msg)
-                raise Exception(error_msg)
-
-            rpos, azpos = matched[0].split()[-2:]
-
+        if land_center is not None:
             _LOG.info(
-                "Scene center for DEM coregistration determined from shape file",
-                r_dem_master_mli=self.r_dem_master_mli,
-                north_lat=north_lat,
-                east_lon=east_lon,
-                rpos=rpos,
-                azpos=azpos
+                "Land center for DEM coregistration determined from shape file",
+                mli=self.r_dem_master_mli,
+                shapefile=self.shapefile,
+                land_center=land_center
             )
+
+            rpos, azpos = land_center
 
         else:
             rpos, azpos = None, None

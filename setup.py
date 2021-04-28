@@ -13,7 +13,7 @@ HERE = Path(__file__).parent
 
 README = (HERE / "README.md").read_text()
 
-with open('requirements.txt') as requirement_file:
+with (HERE / 'requirements.txt').open() as requirement_file:
     requirements = [r.strip() for r in requirement_file.readlines()]
 
 setup_requirements = ["pytest-runner"]

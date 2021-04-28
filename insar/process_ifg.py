@@ -1,6 +1,7 @@
 import io
 import pathlib
 import subprocess
+import shutil
 from typing import Union, Tuple, Optional
 from PIL import Image
 import numpy as np
@@ -117,11 +118,10 @@ def run_workflow(
         if enable_refinement:
             ifg_file = refined_flattened_ifg(pc, ic, dc, ifg_file)
             ifg_file = precise_flattened_ifg(pc, ic, dc, tc, ifg_file, ifg_width, land_center)
-            ifg_baseline = ic.ifg_base
         else:
-            ifg_baseline = ic.ifg_base_init
+            shutil.copy(ic.ifg_base_init, ic.ifg_base)
 
-        calc_bperp_coh_filt(pc, ic, ifg_file, ifg_baseline, ifg_width)
+        calc_bperp_coh_filt(pc, ic, ifg_file, ic.ifg_base, ifg_width)
         calc_unw(pc, ic, tc, ifg_width, land_center)  # this calls unw thinning
         do_geocode(pc, ic, dc, tc, ifg_width)
 

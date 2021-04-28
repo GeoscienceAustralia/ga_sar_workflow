@@ -26,6 +26,11 @@ PG_RETURN_SARPIX_VALUE = (0, ["SLC/MLI range, azimuth pixel (int):         7340 
 test_dir = TemporaryDirectory('test_process_ifg')
 
 
+def base_orbit_se(*args, **kwargs):
+    out_par = args[2]
+    pathlib.Path(out_par).touch()
+    return PG_RETURN_VALUE
+
 @pytest.fixture
 def pg_int_mock():
     """Create basic mock of the py_gamma module for INT processing step."""
@@ -82,6 +87,8 @@ def ic_mock():
     ic.ifg_filt_geocode_png = ic.ifg_dir / "test_filt_geo_int.png"
     ic.ifg_flat_coh_geocode_png = ic.ifg_dir / "test_flat_filt_coh.png"
     ic.ifg_flat_geocode_png = ic.ifg_dir / "test_flat_geo_int.png"
+    ic.ifg_base_init = ic.ifg_dir / "test_base_init.par"
+    ic.ifg_base = ic.ifg_dir / "test_base.par"
 
     ic.ifg_bperp = mock_path()
     ic.r_master_slc = mock_path()
@@ -125,6 +132,8 @@ def test_run_workflow_full(
     m_pygamma = mock.NonCallableMock()
     m_pygamma.base_perp.return_value = PG_RETURN_VALUE
     m_pygamma.coord_to_sarpix.return_value = PG_RETURN_SARPIX_VALUE
+    m_pygamma.base_orbit.side_effect = base_orbit_se
+    m_pygamma.base_orbit.return_value = PG_RETURN_VALUE
     monkeypatch.setattr(process_ifg, "pg", m_pygamma)
 
     # mock out smaller helper functions (prevent I/O etc)

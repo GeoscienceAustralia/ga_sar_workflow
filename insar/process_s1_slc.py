@@ -484,33 +484,35 @@ class SlcProcess:
             corrected for the scenes acquired before 15th March, 2015.
         """
 
+        if self.acquisition_date >= self.phase_shift_date:
+            return
+
         with tempfile.TemporaryDirectory() as tmpdir:
             tmpdir = Path(tmpdir)
-            if self.acquisition_date < self.phase_shift_date:
-                slc_dir = Path(os.getcwd())
-                tab_names = self.swath_tab_names(swath, self.slc_prefix)
+            slc_dir = Path(os.getcwd())
+            tab_names = self.swath_tab_names(swath, self.slc_prefix)
 
-                with working_directory(tmpdir):
-                    slc_1_pathname = str(slc_dir.joinpath(tab_names.slc))
-                    slc_1_par_pathname = str(slc_dir.joinpath(tab_names.par))
-                    slc_2_pathname = tab_names.slc
-                    slc_2_par_pathname = tab_names.par
+            with working_directory(tmpdir):
+                slc_1_pathname = str(slc_dir.joinpath(tab_names.slc))
+                slc_1_par_pathname = str(slc_dir.joinpath(tab_names.par))
+                slc_2_pathname = tab_names.slc
+                slc_2_par_pathname = tab_names.par
 
-                    pg.SLC_phase_shift(
-                        slc_1_pathname,
-                        slc_1_par_pathname,
-                        slc_2_pathname,
-                        slc_2_par_pathname,
-                        -1.25,  # ph_shift: phase shift to add to SLC phase (radians)
-                    )
+                pg.SLC_phase_shift(
+                    slc_1_pathname,
+                    slc_1_par_pathname,
+                    slc_2_pathname,
+                    slc_2_par_pathname,
+                    -1.25,  # ph_shift: phase shift to add to SLC phase (radians)
+                )
 
-                    # replace iw1 slc with phase corrected files
-                    shutil.move(
-                        tmpdir.joinpath(tab_names.slc), slc_dir.joinpath(tab_names.slc)
-                    )
-                    shutil.move(
-                        tmpdir.joinpath(tab_names.par), slc_dir.joinpath(tab_names.par)
-                    )
+                # replace iw1 slc with phase corrected files
+                shutil.move(
+                    tmpdir.joinpath(tab_names.slc), slc_dir.joinpath(tab_names.slc)
+                )
+                shutil.move(
+                    tmpdir.joinpath(tab_names.par), slc_dir.joinpath(tab_names.par)
+                )
 
     def mosaic_slc(
         self, range_looks: Optional[int] = 12, azimuth_looks: Optional[int] = 2,
@@ -568,6 +570,22 @@ class SlcProcess:
         tabs_param = dict()
         complete_frame = True
 
+        # Get the burst offset of each acquisition
+        df_subset = df_subset.sort_values(by=acq_datetime_key, ascending=True)
+        burst_idx_offs = {}
+
+        total_bursts = 0
+        for url in df_subset.url.unique():
+            df_url = df_subset[df_subset.url == url]
+            url_bursts = df_url.total_bursts[0]
+
+            # Sanity check they all have the same total_burst count (they should... all be duplicates of the same value)
+            total_bursts_sane = all(df_url.total_bursts == url_bursts)
+            assert(total_bursts_sane)
+
+            burst_idx_offs[url] = url_bursts
+            total_bursts += url_bursts
+
         with tempfile.TemporaryDirectory() as tmpdir:
             tmpdir = Path(tmpdir)
             burst_tab = tmpdir.joinpath("burst_tab")
@@ -581,7 +599,7 @@ class SlcProcess:
                     # write the burst numbers to subset from the concatenated swaths
                     start_burst = None
                     end_burst = None
-                    total_bursts = 0
+
                     for row in swath_df.itertuples():
                         missing_bursts = row.missing_master_bursts.strip("][")
                         if missing_bursts:
@@ -590,13 +608,13 @@ class SlcProcess:
                         burst_nums = [
                             int(i) for i in row.burst_number.strip("][").split(",")
                         ]
+
+                        burst_offs = burst_idx_offs[row.url]
+
                         if start_burst is None:
-                            start_burst = min(burst_nums)
-                        if end_burst is None:
-                            end_burst = max(burst_nums)
-                        else:
-                            end_burst = max(burst_nums) + total_bursts
-                        total_bursts += int(row.total_bursts)
+                            start_burst = burst_offs + min(burst_nums)
+
+                        end_burst = burst_offs + max(burst_nums)
 
                     fid.write(str(start_burst) + " " + str(end_burst) + "\n")
                     tab_names = self.swath_tab_names(swath, self.slc_prefix)

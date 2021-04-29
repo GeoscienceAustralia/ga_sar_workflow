@@ -583,7 +583,7 @@ class SlcProcess:
             total_bursts_sane = all(df_url.total_bursts == url_bursts)
             assert(total_bursts_sane)
 
-            burst_idx_offs[url] = url_bursts
+            burst_idx_offs[url] = total_bursts
             total_bursts += url_bursts
 
         with tempfile.TemporaryDirectory() as tmpdir:

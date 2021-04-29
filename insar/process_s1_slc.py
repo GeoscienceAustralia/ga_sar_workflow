@@ -577,7 +577,7 @@ class SlcProcess:
         total_bursts = 0
         for url in df_subset.url.unique():
             df_url = df_subset[df_subset.url == url]
-            url_bursts = df_url.total_bursts[0]
+            url_bursts = df_url.total_bursts.values[0]
 
             # Sanity check they all have the same total_burst count (they should... all be duplicates of the same value)
             total_bursts_sane = all(df_url.total_bursts == url_bursts)

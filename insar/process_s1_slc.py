@@ -574,17 +574,22 @@ class SlcProcess:
         df_subset = df_subset.sort_values(by=acq_datetime_key, ascending=True)
         burst_idx_offs = {}
 
-        total_bursts = 0
-        for url in df_subset.url.unique():
-            df_url = df_subset[df_subset.url == url]
-            url_bursts = df_url.total_bursts.values[0]
+        for swath in [1, 2, 3]:
+            burst_idx_offs[swath] = {}
+            total_bursts = 0
 
-            # Sanity check they all have the same total_burst count (they should... all be duplicates of the same value)
-            total_bursts_sane = all(df_url.total_bursts == url_bursts)
-            assert(total_bursts_sane)
+            swath_df = df_subset[df_subset.swath == "IW{}".format(swath)]
 
-            burst_idx_offs[url] = total_bursts
-            total_bursts += url_bursts
+            for url in swath_df.url.unique():
+                df_url = swath_df[(swath_df.url == url) & (swath_df.swath == "IW{}".format(swath))]
+                url_bursts = df_url.total_bursts.values[0]
+
+                # Sanity check they all have the same total_burst count (they should... all be duplicates of the same value)
+                total_bursts_sane = all(df_url.total_bursts == url_bursts)
+                assert(total_bursts_sane)
+
+                burst_idx_offs[swath][url] = total_bursts
+                total_bursts += url_bursts
 
         with tempfile.TemporaryDirectory() as tmpdir:
             tmpdir = Path(tmpdir)

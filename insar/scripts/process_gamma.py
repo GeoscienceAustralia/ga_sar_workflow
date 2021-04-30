@@ -1608,6 +1608,9 @@ class CreateBackscatter(luigi.Task):
     def trigger_resume(self, reprocess_dates, reprocess_failed_scenes):
         log = STATUS_LOGGER.bind(track_frame=f"{self.track}_{self.frame}")
 
+        if output.exists():
+            output.remove()
+
         create_coregs_task = self.get_create_coreg_task()
 
         # FIXME: We need to separate backscatter from coreg

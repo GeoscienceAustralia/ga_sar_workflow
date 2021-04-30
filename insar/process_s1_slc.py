@@ -582,7 +582,7 @@ class SlcProcess:
 
             for url in swath_df.url.unique():
                 df_url = swath_df[(swath_df.url == url) & (swath_df.swath == "IW{}".format(swath))]
-                url_bursts = df_url.total_bursts.values[0]
+                url_bursts = int(df_url.total_bursts.values[0])
 
                 # Sanity check they all have the same total_burst count (they should... all be duplicates of the same value)
                 total_bursts_sane = all(df_url.total_bursts == url_bursts)
@@ -614,7 +614,7 @@ class SlcProcess:
                             int(i) for i in row.burst_number.strip("][").split(",")
                         ]
 
-                        burst_offs = burst_idx_offs[row.url]
+                        burst_offs = burst_idx_offs[swath][row.url]
 
                         if start_burst is None:
                             start_burst = burst_offs + min(burst_nums)

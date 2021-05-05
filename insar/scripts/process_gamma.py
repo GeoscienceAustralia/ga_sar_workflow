@@ -2434,11 +2434,11 @@ class ARD(luigi.WrapperTask):
 
             # DEM files
             "DEM/**/*rlks_geo_to_rdc.lt",
-            "DEM/**/*_geo.dem",
+            "DEM/**/*_geo.dem.tif",
             "DEM/**/*_geo.dem.par",
             "DEM/**/diff_*rlks.par",
-            "DEM/**/*_geo.lv_phi",
-            "DEM/**/*_geo.lv_theta",
+            "DEM/**/*_geo.lv_phi.tif",
+            "DEM/**/*_geo.lv_theta.tif",
             "DEM/**/*_rdc.dem",
 
             # Keep all lists and top level files

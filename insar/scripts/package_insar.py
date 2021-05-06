@@ -31,14 +31,16 @@ def map_product(product: str) -> Dict:
             "angles": ("lv_phi.tif", "lv_theta.tif"),
             "product_base": "SLC",
             "dem_base": "DEM",
-            "product_family": "bck",
+            "product_family": "nbr",
+            "thumbnail_bands": ["gamma0_VV"]
         },
         "insar": {
-            "suffixs": ("unw.tif", "int.tif", "cc.tif"),
+            "suffixs": ("unw.tif", "int.tif", "coh.tif"),
             "angles": ("lv_phi.tif", "lv_theta.tif"),
             "product_base": "INT",
             "dem_base": "DEM",
             "product_family": "insar",
+            "thumbnail_bands": ["2pi", "2pi", "2pi"]
         },
     }
 
@@ -321,34 +323,20 @@ class SLC:
                     _LOG.info("burst does not exist", burst_data=burst_data)
 
                 # try to find any slc parameter for any polarizations to extract the metadata
-                par_files = None
-                for _pol in _pols:
-                    par_files = [
-                        item
-                        for item in slc_scene_path.glob(
-                            f"r{slc_scene_path.name}_{_pol}_*rlks.mli.par"
-                        )
-                    ]
-                    if par_files:
-                        break
+                par_files = [
+                    item
+                    for _pol in _pols
+                    for item in slc_scene_path.glob(
+                        f"r{slc_scene_path.name}_{_pol}_*rlks.mli.par"
+                    )
+                ]
 
-                # at this point par_files could be: None, [], or [some_file]
-                # log error if None or []
-                if not par_files:
+                # Ensure we have data for all polarisations requested to be packaged
+                if len(par_files) != len(_pols):
                     package_status = False
-                    _LOG.info(
-                        f"missing required parameter needed for packaging "
-                        f"for {slc_scene_path}"
-                    )
-                    _LOG.info(
-                        "missing parameter required for packaging",
-                        slc_path=str(slc_scene_path),
-                    )
-                    # raise exception and exit here
-                    raise Exception(
-                        f"missing required parameter needed "
-                        f"for packaging for {slc_scene_path}"
-                    )
+                    msg = f"{slc_scene_path} missing one or more polarised products, expected {_pols}"
+                    _LOG.info(msg, scene=slc_scene_path)
+                    raise Exception(msg)
 
                 scene_date = datetime.datetime.strptime(
                     slc_scene_path.name, "%Y%m%d"
@@ -361,8 +349,11 @@ class SLC:
                 # extract metadata (this requires pygamma)
                 s1_zip_list = get_s1_files(burst_data, scene_date)
 
-                # get multi-layered slc metadata dict
+                # get multi-layered slc ESA metadata dict
                 slc_metadata_dict = get_slc_metadata_dict(s1_zip_list, yaml_base_dir)
+
+                # get our workflow processing metadata dict
+                our_metadata_dict = {} # TODO
 
                 yield cls(
                     track=_track,
@@ -370,7 +361,8 @@ class SLC:
                     par_file=par_files[0],
                     slc_path=slc_scene_path,
                     dem_path=dem_path,
-                    slc_metadata=slc_metadata_dict,
+                    esa_slc_metadata=slc_metadata_dict,
+                    our_slc_metadata=our_metadata_dict,
                     status=package_status,
                 )
         else:
@@ -409,46 +401,86 @@ def package(
     common_attrs: Optional[Dict] = None,
 ) -> None:
 
-    # pg.__file__ doesn't work with the shim. The following error is generated
-    # AttributeError: Unrecognised Gamma program '__file__', check calling
-    # function
-    # software_name, version = Path(pg.__file__).parent.name.split("-")
-
-    # use the environmental variable to get software name & version
-    software_name,version = os.path.split(os.environ["GAMMA_INSTALL_DIR"])[-1].split("-")
-    url = "http://www/gamma-rs.ch"
-
     # Both the VV and VH polarizations has have identical SLC and burst informations.
     # Only properties from one polarization is gathered for packaging.
     for slc in SLC.for_path(
         track, frame, polarizations, track_frame_base, product, yaml_base_dir
     ):
-        _LOG.info("processing slc scene", slc_scene=str(slc.slc_path))
-
         # skip packaging for missing parameters files needed to extract metadata
         if not slc.status:
+            _LOG.info("skipping slc scene", slc_scene=str(slc.slc_path))
             continue
 
+        _LOG.info("processing slc scene", slc_scene=str(slc.slc_path))
+
         with DatasetAssembler(Path(out_directory), naming_conventions="dea") as p:
-            esa_metadata_slc = slc.slc_metadata
+            # Metadata extracted verbatim from ESA's acquisition xml files
+            esa_slc_metadata = slc.esa_slc_metadata
+            esa_s1_raw_data_ids = esa_slc_metadata.keys()
+            # Metadata extracted/generated by gamma
             ard_slc_metadata = get_image_metadata_dict(slc.par_file)
+            # Extra metadata generated by our own processing workflow
+            our_slc_metadata = slc.our_slc_metadata
 
             # extract the common slc attributes from ESA SLC files
             # subsequent slc all have the same common SLC attributes
             if common_attrs is None:
-                for _, _meta in esa_metadata_slc.items():
+                for _, _meta in esa_slc_metadata.items():
                     common_attrs = get_slc_attrs(_meta["properties"])
                     break
+
+            # Query our SLCs for orbit file used
+            orbit_file = Path(our_slc_metadata["slc"]["orbit_url"]).name
+
+            if "RESORB" in orbit_file:
+                orbit_source = "RESORB"
+                is_orbit_precise = False
+            elif "POEORB" in orbit_file:
+                orbit_source = "POEORB"
+                is_orbit_precise = True
+            else:
+                raise Exception(f"Unsupported orbit file: {orbit_file}")
 
             product_attrs = map_product(product)
             p.instrument = common_attrs["instrument"]
             p.platform = common_attrs["platform"]
             p.product_family = product_attrs["product_family"]
-            p.maturity = "interim"
+
+            # TBD: When we support NRT backscatter, we need to differentiate
+            # between non-coregistered backscatter (not necessarily interim) &
+            # coregistered backscatter (which would be final).
+            #
+            # currently we only produce coregistered data (and SLC.for_path
+            # only looks for coregistered data), so this is fine for now...
+            if is_orbit_precise:
+                p.maturity = "interim"
+            else:
+                p.maturity = "final"
+
             p.region_code = f"{int(common_attrs['relative_orbit']):03}{frame}"
             p.producer = "ga.gov.au"
             p.properties["eo:orbit"] = common_attrs["orbit"]
             p.properties["eo:relative_orbit"] = common_attrs["relative_orbit"]
+
+            # NEEDS REVISION
+            # TBD: what should this prefix be called?
+            # or do we just throw them into the user metadata instead?
+            prefix = "TBD"
+
+            p.properties[f"{prefix}:orbit_data_source"] = orbit_source
+            p.properties[f"{prefix}:orbit_data_file"] = orbit_file
+
+            p.properties[f"{prefix}:polarizations"] = " ".join(polarizations).upper()
+            p.properties[f"{prefix}:antenna_pointing"] = "TODO"
+            p.properties[f"{prefix}:platform_heading"] = "TODO"
+
+            # These are hard-coded assuptions, based on either our satellite/s (S1) or the data from it we support.
+            p.properties[f"{prefix}:band"] = "C"
+            p.properties[f"{prefix}:observation_mode"] = "IW"
+            p.properties[f"{prefix}:beam_id"] = "TOPS"
+            p.properties[f"{prefix}:orbit_mean_altitude"] = 693
+            p.properties[f"{prefix}:dem"] = "???"
+            # END NEEDS REVISION
 
             # processed time is determined from the maketime of slc.par_file
             # TODO better mechanism to infer the processed time of files
@@ -458,14 +490,22 @@ def package(
             # TODO need better logical mechanism to determine dataset_version
             p.dataset_version = "1.0.0"
 
-            # note the software version
-            p.note_software_version(software_name, url, version)
+            # note the software versions used
+            # Note: This assumes we're running in the same environment the workflow was...
+            # - we may want to log this directly from the workflow in the future to be certain
+
+            gamma_software_name,gamma_version = os.path.split(os.environ["GAMMA_INSTALL_DIR"])[-1].split("-")
+            gamma_url = "http://www/gamma-rs.ch"
+
+            p.note_software_version(gamma_software_name, gamma_url, gamma_version)
+            p.note_software_version("GDAL", "https://gdal.org/", osgeo.gdal.VersionInfo())
+            p.note_software_version("gamma_insar", "https://github.com/GeoscienceAustralia/gamma_insar", "TBD")
 
             for _key, _val in ard_slc_metadata.items():
                 p.properties[f"{product}:{_key}"] = _val
 
             # store level-1 SLC metadata as extended user metadata
-            for key, val in esa_metadata_slc.items():
+            for key, val in esa_slc_metadata.items():
                 p.extend_user_metadata(key, val)
 
             # find backscatter files and write
@@ -475,6 +515,20 @@ def package(
             _write_angles_measurements(
                 p, find_products(slc.dem_path, product_attrs["angles"])
             )
+
+            # Note lineage
+            # TODO: get source data paths?  or are IDs enough?
+
+            # What are these classified as? guessing not level0...
+            p.note_source_datasets("level0", esa_s1_raw_data_ids)
+
+            # Write thumbnail
+            thumbnail_bands = product_attrs["thumbnail_bands"]
+            if len(thumbnail_bands) == 1:
+                p.write_thumbnail_singleband(thumbnail_bands[0])
+            else:
+                p.write_thumbnail(**thumbnail_bands)
+
             p.done()
 
 

@@ -11,6 +11,7 @@ import datetime
 import pandas as pd
 import structlog
 import json
+import osgeo.gdal
 
 from insar import constant as const
 from insar.constant import SlcFilenames

@@ -180,7 +180,7 @@ class SlcProcess:
 
             self.acquisition_bursts[_id] = {}
             self.metadata[_id] = {
-                "src_url": save_file
+                "src_url": save_file.as_posix()
             }
 
             # add start time to dict
@@ -250,25 +250,19 @@ class SlcProcess:
                 xml_pattern = xml_pattern.format(swath=swath, polarization=self.polarization.lower())
                 for xml_file in save_file.glob(xml_pattern):
                     _, cout, _ = pg.S1_burstloc(xml_file)
-
-                    num_bursts = 0
-
-                    for line in cout:
-                        if line.startswith("Burst"):
-                            num_bursts += 1
-
+                    num_bursts = sum([line.startswith("Burst") for line in cout])
                     num_subswath_burst += num_bursts
 
                 self.acquisition_bursts[_id][swath] = num_subswath_burst
-                self.metadata[_id]["orbit_url"] = raw_files[4]
+                self.metadata[_id][f"IW{swath}_bursts"] = num_subswath_burst
 
         self.slc_tabs_params = _concat_tabs
         self.metadata["slc"]["orbit_url"] = self.orbit_file
 
         # Write metadata used to produce this SLC
-        metadata_path = self.output_dir / self.scene_date / "metadata.json"
+        metadata_path = self.output_dir / self.scene_date / f"metadata_{self.polarization}.json"
         with metadata_path.open("w") as file:
-            json.dump(self.metadata, file)
+            json.dump(self.metadata, file, indent=2)
 
     def _write_tabs(
         self,

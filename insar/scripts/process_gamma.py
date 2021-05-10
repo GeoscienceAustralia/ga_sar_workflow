@@ -4,6 +4,7 @@ import datetime
 import os
 import re
 import traceback
+import os.path
 from os.path import exists, join as pjoin
 from pathlib import Path
 import zipfile
@@ -15,7 +16,10 @@ import zlib
 import structlog
 import shutil
 import enum
+import osgeo.gdal
+import json
 
+import insar
 from insar.constant import SCENE_DATE_FMT, SlcFilenames, MliFilenames
 from insar.generate_slc_inputs import query_slc_inputs, slc_inputs
 from insar.calc_baselines_new import BaselineProcess
@@ -376,6 +380,7 @@ class InitialSetup(luigi.Task):
     poeorb_path = luigi.Parameter()
     resorb_path = luigi.Parameter()
     cleanup = luigi.BoolParameter()
+    dem_img = luigi.Parameter()
 
     def output(self):
         return luigi.LocalTarget(
@@ -389,6 +394,7 @@ class InitialSetup(luigi.Task):
         log.info("initial setup task", sensor=self.sensor)
 
         outdir = Path(self.outdir)
+        pols = list(self.polarization)
 
         # get the relative orbit number, which is int value of the numeric part of the track name
         rel_orbit = int(re.findall(r"\d+", str(self.track))[0])
@@ -401,7 +407,7 @@ class InitialSetup(luigi.Task):
             self.end_date,
             str(self.orbit),
             rel_orbit,
-            list(self.polarization),
+            pols,
             self.sensor
         )
 
@@ -416,7 +422,7 @@ class InitialSetup(luigi.Task):
         # here scenes_list and download_list are overwritten for each polarization
         # IW products in conflict-free mode products VV and VH polarization over land
         slc_inputs_df = pd.concat(
-            [slc_inputs(slc_query_results[pol]) for pol in list(self.polarization)]
+            [slc_inputs(slc_query_results[pol]) for pol in pols]
         )
 
         # download slc data
@@ -489,6 +495,40 @@ class InitialSetup(luigi.Task):
 
         with self.output().open("w") as out_fid:
             out_fid.write("")
+
+        # Write high level workflow metadata
+        _, gamma_version = os.path.split(os.environ["GAMMA_INSTALL_DIR"])[-1].split("-")
+
+        metadata = {
+            # General workflow parameters
+            #
+            # Note: This is also accessible indirectly in the log files, and
+            # potentially in other plain text files - but repeated here
+            # for easy access for external software so it doesn't need to
+            # know the nity gritty of all our auxilliary files or logs.
+            "shapefile": str(self.vector_file),
+            "database": str(self.database_name),
+            "poeorb_path": str(self.poeorb_path),
+            "resorb_path": str(self.resorb_path),
+            "source_data_path": str(os.path.commonpath(list(download_list))),
+            "dem_path": str(self.dem_img),
+            "primary_ref_scene": ref_scene_date.strftime(__DATE_FMT__),
+            "temporal_range": [
+                self.start_date.strftime(__DATE_FMT__),
+                self.end_date.strftime(__DATE_FMT__)
+            ],
+            "burst_data": str(self.burst_data_csv),
+            "num_scene_dates": len(formatted_scene_dates),
+            "polarizations": pols,
+
+            # Software versions used for processing
+            "gamma_version": gamma_version,
+            "gamma_insar_version": insar.__version__,
+            "gdal_version": str(osgeo.gdal.VersionInfo()),
+        }
+
+        with (outdir / "metadata.json").open("w") as file:
+            json.dump(metadata, file, indent=2)
 
 
 @requires(InitialSetup)
@@ -2339,7 +2379,7 @@ class ARD(luigi.WrapperTask):
 
                 if slc_query_results is None:
                     raise ValueError(
-                        f"Nothing was returned for {self.track}_{self.frame} "
+                        f"Nothing was returned for {track}_{frame} "
                         f"start_date: {self.start_date} "
                         f"end_date: {self.end_date} "
                         f"orbit: {self.orbit}"

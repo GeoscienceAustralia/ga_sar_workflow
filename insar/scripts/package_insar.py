@@ -9,6 +9,7 @@ import structlog
 import pandas as pd
 from pathlib import Path
 from typing import Dict, Iterable, List, Optional, Union
+import json
 
 from insar.py_gamma_ga import pg
 from eodatasets3 import DatasetAssembler
@@ -32,14 +33,16 @@ def map_product(product: str) -> Dict:
             "product_base": "SLC",
             "dem_base": "DEM",
             "product_family": "nbr",
-            "thumbnail_bands": ["gamma0_VV"]
+            "thumbnail_bands": ["gamma0_vv"]
         },
         "insar": {
+            # Note: Suffixes here are wrong / need revising
             "suffixs": ("unw.tif", "int.tif", "coh.tif"),
             "angles": ("lv_phi.tif", "lv_theta.tif"),
             "product_base": "INT",
             "dem_base": "DEM",
             "product_family": "insar",
+            # Note: These are wrong / placeholders
             "thumbnail_bands": ["2pi", "2pi", "2pi"]
         },
     }
@@ -289,7 +292,8 @@ class SLC:
     par_file: Path
     slc_path: Path
     dem_path: Path
-    slc_metadata: Dict
+    esa_slc_metadata: Dict
+    our_slc_metadata: Dict
     status: bool
 
     @classmethod
@@ -353,7 +357,10 @@ class SLC:
                 slc_metadata_dict = get_slc_metadata_dict(s1_zip_list, yaml_base_dir)
 
                 # get our workflow processing metadata dict
-                our_metadata_dict = {} # TODO
+                # Note: we take this from the first polarisation's metadata, they should
+                # share common values for all the properties we care about for packaging.
+                with (slc_scene_path / f"metadata_{_pols[0]}.json").open("r") as file:
+                    our_metadata_dict = json.load(file)
 
                 yield cls(
                     track=_track,
@@ -400,6 +407,19 @@ def package(
     polarizations: Optional[Iterable[str]] = ("VV", "VH"),
     common_attrs: Optional[Dict] = None,
 ) -> None:
+
+    if not isinstance(track_frame_base, Path):
+        track_frame_base = Path(track_frame_base)
+
+    if not isinstance(out_directory, Path):
+        out_directory = Path(out_directory)
+
+    if yaml_base_dir and not isinstance(yaml_base_dir, Path):
+        yaml_base_dir = Path(yaml_base_dir)
+
+    # Load high level workflow metadata
+    with (track_frame_base / "metadata.json").open("r") as file:
+        workflow_metadata = json.load(file)
 
     # Both the VV and VH polarizations has have identical SLC and burst informations.
     # Only properties from one polarization is gathered for packaging.
@@ -465,21 +485,26 @@ def package(
             # NEEDS REVISION
             # TBD: what should this prefix be called?
             # or do we just throw them into the user metadata instead?
-            prefix = "TBD"
+            prefix = "tbd"
 
             p.properties[f"{prefix}:orbit_data_source"] = orbit_source
             p.properties[f"{prefix}:orbit_data_file"] = orbit_file
 
             p.properties[f"{prefix}:polarizations"] = " ".join(polarizations).upper()
-            p.properties[f"{prefix}:antenna_pointing"] = "TODO"
-            p.properties[f"{prefix}:platform_heading"] = "TODO"
+
+            if float(ard_slc_metadata["azimuth_angle"]) > 0:
+                p.properties[f"{prefix}:antenna_pointing"] = "RIGHT"
+            else:
+                p.properties[f"{prefix}:antenna_pointing"] = "LEFT"
+
+            p.properties[f"{prefix}:platform_heading"] = ard_slc_metadata["heading"]
 
             # These are hard-coded assuptions, based on either our satellite/s (S1) or the data from it we support.
             p.properties[f"{prefix}:band"] = "C"
             p.properties[f"{prefix}:observation_mode"] = "IW"
             p.properties[f"{prefix}:beam_id"] = "TOPS"
             p.properties[f"{prefix}:orbit_mean_altitude"] = 693
-            p.properties[f"{prefix}:dem"] = "???"
+            p.properties[f"{prefix}:dem"] = workflow_metadata["dem_path"]
             # END NEEDS REVISION
 
             # processed time is determined from the maketime of slc.par_file
@@ -491,15 +516,9 @@ def package(
             p.dataset_version = "1.0.0"
 
             # note the software versions used
-            # Note: This assumes we're running in the same environment the workflow was...
-            # - we may want to log this directly from the workflow in the future to be certain
-
-            gamma_software_name,gamma_version = os.path.split(os.environ["GAMMA_INSTALL_DIR"])[-1].split("-")
-            gamma_url = "http://www/gamma-rs.ch"
-
-            p.note_software_version(gamma_software_name, gamma_url, gamma_version)
-            p.note_software_version("GDAL", "https://gdal.org/", osgeo.gdal.VersionInfo())
-            p.note_software_version("gamma_insar", "https://github.com/GeoscienceAustralia/gamma_insar", "TBD")
+            p.note_software_version("gamma", "http://www/gamma-rs.ch", workflow_metadata["gamma_version"])
+            p.note_software_version("GDAL", "https://gdal.org/", workflow_metadata["gdal_version"])
+            p.note_software_version("gamma_insar", "https://github.com/GeoscienceAustralia/gamma_insar", workflow_metadata["gamma_insar_version"])
 
             for _key, _val in ard_slc_metadata.items():
                 p.properties[f"{product}:{_key}"] = _val
@@ -520,12 +539,12 @@ def package(
             # TODO: get source data paths?  or are IDs enough?
 
             # What are these classified as? guessing not level0...
-            p.note_source_datasets("level0", esa_s1_raw_data_ids)
+            #p.note_source_datasets("level0", esa_s1_raw_data_ids)
 
             # Write thumbnail
             thumbnail_bands = product_attrs["thumbnail_bands"]
             if len(thumbnail_bands) == 1:
-                p.write_thumbnail_singleband(thumbnail_bands[0])
+                p.write_thumbnail(thumbnail_bands[0], thumbnail_bands[0], thumbnail_bands[0])
             else:
                 p.write_thumbnail(**thumbnail_bands)
 

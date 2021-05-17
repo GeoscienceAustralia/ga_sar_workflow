@@ -105,11 +105,15 @@ class CoregisterSlc:
             self.out_dir = Path(self.slc_slave).parent
         self.accuracy_warning = self.out_dir / "ACCURACY_WARNING"
 
-        self.slave_date, self.slave_polar = self.slc_slave.stem.split('_')
-        self.master_date, self.master_polar = self.slc_master.stem.split('_')
+        self.slave_date, self.slave_pol = self.slc_slave.stem.split('_')
+        self.master_date, self.master_pol = self.slc_master.stem.split('_')
+
+        # coreg between differently polarised data makes no sense
+        assert(self.slave_pol == self.master_pol)
 
         self.log = _LOG.bind(
             task="SLC coregistration",
+            polarization=self.slave_pol,
             slave_date=self.slave_date,
             slc_slave=self.slc_slave,
             master_date=self.master_date,
@@ -156,7 +160,7 @@ class CoregisterSlc:
         self.r_slave_mli_par = None
 
         master_slave_prefix = f"{self.master_date}-{self.slave_date}"
-        self.r_master_slave_name = f"{master_slave_prefix}_{self.slave_polar}_{self.rlks}rlks"
+        self.r_master_slave_name = f"{master_slave_prefix}_{self.slave_pol}_{self.rlks}rlks"
 
         self.slave_lt = self.out_dir / f"{self.r_master_slave_name}.lt"
         self.slave_off = self.out_dir / f"{self.r_master_slave_name}.off"
@@ -1503,24 +1507,28 @@ class CoregisterSlc:
         """Main method to process SLC coregistration products."""
 
         # Re-bind thread local context to IFG processing state
-        structlog.threadlocal.clear_threadlocal()
-        structlog.threadlocal.bind_threadlocal(
-            task="SLC coregistration",
-            slc_dir=self.out_dir,
-            master_date=self.master_date,
-            slave_date=self.slave_date
-        )
+        try:
+            structlog.threadlocal.clear_threadlocal()
+            structlog.threadlocal.bind_threadlocal(
+                task="SLC coregistration",
+                slc_dir=self.out_dir,
+                master_date=self.master_date,
+                slave_date=self.slave_date
+            )
 
-        with working_directory(self.out_dir):
-            self.set_tab_files()
-            self.get_lookup()
-            self.reduce_offset()
-            self.fine_coregistration(self.slave_date, self.list_idx)
+            with working_directory(self.out_dir):
+                self.set_tab_files()
+                self.get_lookup()
+                self.reduce_offset()
+                self.fine_coregistration(self.slave_date, self.list_idx)
 
-            if inc_backscatter:
-                self.resample_full()
-                self.multi_look()
-                self.generate_normalised_backscatter()
+                if inc_backscatter:
+                    self.resample_full()
+                    self.multi_look()
+                    self.generate_normalised_backscatter()
+
+        finally:
+            structlog.threadlocal.clear_threadlocal()
 
     def main_backscatter(
         self,
@@ -1533,19 +1541,23 @@ class CoregisterSlc:
         self.slave_off = slave_off
 
         # Re-bind thread local context to IFG processing state
-        structlog.threadlocal.clear_threadlocal()
-        structlog.threadlocal.bind_threadlocal(
-            task="SLC backscatter",
-            slc_dir=self.out_dir,
-            master_date=self.master_date,
-            slave_date=self.slave_date,
-            slave_lt=self.slave_lt,
-            slave_off=self.slave_off
-        )
+        try:
+            structlog.threadlocal.clear_threadlocal()
+            structlog.threadlocal.bind_threadlocal(
+                task="SLC backscatter",
+                slc_dir=self.out_dir,
+                master_date=self.master_date,
+                slave_date=self.slave_date,
+                slave_lt=self.slave_lt,
+                slave_off=self.slave_off
+            )
 
-        with working_directory(self.out_dir):
-            self.set_tab_files()
-            self.resample_full()
-            self.multi_look()
-            self.generate_normalised_backscatter()
+            with working_directory(self.out_dir):
+                self.set_tab_files()
+                self.resample_full()
+                self.multi_look()
+                self.generate_normalised_backscatter()
+
+        finally:
+            structlog.threadlocal.clear_threadlocal()
 

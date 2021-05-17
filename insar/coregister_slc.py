@@ -108,9 +108,6 @@ class CoregisterSlc:
         self.slave_date, self.slave_pol = self.slc_slave.stem.split('_')
         self.master_date, self.master_pol = self.slc_master.stem.split('_')
 
-        # coreg between differently polarised data makes no sense
-        assert(self.slave_pol == self.master_pol)
-
         self.log = _LOG.bind(
             task="SLC coregistration",
             polarization=self.slave_pol,
@@ -346,6 +343,9 @@ class CoregisterSlc:
         """
 
         self.log.info("Beginning coarse coregistration")
+
+        # coreg between differently polarised data makes no sense
+        assert(self.slave_pol == self.master_pol)
 
         # create slave offset
         pg.create_offset(
@@ -906,11 +906,14 @@ class CoregisterSlc:
                 )
 
                 # SLC_copy $r_slave_IWi.slc $master_IWi.par $r_slave_IWi.slc.{i}.1 $r_slave_IWi.par.{i}.1 - 1. 0 $range_samples $starting_line1 $lines_overlap
+                r_slave_IWi_slc_name = Path(r_slave_IWi.slc).name
+                r_slave_IWi_par_name = Path(r_slave_IWi.par).name
+
                 pg.SLC_copy(
                     r_slave_IWi.slc,
                     master_IWi.par,
-                    temp_dir / f"{r_slave_IWi.slc}.{i}.1",
-                    temp_dir / f"{r_slave_IWi.par}.{i}.1",
+                    temp_dir / f"{r_slave_IWi_slc_name}.{i}.1",
+                    temp_dir / f"{r_slave_IWi_par_name}.{i}.1",
                     const.NOT_PROVIDED,
                     1.0,
                     0,
@@ -923,8 +926,8 @@ class CoregisterSlc:
                 pg.SLC_copy(
                     r_slave_IWi.slc,
                     master_IWi.par,
-                    temp_dir / f"{r_slave_IWi.slc}.{i}.2",
-                    temp_dir / f"{r_slave_IWi.par}.{i}.2",
+                    temp_dir / f"{r_slave_IWi_slc_name}.{i}.2",
+                    temp_dir / f"{r_slave_IWi_par_name}.{i}.2",
                     const.NOT_PROVIDED,
                     1.0,
                     0,
@@ -954,7 +957,7 @@ class CoregisterSlc:
                 # SLC_intf $mas_IWi_slc.{i}.1 $r_slave_IWi.slc.{i}.1 $mas_IWi_par.{i}.1 $mas_IWi_par.{i}.1 $off1 $int1 1 1 0 - 0 0
                 pg.SLC_intf(
                     temp_dir / f"{mas_IWi_slc}.{i}.1",
-                    temp_dir / f"{r_slave_IWi.slc}.{i}.1",
+                    temp_dir / f"{r_slave_IWi_slc_name}.{i}.1",
                     temp_dir / f"{mas_IWi_par}.{i}.1",
                     temp_dir / f"{mas_IWi_par}.{i}.1",
                     str(off1),
@@ -986,7 +989,7 @@ class CoregisterSlc:
                 # SLC_intf $mas_IWi_slc.{i}.2 $r_slave_IWi_slc.{i}.2 $mas_IWi_par.{i}.2 $mas_IWi_par.{i}.2 $off2 $int2 1 1 0 - 0 0
                 pg.SLC_intf(
                     temp_dir / f"{mas_IWi_slc}.{i}.2",
-                    temp_dir / f"{r_slave_IWi.slc}.{i}.2",
+                    temp_dir / f"{r_slave_IWi_slc_name}.{i}.2",
                     temp_dir / f"{mas_IWi_par}.{i}.2",
                     temp_dir / f"{mas_IWi_par}.{i}.2",
                     str(off2),
@@ -1357,7 +1360,7 @@ class CoregisterSlc:
         slave_gamma0_geo = self.out_dir.joinpath(f"{self.slave_mli.stem}_geo.gamma0")
 
         # If a resampled MLI exists, this is coregistered (eg: most dates)
-        if self.r_slave_mli.exists():
+        if self.r_slave_mli and self.r_slave_mli.exists():
             src_mli = self.r_slave_mli
         # Otherwise, this is the reference date which has no resampling
         # (as the reference date "is" what other dates are resampling to)

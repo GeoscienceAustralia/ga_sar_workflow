@@ -1340,6 +1340,7 @@ class CoregisterSlave(luigi.Task):
     # from coregistration.
     coreg_offset = luigi.OptionalParameter(default=None)
     coreg_lut = luigi.OptionalParameter(default=None)
+    just_backscatter = luigi.BoolParameter()
 
     def output(self):
         return luigi.LocalTarget(
@@ -1374,7 +1375,7 @@ class CoregisterSlave(luigi.Task):
         slave_date, slave_pol = Path(self.slc_slave).stem.split('_')
         master_date, master_pol = Path(self.slc_master).stem.split('_')
 
-        is_actually_backscatter = self.coreg_offset or self.coreg_lut
+        is_actually_backscatter = self.just_backscatter
 
         # coreg between differently polarised data makes no sense
         if not is_actually_backscatter:
@@ -1417,11 +1418,17 @@ class CoregisterSlave(luigi.Task):
             )
 
             if is_actually_backscatter:
-                coreg_slave.main_backscatter(
-                    Path(self.coreg_offset),
-                    Path(self.coreg_lut)
-                )
+                # Backscatter w/ LUT for resampling
+                if self.coreg_offset and self.coreg_lut:
+                    coreg_slave.main_backscatter(
+                        Path(self.coreg_offset),
+                        Path(self.coreg_lut)
+                    )
+                # Backscatter w/o resampling (eg: for other polarisations in the reference date)
+                else:
+                    coreg_slave.main_backscatter(None, None)
             else:
+                # Full coregistration (currently also includes backscatter)
                 coreg_slave.main()
 
             log.info("SLC coregistration complete")
@@ -1733,14 +1740,14 @@ class CreateBackscatter(luigi.Task):
         )
 
         kwargs = self.get_base_kwargs()
-        kwargs["coreg_offset"] = None
-        kwargs["coreg_lut"] = None
+        kwargs["just_backscatter"] = True
 
         slave_coreg_jobs = []
 
-        # need to account for master scene with polarization different than
-        # the one used in coregistration of dem and master scene
+        # Produce backscatter for the reference date
         slc_master_dir = outdir / __SLC__ / master_scene
+        kwargs["coreg_offset"] = None
+        kwargs["coreg_lut"] = None
 
         for pol in master_polarizations:
             slave_slc_prefix = f"{master_scene}_{pol.upper()}"
@@ -1748,8 +1755,7 @@ class CreateBackscatter(luigi.Task):
             kwargs["slc_slave"] = slc_master_dir / f"{slave_slc_prefix}.slc"
             kwargs["slave_mli"] = slc_master_dir / f"{slave_slc_prefix}_{rlks}rlks.mli"
 
-            # TODO: This needs to be backscatter ONLY - no coreg for master date
-            #slave_coreg_jobs.append(CoregisterSlave(**kwargs))
+            slave_coreg_jobs.append(CoregisterSlave(**kwargs))
 
         for list_index, list_dates in enumerate(coreg_tree):
             list_index += 1  # list index is 1-based

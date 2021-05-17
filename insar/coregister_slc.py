@@ -1356,11 +1356,19 @@ class CoregisterSlc:
         slave_gamma0 = self.out_dir.joinpath(f"{self.slave_mli.stem}.gamma0")
         slave_gamma0_geo = self.out_dir.joinpath(f"{self.slave_mli.stem}_geo.gamma0")
 
+        # If a resampled MLI exists, this is coregistered (eg: most dates)
+        if self.r_slave_mli.exists():
+            src_mli = self.r_slave_mli
+        # Otherwise, this is the reference date which has no resampling
+        # (as the reference date "is" what other dates are resampling to)
+        else:
+            src_mli = self.slave_mli
+
         with tempfile.TemporaryDirectory() as temp_dir:
             temp_dir = Path(temp_dir)
             temp_output = temp_dir.joinpath("temp_output")
             with working_directory(temp_dir):
-                d1_pathname = str(self.r_slave_mli)
+                d1_pathname = str(src_mli)
                 d2_pathname = str(self.ellip_pix_sigma0)
                 d_out_pathname = str(temp_output)
                 width = self.master_sample.mli_width_end
@@ -1468,7 +1476,7 @@ class CoregisterSlc:
                 # geocode sigma0 mli
                 slave_sigma0_geo = slave_gamma0_geo.with_suffix(".sigma0")
 
-                data_in_pathname = str(self.r_slave_mli)
+                data_in_pathname = str(src_mli)
                 width_in = self.master_sample.mli_width_end
                 lookup_table_pathname = str(self.dem_lt_fine)
                 data_out_pathname = str(slave_sigma0_geo)
@@ -1532,13 +1540,15 @@ class CoregisterSlc:
 
     def main_backscatter(
         self,
-        slave_off: Path,
-        lookup_table: Path
+        slave_off: Optional[Path],
+        lookup_table: Optional[Path]
     ):
         """Main method to process SLC backscatter products."""
 
-        self.slave_lt = lookup_table
-        self.slave_off = slave_off
+        enable_resampling = slave_off and lookup_table
+        if enable_resampling:
+            self.slave_lt = lookup_table
+            self.slave_off = slave_off
 
         # Re-bind thread local context to IFG processing state
         try:
@@ -1554,8 +1564,11 @@ class CoregisterSlc:
 
             with working_directory(self.out_dir):
                 self.set_tab_files()
-                self.resample_full()
-                self.multi_look()
+
+                if enable_resampling:
+                    self.resample_full()
+                    self.multi_look()
+
                 self.generate_normalised_backscatter()
 
         finally:

@@ -498,6 +498,7 @@ class InitialSetup(luigi.Task):
 
         # Write high level workflow metadata
         _, gamma_version = os.path.split(os.environ["GAMMA_INSTALL_DIR"])[-1].split("-")
+        workdir = Path(self.workdir)
 
         metadata = {
             # General workflow parameters
@@ -506,6 +507,9 @@ class InitialSetup(luigi.Task):
             # potentially in other plain text files - but repeated here
             # for easy access for external software so it doesn't need to
             # know the nity gritty of all our auxilliary files or logs.
+            "track_frame_sensor": workdir.name,
+            "original_work_dir": workdir.parent.as_posix(),
+            "original_job_dir": Path(self.outdir).as_posix(),
             "shapefile": str(self.vector_file),
             "database": str(self.database_name),
             "poeorb_path": str(self.poeorb_path),
@@ -527,7 +531,11 @@ class InitialSetup(luigi.Task):
             "gdal_version": str(osgeo.gdal.VersionInfo()),
         }
 
+        # We write metadata to BOTH work and out dirs
         with (outdir / "metadata.json").open("w") as file:
+            json.dump(metadata, file, indent=2)
+
+        with (workdir.parent / "metadata.json").open("w") as file:
             json.dump(metadata, file, indent=2)
 
 
@@ -548,7 +556,7 @@ class CreateGammaDem(luigi.Task):
 
     def run(self):
         log = STATUS_LOGGER.bind(track_frame=f"{self.track}_{self.frame}")
-        log.info("create gamma dem task")
+        log.info("Beginning gamma DEM creation")
 
         gamma_dem_dir = Path(self.outdir).joinpath(__DEM_GAMMA__)
         mk_clean_dir(gamma_dem_dir)
@@ -561,6 +569,9 @@ class CreateGammaDem(luigi.Task):
         }
 
         create_gamma_dem(**kwargs)
+
+        log.info("Gamma DEM creation complete")
+
         with self.output().open("w") as out_fid:
             out_fid.write("")
 
@@ -586,6 +597,9 @@ class ProcessSlc(luigi.Task):
         )
 
     def run(self):
+        log = STATUS_LOGGER.bind(scene_date=self.scene_date, polarization=self.polarization)
+        log.info("Beginning SLC processing")
+
         (Path(self.slc_dir) / str(self.scene_date)).mkdir(parents=True, exist_ok=True)
 
         slc_job = SlcProcess(
@@ -598,6 +612,8 @@ class ProcessSlc(luigi.Task):
         )
 
         slc_job.main()
+
+        log.info("SLC processing complete")
 
         with self.output().open("w") as f:
             f.write("")
@@ -738,6 +754,9 @@ class ProcessSlcMosaic(luigi.Task):
         )
 
     def run(self):
+        log = STATUS_LOGGER.bind(scene_date=self.scene_date, polarization=self.polarization)
+        log.info("Beginning SLC mosaic")
+
         slc_job = SlcProcess(
             str(self.raw_path),
             str(self.slc_dir),
@@ -748,6 +767,8 @@ class ProcessSlcMosaic(luigi.Task):
         )
 
         slc_job.main_mosaic(int(self.rlks), int(self.alks))
+
+        log.info("SLC mosaic complete")
 
         with self.output().open("w") as f:
             f.write("")
@@ -770,9 +791,6 @@ class CreateSlcMosaic(luigi.Task):
         )
 
     def run(self):
-        log = STATUS_LOGGER.bind(track_frame=f"{self.track}_{self.frame}")
-        log.info("subset slc task")
-
         slc_dir = Path(self.outdir).joinpath(__SLC__)
         slc_frames = get_scenes(self.burst_data_csv)
 
@@ -1078,6 +1096,7 @@ class Multilook(luigi.Task):
             int(str(self.rlks)),
             int(str(self.alks)),
         )
+
         with self.output().open("w") as f:
             f.write("")
 
@@ -1099,9 +1118,6 @@ class CreateMultilook(luigi.Task):
         )
 
     def run(self):
-        log = STATUS_LOGGER.bind(track_frame=f"{self.track}_{self.frame}")
-        log.info("create multi-look task")
-
         # calculate the mean range and azimuth look values
         slc_dir = Path(self.outdir).joinpath(__SLC__)
         slc_frames = get_scenes(self.burst_data_csv)
@@ -1163,7 +1179,7 @@ class CalcInitialBaseline(luigi.Task):
 
     def run(self):
         log = STATUS_LOGGER.bind(track_frame=f"{self.track}_{self.frame}")
-        log.info("calculate baseline task")
+        log.info("Beginning baseline calculation")
 
         outdir = Path(self.outdir)
 
@@ -1214,6 +1230,8 @@ class CalcInitialBaseline(luigi.Task):
         # creates a ifg list based on sbas-network
         baseline.sbas_list(nmin=int(proc_config.min_connect), nmax=int(proc_config.max_connect))
 
+        log.info("Baseline calculation complete")
+
         with self.output().open("w") as out_fid:
             out_fid.write("")
 
@@ -1237,7 +1255,7 @@ class CoregisterDemMaster(luigi.Task):
 
     def run(self):
         log = STATUS_LOGGER.bind(track_frame=f"{self.track}_{self.frame}")
-        log.info("co-register master-dem task")
+        log.info("Beginning DEM master coregistration")
 
         outdir = Path(self.outdir)
 
@@ -1281,6 +1299,8 @@ class CoregisterDemMaster(luigi.Task):
 
         coreg.main()
 
+        log.info("DEM master coregistration complete")
+
         with self.output().open("w") as out_fid:
             out_fid.write("")
 
@@ -1319,6 +1339,7 @@ class CoregisterSlave(luigi.Task):
     # from coregistration.
     coreg_offset = luigi.OptionalParameter(default=None)
     coreg_lut = luigi.OptionalParameter(default=None)
+    just_backscatter = luigi.BoolParameter()
 
     def output(self):
         return luigi.LocalTarget(
@@ -1350,7 +1371,23 @@ class CoregisterSlave(luigi.Task):
         return (coreg.slave_lt, coreg.slave_off)
 
     def run(self):
-        log = STATUS_LOGGER.bind(outdir=self.outdir, slc_master=self.slc_master, slc_slave=self.slc_slave)
+        slave_date, slave_pol = Path(self.slc_slave).stem.split('_')
+        master_date, master_pol = Path(self.slc_master).stem.split('_')
+
+        is_actually_backscatter = self.just_backscatter
+
+        # coreg between differently polarised data makes no sense
+        if not is_actually_backscatter:
+            assert(slave_pol == master_pol)
+
+        log = STATUS_LOGGER.bind(
+            outdir=self.outdir,
+            polarization=slave_pol,
+            slave_date=slave_date,
+            slc_slave=self.slc_slave,
+            master_date=master_date,
+            slc_master=self.slc_master
+        )
         log.info("Beginning SLC coregistration")
 
         # Load the gamma proc config file
@@ -1379,12 +1416,18 @@ class CoregisterSlave(luigi.Task):
                 dem_lt_fine=Path(str(self.dem_lt_fine)),
             )
 
-            if self.coreg_offset or self.coreg_lut:
-                coreg_slave.main_backscatter(
-                    Path(self.coreg_offset),
-                    Path(self.coreg_lut)
-                )
+            if is_actually_backscatter:
+                # Backscatter w/ LUT for resampling
+                if self.coreg_offset and self.coreg_lut:
+                    coreg_slave.main_backscatter(
+                        Path(self.coreg_offset),
+                        Path(self.coreg_lut)
+                    )
+                # Backscatter w/o resampling (eg: for other polarisations in the reference date)
+                else:
+                    coreg_slave.main_backscatter(None, None)
             else:
+                # Full coregistration (currently also includes backscatter)
                 coreg_slave.main()
 
             log.info("SLC coregistration complete")
@@ -1563,17 +1606,6 @@ class CreateCoregisterSlaves(luigi.Task):
 
         slave_coreg_jobs = []
 
-        # need to account for master scene with polarization different than
-        # the one used in coregistration of dem and master scene
-        master_pol_coreg = set(list(master_polarizations[0])) - {master_pol}
-        for pol in master_pol_coreg:
-            master_slc_prefix = f"{master_scene}_{pol.upper()}"
-            kwargs["slc_slave"] = slc_master_dir.joinpath(f"{master_slc_prefix}.slc")
-            kwargs["slave_mli"] = slc_master_dir.joinpath(
-                f"{master_slc_prefix}_{rlks}rlks.mli"
-            )
-            slave_coreg_jobs.append(CoregisterSlave(**kwargs))
-
         for list_index, list_dates in enumerate(coreg_tree):
             list_index += 1  # list index is 1-based
             list_frames = [i for i in slc_frames if i[0].date() in list_dates]
@@ -1680,11 +1712,15 @@ class CreateBackscatter(luigi.Task):
         master_polarizations = [
             pols for dt, _, pols in slc_frames if dt.date() == master_scene
         ]
+
+        # Sanity check there's only a single master scene entry
         assert len(master_polarizations) == 1
+
+        master_polarizations = master_polarizations[0]
 
         # TODO if master polarization data does not exist in SLC archive then
         # TODO choose other polarization or raise Error.
-        if self.master_scene_polarization not in master_polarizations[0]:
+        if self.master_scene_polarization not in master_polarizations:
             raise ValueError(
                 f"{self.master_scene_polarization}  not available in SLC data for {master_scene}"
             )
@@ -1702,28 +1738,23 @@ class CreateBackscatter(luigi.Task):
             f"{master_scene}_{master_pol}"
         )
 
-        slc_master_dir = outdir / __SLC__ / master_scene
-
         kwargs = self.get_base_kwargs()
-        kwargs["coreg_offset"] = None
-        kwargs["coreg_lut"] = None
+        kwargs["just_backscatter"] = True
 
         slave_coreg_jobs = []
 
-        # need to account for master scene with polarization different than
-        # the one used in coregistration of dem and master scene
+        # Produce backscatter for the reference date
+        slc_master_dir = outdir / __SLC__ / master_scene
+        kwargs["coreg_offset"] = None
+        kwargs["coreg_lut"] = None
 
-        # DISABLED: Until we separate backscatter from coreg (currently coreg does this)
-        # https://github.com/GeoscienceAustralia/gamma_insar/issues/211
+        for pol in master_polarizations:
+            slave_slc_prefix = f"{master_scene}_{pol.upper()}"
 
-        #master_pol_coreg = set(list(master_polarizations[0])) - {master_pol}
-        #for pol in master_pol_coreg:
-        #    master_slc_prefix = f"{master_scene}_{pol.upper()}"
-        #    kwargs["slc_slave"] = slc_master_dir.joinpath(f"{master_slc_prefix}.slc")
-        #    kwargs["slave_mli"] = slc_master_dir.joinpath(
-        #        f"{master_slc_prefix}_{rlks}rlks.mli"
-        #    )
-        #    slave_coreg_jobs.append(CoregisterSlave(**kwargs))
+            kwargs["slc_slave"] = slc_master_dir / f"{slave_slc_prefix}.slc"
+            kwargs["slave_mli"] = slc_master_dir / f"{slave_slc_prefix}_{rlks}rlks.mli"
+
+            slave_coreg_jobs.append(CoregisterSlave(**kwargs))
 
         for list_index, list_dates in enumerate(coreg_tree):
             list_index += 1  # list index is 1-based
@@ -1818,12 +1849,17 @@ class ProcessIFG(luigi.Task):
         )
 
     def run(self):
-        log = STATUS_LOGGER.bind(outdir=self.outdir, master_date=self.master_date, slave_date=self.slave_date)
-        log.info("Beginning interferogram processing")
-
         # Load the gamma proc config file
         with open(str(self.proc_file), 'r') as proc_fileobj:
             proc_config = ProcConfig.from_file(proc_fileobj, self.outdir)
+
+        log = STATUS_LOGGER.bind(
+            outdir=self.outdir,
+            polarization=proc.polarisation,
+            master_date=self.master_date,
+            slave_date=self.slave_date
+        )
+        log.info("Beginning interferogram processing")
 
         # Run IFG processing in an exception handler that doesn't propagate exception into Luigi
         # This is to allow processing to fail without stopping the Luigi pipeline, and thus

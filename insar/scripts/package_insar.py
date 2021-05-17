@@ -90,13 +90,15 @@ def get_image_metadata_dict(par_file: Union[Path, str]) -> Dict:
     _metadata["incidence_angle"] = params.get_value(
         "incidence_angle", dtype=float, index=0
     )
-    _metadata["azimuth_angle"] = params.get_value("azimuth_angle", dtype=float, index=0)
-    _metadata["range_looks"] = params.get_value("range_looks", dtype=int, index=0)
-    _metadata["azimuth_looks"] = params.get_value("azimuth_looks", dtype=int, index=0)
-    _metadata["range_pixel_spacing"] = params.get_value(
+
+    azimuth_angle = params.get_value("azimuth_angle", dtype=float, index=0)
+    _metadata["azimuth_angle"] = azimuth_angle
+    _metadata["looks_range"] = params.get_value("range_looks", dtype=int, index=0)
+    _metadata["looks_azimuth"] = params.get_value("azimuth_looks", dtype=int, index=0)
+    _metadata["pixel_spacing_range"] = params.get_value(
         "range_pixel_spacing", dtype=float, index=0
     )
-    _metadata["azimuth_pixel_spacing"] = params.get_value(
+    _metadata["pixel_spacing_azimuth"] = params.get_value(
         "azimuth_pixel_spacing", dtype=float, index=0
     )
     _metadata["radar_frequency"] = params.get_value(
@@ -140,6 +142,15 @@ def get_image_metadata_dict(par_file: Union[Path, str]) -> Dict:
     _metadata["center_longitude"] = params.get_value(
         "center_longitude", dtype=float, index=0
     )
+
+    if float(azimuth_angle) > 0:
+        p.properties["observation_direction"] = "right"
+    else:
+        p.properties["observation_direction"] = "left"
+
+    # Hard-coded assumptions based on our processing pipeline / data we use
+    p.properties["frequency_band"] = "C"
+    p.properties["instrument_mode"] = "IW"
 
     return _metadata
 
@@ -482,28 +493,24 @@ def package(
             p.properties["eo:orbit"] = common_attrs["orbit"]
             p.properties["eo:relative_orbit"] = common_attrs["relative_orbit"]
 
+            p.properties["constellation"] = "sentinel-1"
+            p.properties["instruments"] = ["c-sar"]
+
             # NEEDS REVISION
             # TBD: what should this prefix be called?
             # or do we just throw them into the user metadata instead?
             prefix = "tbd"
 
-            p.properties[f"{prefix}:orbit_data_source"] = orbit_source
-            p.properties[f"{prefix}:orbit_data_file"] = orbit_file
+            p.properties[f"card4l:orbit_data_source"] = orbit_source
+            p.properties[f"{prefix}:orbit_data_file"] = orbit_file  # TBD: Apparently this should be a "link"
 
-            p.properties[f"{prefix}:polarizations"] = " ".join(polarizations).upper()
-
-            if float(ard_slc_metadata["azimuth_angle"]) > 0:
-                p.properties[f"{prefix}:antenna_pointing"] = "RIGHT"
-            else:
-                p.properties[f"{prefix}:antenna_pointing"] = "LEFT"
+            p.properties["sar:polarizations"] = polarizations
 
             p.properties[f"{prefix}:platform_heading"] = ard_slc_metadata["heading"]
 
             # These are hard-coded assuptions, based on either our satellite/s (S1) or the data from it we support.
-            p.properties[f"{prefix}:band"] = "C"
-            p.properties[f"{prefix}:observation_mode"] = "IW"
-            p.properties[f"{prefix}:beam_id"] = "TOPS"
-            p.properties[f"{prefix}:orbit_mean_altitude"] = 693
+            p.properties["card4l:beam_id"] = "TOPS"
+            p.properties["card4l:orbit_mean_altitude"] = 693
             p.properties[f"{prefix}:dem"] = workflow_metadata["dem_path"]
             # END NEEDS REVISION
 
@@ -536,10 +543,8 @@ def package(
             )
 
             # Note lineage
-            # TODO: get source data paths?  or are IDs enough?
-
-            # What are these classified as? guessing not level0...
-            #p.note_source_datasets("level0", esa_s1_raw_data_ids)
+            # TODO: we currently don't index the source data, thus can't implement this yet
+            # - they'll be uuid v5's for each acquisition's ESA assigned ID
 
             # Write thumbnail
             thumbnail_bands = product_attrs["thumbnail_bands"]

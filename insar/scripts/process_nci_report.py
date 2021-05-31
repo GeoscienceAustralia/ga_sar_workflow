@@ -37,7 +37,7 @@ def query_out_dir(dir: Path):
         all_scene_dates = [line.strip() for line in scenes_file]
 
     with (dir / "lists" / "ifgs.list").open("r") as ifgs_file:
-        all_ifg_date_pairs = set([tuple(line.strip().split(",")) for line in ifgs_file])
+        all_ifg_date_pairs = set([line.strip().replace(",", "-") for line in ifgs_file])
 
     with (dir / "metadata.json").open("r") as metadata_file:
         metadata = json.load(metadata_file)
@@ -56,7 +56,7 @@ def query_out_dir(dir: Path):
 
     for date_str in all_scene_dates:
         for pol in pols:
-            all_scenes.add((date_str, pol))
+            all_scenes.add(f"{date_str}-{pol}")
 
         date_dir = dir / "SLC" / date_str
         if not date_dir.exists():
@@ -66,11 +66,12 @@ def query_out_dir(dir: Path):
         is_complete = True
 
         for pol in pols:
+            index = f"{date_str}-{pol}"
             is_complete = len(list(date_dir.glob(f"*_{pol}_*gamma0.tif"))) == 1
 
             if is_complete:
-                completed_coreg_slcs.add((date_str, pol))
-                completed_backscatter.add((date_str, pol))
+                completed_coreg_slcs.add(index)
+                completed_backscatter.add(index)
 
         # Query ACCURACY_WARNING
         accuracy_warning_path = date_dir / "ACCURACY_WARNING"
@@ -96,8 +97,8 @@ def query_out_dir(dir: Path):
     # Iterate all IFGs to detect completed products
     completed_ifgs = set()
 
-    for master_date, slave_date in all_ifg_date_pairs:
-        date_dir = dir / "INT" / f"{master_date}-{slave_date}"
+    for date_pair in all_ifg_date_pairs:
+        date_dir = dir / "INT" / date_pair
         if not date_dir.exists():
             continue
 
@@ -105,7 +106,7 @@ def query_out_dir(dir: Path):
         is_complete = len(list(date_dir.glob("*geo_unw.tif"))) == 1
 
         if is_complete:
-            completed_ifgs.add(tuple(date_dir.name.split("-")))
+            completed_ifgs.add(date_dir.name)
 
     # Determine missing products
     missing_slc_dates = all_scenes - completed_coreg_slcs
@@ -250,7 +251,7 @@ def query_job_dir(dir: Path):
                 if "slave_date" not in log:
                     continue
 
-                index = (log["slave_date"], log["polarization"])
+                index = f"{log['slave_date']}-{log['polarization']}"
                 entry = (
                     timestamp,
                     log["polarization"],
@@ -283,7 +284,7 @@ def query_job_dir(dir: Path):
                 if "master_date" not in log:
                     continue
 
-                date_pair = (log["master_date"], log["slave_date"])
+                date_pair = f"{log['master_date']}-{log['slave_date']}"
                 entry = (timestamp, "VV", log["master_date"], log["slave_date"])
 
                 if "Beginning interferogram processing" in event:
@@ -568,7 +569,7 @@ def generate_summary(job_dir: Optional[Path], out_dir: Optional[Path]):
 
 def export_report_json(summary: dict, out_json_path: Path):
     with out_json_path.open("w") as file:
-        json.dump(summary, file, indent=2)
+        json.dump(summary, file, indent=2, default=str)
 
 def print_header_line(msg=None, width=80, filler='='):
     line = filler * (width // len(filler))
@@ -821,7 +822,7 @@ if __name__ == "__main__":
             print_report(summary)
 
     if args.json:
-        export_report_json(summaries, args.json)
+        export_report_json(summaries, json_path)
 
     if args.csv:
         with csv_path.open("w") as csv_file:

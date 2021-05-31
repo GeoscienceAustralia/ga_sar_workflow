@@ -180,19 +180,19 @@ class CoregisterDem:
         )
         attrs["dem_master_sigma0"] = outdir.joinpath(f"{slc_prefix}.sigma0")
         attrs["dem_master_sigma0_geo"] = outdir.joinpath(f"{slc_prefix}_geo.sigma0")
-        attrs["dem_master_sigma0_geo_geo"] = attrs["dem_master_sigma0_geo"].with_suffix(
-            attrs["dem_master_sigma0_geo"].suffix + ".tif"
+        attrs["dem_master_sigma0_geo_tif"] = attrs["dem_master_sigma0_geo"].with_suffix(
+            "_" + attrs["dem_master_sigma0_geo"].suffix[1:] + ".tif"
         )
         attrs["dem_master_gamma0"] = outdir.joinpath(f"{slc_prefix}.gamma0")
         attrs["dem_master_gamma0_bmp"] = attrs["dem_master_gamma0"].with_suffix(
-            attrs["dem_master_gamma0"].suffix + ".bmp"
+            "_" + attrs["dem_master_gamma0"].suffix[1:] + ".bmp"
         )
         attrs["dem_master_gamma0_geo"] = outdir.joinpath(f"{slc_prefix}_geo.gamma0")
         attrs["dem_master_gamma0_geo_bmp"] = attrs["dem_master_gamma0_geo"].with_suffix(
-            attrs["dem_master_gamma0_geo"].suffix + ".bmp"
+            "_" + attrs["dem_master_gamma0_geo"].suffix[1:] + ".bmp"
         )
-        attrs["dem_master_gamma0_geo_geo"] = attrs["dem_master_gamma0_geo"].with_suffix(
-            attrs["dem_master_gamma0_geo"].suffix + ".tif"
+        attrs["dem_master_gamma0_geo_tif"] = attrs["dem_master_gamma0_geo_bmp"].with_suffix(
+            ".tif"
         )
 
         attrs["r_dem_master_slc"] = outdir.joinpath(f"{r_slc_prefix}.slc")
@@ -202,7 +202,7 @@ class CoregisterDem:
             attrs["r_dem_master_mli"].suffix + ".par"
         )
         attrs["r_dem_master_mli_bmp"] = attrs["r_dem_master_mli"].with_suffix(
-            attrs["r_dem_master_mli"].suffix + ".bmp"
+            "_" + attrs["r_dem_master_mli"].suffix[1:] + ".bmp"
         )
         return attrs
 
@@ -226,7 +226,7 @@ class CoregisterDem:
             attrs["geo_dem"].suffix + ".par"
         )
         attrs["geo_dem_geo"] = attrs["geo_dem"].with_suffix(
-            attrs["geo_dem"].suffix + ".tif"
+            "_" + attrs["geo_dem"].suffix[1:] + ".tif"
         )
         attrs["dem_lt_rough"] = outdir.joinpath(f"{dem_prefix}_rough_geo_to_rdc.lt")
         attrs["dem_geo_sim_sar"] = outdir.joinpath(f"{dem_prefix}_geo.sim")
@@ -249,10 +249,10 @@ class CoregisterDem:
         attrs["dem_lv_theta"] = outdir.joinpath(f"{dem_prefix}_geo.lv_theta")
         attrs["dem_lv_phi"] = outdir.joinpath(f"{dem_prefix}_geo.lv_phi")
         attrs["dem_lv_theta_geo"] = attrs["dem_lv_theta"].with_suffix(
-            attrs["dem_lv_theta"].suffix + ".tif"
+            "_" + attrs["dem_lv_theta"].suffix[1:] + ".tif"
         )
         attrs["dem_lv_phi_geo"] = attrs["dem_lv_phi"].with_suffix(
-            attrs["dem_lv_phi"].suffix + ".tif"
+            "_" + attrs["dem_lv_phi"].suffix[1:] + ".tif"
         )
 
         # external image parameters to be used in co-registration
@@ -1089,7 +1089,7 @@ class CoregisterDem:
             )
 
         # Convert lsmap to geotiff
-        ls_map_tif = str(self.dem_lsmap.with_suffix(".lsmap.tif"))
+        ls_map_tif = str(self.dem_lsmap.with_suffix("_lsmap.tif"))
         pg.data2geotiff(
             str(self.geo_dem_par),
             str(self.dem_lsmap),
@@ -1110,7 +1110,7 @@ class CoregisterDem:
         ls_map_img[ls_map_img != 1] = 0
 
         # Save this back out as a geotiff w/ identical projection as the lsmap
-        ls_map_mask_tif = self.dem_lsmap.with_suffix(".lsmap.mask.tif")
+        ls_map_mask_tif = self.dem_lsmap.with_suffix("_lsmap_mask.tif")
         ls_mask_file = gdal.GetDriverByName("GTiff").Create(
             ls_map_mask_tif.as_posix(),
             ls_map_img.shape[1], ls_map_img.shape[0], 1,
@@ -1189,7 +1189,7 @@ class CoregisterDem:
         dem_par_pathname = str(self.geo_dem_par)
         data_pathname = str(self.dem_master_gamma0_geo)
         dtype = 2  # FLOAT
-        geotiff_pathname = self.dem_master_gamma0_geo_geo
+        geotiff_pathname = self.dem_master_gamma0_geo_tif
         nodata = 0.0
 
         pg.data2geotiff(
@@ -1227,7 +1227,7 @@ class CoregisterDem:
         dem_par_pathname = str(self.geo_dem_par)
         data_pathname = str(self.dem_master_sigma0_geo)
         dtype = 2  # FLOAT
-        geotiff_pathname = str(self.dem_master_sigma0_geo_geo)
+        geotiff_pathname = str(self.dem_master_sigma0_geo_tif)
         nodata = 0.0
 
         pg.data2geotiff(

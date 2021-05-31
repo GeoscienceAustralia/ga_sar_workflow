@@ -508,8 +508,8 @@ class InitialSetup(luigi.Task):
             # for easy access for external software so it doesn't need to
             # know the nity gritty of all our auxilliary files or logs.
             "track_frame_sensor": workdir.name,
-            "original_work_dir": workdir.parent.as_posix(),
-            "original_job_dir": Path(self.outdir).as_posix(),
+            "original_work_dir": Path(self.outdir).as_posix(),
+            "original_job_dir": workdir.parent.as_posix(),
             "shapefile": str(self.vector_file),
             "database": str(self.database_name),
             "poeorb_path": str(self.poeorb_path),

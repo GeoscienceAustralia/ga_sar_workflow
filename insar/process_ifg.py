@@ -121,6 +121,7 @@ def run_workflow(
                 ifg_file = precise_flattened_ifg(pc, ic, dc, tc, ifg_file, ifg_width, land_center)
             else:
                 shutil.copy(ic.ifg_base_init, ic.ifg_base)
+                shutil.copy(ifg_file, ic.ifg_flat)
 
             calc_bperp_coh_filt(pc, ic, ifg_file, ic.ifg_base, ifg_width)
             calc_unw(pc, ic, tc, ifg_width, land_center)  # this calls unw thinning

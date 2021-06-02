@@ -511,8 +511,10 @@ def package(
                 p.maturity = "interim"
 
             assert(int(track[1:-1]) == int(common_attrs['relative_orbit']))
+            padded_track = f"{track[0]}{int(track[1:-1]):03}{track[-1]}"
+            padded_frame = f"{frame[0]}{int(frame[1:-1]):03}{frame[-1]}"
 
-            p.region_code = f"{track[0]}{int(common_attrs['relative_orbit']):03}{track[-1]}{frame}"
+            p.region_code = f"{padded_track}{padded_frame}"
             p.producer = "ga.gov.au"
 
             p.properties["constellation"] = "sentinel-1"

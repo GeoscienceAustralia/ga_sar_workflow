@@ -2,34 +2,39 @@
 Utilities for managing Gamma settings for the InSAR ARD workflow.
 """
 
-import os
+import string
 import pathlib
+import itertools
 from collections import namedtuple
 
 
 class ProcConfig:
     """Container for Gamma proc files (collection of runtime settings)."""
 
-    # NB: use slots to prevent accidental addition of variables from typos
-    __slots__ = [
+    __path_attribs__ = [
         "gamma_config",
         "nci_path",
+        "output_path",
+        "job_path",
         "envisat_orbits",
         "ers_orbits",
         "s1_orbits",
         "s1_path",
         "master_dem_image",
+    ]
+
+    __subdir_attribs__ = [
         "slc_dir",
         "dem_dir",
         "int_dir",
         "base_dir",
         "list_dir",
         "error_dir",
-        "pdf_dir",
         "raw_data_dir",
-        "batch_job_dir",
-        "manual_job_dir",
         "pre_proc_dir",
+    ]
+
+    __filename_attribs__ = [
         "scene_list",
         "slave_list",
         "ifg_list",
@@ -37,6 +42,13 @@ class ProcConfig:
         "s1_burst_list",
         "s1_download_list",
         "remove_scene_list",
+    ]
+
+    # NB: use slots to prevent accidental addition of variables from typos
+    __slots__ = [
+        *__path_attribs__,
+        *__subdir_attribs__,
+        *__filename_attribs__,
         "project",
         "track",
         "dem_area",
@@ -56,18 +68,10 @@ class ProcConfig:
         "ref_master_scene",
         "min_connect",
         "max_connect",
-        "post_process_method",
         "extract_raw_data",
-        "do_slc",
-        "do_s1_resize",
-        "s1_resize_ref_slc",
-        "do_s1_burst_subset",
-        "coregister_dem",
-        "use_ext_image",
-        "coregister_slaves",
-        "process_ifgs",
-        "ifg_geotiff",
+        "workflow",
         "clean_up",
+        "s1_resize_ref_slc",
         "dem_patch_window",
         "dem_rpos",
         "dem_azpos",
@@ -88,8 +92,6 @@ class ProcConfig:
         "coreg_s1_cc_thresh",
         "coreg_s1_frac_thresh",
         "coreg_s1_stdev_thresh",
-        "ifg_begin",
-        "ifg_end",
         "ifg_coherence_threshold",
         "ifg_unw_mask",
         "ifg_patches_range",
@@ -104,64 +106,6 @@ class ProcConfig:
         "ifg_thres",
         "ifg_init_win",
         "ifg_offset_win",
-        "post_ifg_da_threshold",
-        "post_ifg_area_range",
-        "post_ifg_area_azimuth",
-        # 'post_ifg_area_range',
-        # 'post_ifg_area_azimuth',
-        "post_ifg_patches_range",
-        "post_ifg_patches_azimuth",
-        "post_ifg_overlap_range",
-        "post_ifg_overlap_azimuth",
-        "nci_project",
-        "min_jobs",
-        "max_jobs",
-        "pbs_run_loc",
-        "queue",
-        "exp_queue",
-        "mdss_queue",
-        "raw_walltime",
-        "raw_mem",
-        "raw_ncpus",
-        "create_dem_walltime",
-        "create_dem_mem",
-        "create_dem_ncpus",
-        "slc_walltime",
-        "slc_mem",
-        "slc_ncpus",
-        "calc_walltime",
-        "calc_mem",
-        "calc_ncpus",
-        "base_walltime",
-        "base_mem",
-        "base_ncpus",
-        "ml_walltime",
-        "ml_mem",
-        "ml_ncpus",
-        "resize_walltime",
-        "resize_mem",
-        "resize_ncpus",
-        "dem_walltime",
-        "dem_mem",
-        "dem_ncpus",
-        "pix_walltime",
-        "pix_mem",
-        "pix_ncpus",
-        "coreg_walltime",
-        "coreg_mem",
-        "coreg_ncpus",
-        "ifg_walltime",
-        "ifg_mem",
-        "ifg_ncpus",
-        "post_walltime",
-        "post_mem",
-        "post_ncpus",
-        "error_walltime",
-        "error_mem",
-        "error_ncpus",
-        "image_walltime",
-        "image_mem",
-        "image_ncpus",
         # derived member vars
         "dem_img",
         "proj_dir",
@@ -226,6 +170,68 @@ class ProcConfig:
         cfg = {e[0].strip().lower(): e[1].strip() for e in kv_pairs}
         return ProcConfig(outdir, **cfg)
 
+    def validate(self) -> str:
+        """
+        Validates the .proc configuration file values provided.
+
+        :return: A string describing what errors make the config invalid, will be falsy if valid.
+        """
+        msg = ""
+
+        # Validate all attributes exist!
+        for s in self.__slots__:
+            if not hasattr(self, s):
+                msg += f"Missing attribute: {s}\n"
+
+        # Validate paths/subdirs/filenames confirm to allowed characters
+        valid_path_chars = f"-_. {string.ascii_letters}{string.digits}"
+        for name in itertools.chain(self.__path_attribs__, self.__subdir_attribs__, self.__filename_attribs__):
+            if not hasattr(self, name):
+                continue
+
+            pathname = self[name]
+            validity_mask = [c in valid_path_chars for c in pathname]
+            valid = all(validity_mask)
+
+            if not valid:
+                invalid_chars = [c for i,c in enumerate(pathname) if validity_mask[i]]
+                msg += f"Attribute {name} is not a valid path name: {pathname} (must not contain {invalid_chars})\n"
+
+        # Validate sensor
+        # TODO: When we add multiple sensor support (eg: radarsat 2) we will want to generalise this into a kind of
+        # "capability" table somewhere that's re-used by the codebase.
+        if hasattr(self, "sensor"):
+            allowed_sensors = ["S1"]  # TODO: Add "RSAT2" when we support radarsat 2
+            if self.sensor not in allowed_sensors:
+                msg += f"Unsupported sensor: {self.sensor}\n"
+
+            # Validate polarisations
+            # Note: currently this is just the 'master' polarisation (used for IFGs)
+            if hasattr(self, "polarisation"):
+                if self.sensor == "S1":
+                    allowed_s1_pols = ["VV", "VH"]
+
+                    if self.polarisation not in allowed_s1_pols:
+                        msg += f"Invalid polarisation for S1: {self.polarisation} (expected one of: {', '.join(allowed_s1_pols)})"
+
+        if hasattr(self, "process_method"):
+            if self.process_method != "sbas":
+                msg += "Attribute process_method must be sbas, not: {self.process_method} (currently only sbas is supported)"
+
+        if hasattr(self, "workflow"):
+            # TODO: workflow matches ARDWorkflow
+            pass
+
+        if hasattr(self, "cleanup"):
+            # TODO: cleanup is boolean
+            pass
+
+        # Note: In the future we may want to limit some of the numeric values, but for now we
+        # simply let them remain as-is.
+        #
+        # At that stage we probably want a thirdparty data model validation solution, eg: marshmallow
+
+        return msg
 
 def is_valid_config_line(line):
     """

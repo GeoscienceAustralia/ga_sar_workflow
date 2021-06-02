@@ -32,7 +32,7 @@ def map_product(product: str) -> Dict:
             "angles": ("lv_phi.tif", "lv_theta.tif"),
             "product_base": "SLC",
             "dem_base": "DEM",
-            "product_family": "nbr",
+            "product_family": "nrb",
             "thumbnail_bands": ["gamma0_vv"]
         },
         "insar": {
@@ -93,6 +93,8 @@ def get_image_metadata_dict(par_file: Union[Path, str]) -> Dict:
 
     azimuth_angle = params.get_value("azimuth_angle", dtype=float, index=0)
     _metadata["azimuth_angle"] = azimuth_angle
+
+    # TBD: src only?
     _metadata["looks_range"] = params.get_value("range_looks", dtype=int, index=0)
     _metadata["looks_azimuth"] = params.get_value("azimuth_looks", dtype=int, index=0)
     _metadata["pixel_spacing_range"] = params.get_value(
@@ -101,6 +103,7 @@ def get_image_metadata_dict(par_file: Union[Path, str]) -> Dict:
     _metadata["pixel_spacing_azimuth"] = params.get_value(
         "azimuth_pixel_spacing", dtype=float, index=0
     )
+
     _metadata["radar_frequency"] = params.get_value(
         "radar_frequency", dtype=float, index=0
     )
@@ -143,14 +146,21 @@ def get_image_metadata_dict(par_file: Union[Path, str]) -> Dict:
         "center_longitude", dtype=float, index=0
     )
 
+    # TBD: src only?
     if float(azimuth_angle) > 0:
-        p.properties["observation_direction"] = "right"
+        _metadata["observation_direction"] = "right"
     else:
-        p.properties["observation_direction"] = "left"
+        _metadata["observation_direction"] = "left"
 
-    # Hard-coded assumptions based on our processing pipeline / data we use
-    p.properties["frequency_band"] = "C"
-    p.properties["instrument_mode"] = "IW"
+    # Hard-coded assumptions based on our processing pipeline / data we use / S1A+S1B sensors
+    _metadata["frequency_band"] = "C"
+    _metadata["center_frequency"] = 5.405  # TBD: src only?
+    _metadata["instrument_mode"] = "IW"
+    _metadata["product_type"] = "RTC"
+
+    # TODO: "resolution_range" = 3.5?  but this would change based on range_looks?
+    # TODO: "resolution_azimuth" = 22?  as above?
+    # TODO: "looks_equivalent_number" = ?? (we have two... is this the min? max? something else?)
 
     return _metadata
 
@@ -346,8 +356,16 @@ class SLC:
                     )
                 ]
 
+                backscatter_files = [
+                    item
+                    for _pol in _pols
+                    for item in slc_scene_path.glob(
+                        f"{slc_scene_path.name}_{_pol}*_geo.gamma0.tif"
+                    )
+                ]
+
                 # Ensure we have data for all polarisations requested to be packaged
-                if len(par_files) != len(_pols):
+                if len(backscatter_files) != len(_pols):
                     package_status = False
                     msg = f"{slc_scene_path} missing one or more polarised products, expected {_pols}"
                     _LOG.info(msg, scene=slc_scene_path)
@@ -391,7 +409,11 @@ def get_slc_attrs(doc: Dict) -> Dict:
     """
     Returns a properties common to a esa s1_slc from a doc.
     """
-    sensor_attrs = {"orbit": doc["orbit"], "relative_orbit": doc["orbitNumber_rel"]}
+    sensor_attrs = {
+        "orbit": doc["orbit"],
+        "relative_orbit": doc["orbitNumber_rel"],
+        "absolute_orbit": doc["orbitNumber_abs"]
+    }
 
     sensor = doc["sensor"]
     if sensor == "S1A":
@@ -490,11 +512,8 @@ def package(
 
             p.region_code = f"{int(common_attrs['relative_orbit']):03}{frame}"
             p.producer = "ga.gov.au"
-            p.properties["eo:orbit"] = common_attrs["orbit"]
-            p.properties["eo:relative_orbit"] = common_attrs["relative_orbit"]
 
             p.properties["constellation"] = "sentinel-1"
-            p.properties["instruments"] = ["c-sar"]
 
             # NEEDS REVISION
             # TBD: what should this prefix be called?
@@ -512,6 +531,13 @@ def package(
             p.properties["card4l:beam_id"] = "TOPS"
             p.properties["card4l:orbit_mean_altitude"] = 693
             p.properties[f"{prefix}:dem"] = workflow_metadata["dem_path"]
+
+            # FIXME: S1A and S1B are different
+            # src only: p.properties["sat:platform_international_designator"] = "2014-016A"
+            p.properties["sat:orbit_state"] = "ascending"  # Hard-coded for now (we don't support descending)
+            p.properties["sat:absolute_orbit"] = common_attrs["absolute_orbit"]
+            p.properties["sat:relative_orbit"] = common_attrs["relative_orbit"]
+            # TODO: sat:anx_datetime
             # END NEEDS REVISION
 
             # processed time is determined from the maketime of slc.par_file
@@ -541,6 +567,11 @@ def package(
             _write_angles_measurements(
                 p, find_products(slc.dem_path, product_attrs["angles"])
             )
+
+            # Write layover/shadow mask
+            for product_path in slc.dem_path.glob("*lsmap*.tif"):
+                product_name = product_path.stem[product_path.stem.index("lsmap"):].replace(".", "_")
+                p.write_measurement(product_name, product_path, overviews=None)
 
             # Note lineage
             # TODO: we currently don't index the source data, thus can't implement this yet

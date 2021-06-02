@@ -424,14 +424,14 @@ def ard_insar(
         job_name = uuid.uuid4().hex[0:6]
 
     # Validate date range
-    if start_date < datetime.datetime(year=2016):
+    if start_date.year < 2016:
         print("Dates prior to 2016 are currently not supported due to poor sensor data.")
 
     # TODO: Would be good to query the database for the latest date available, to use as an end-date bound
 
     # Validate .proc file
     with open(proc_file, "r") as proc_file_obj:
-        proc_config = ProcConfig.from_file(proc_file_obj, outdir)
+        proc_config = ProcConfig.from_file(proc_file_obj, None)
 
     proc_valid_error = proc_config.validate()
     if proc_valid_error:

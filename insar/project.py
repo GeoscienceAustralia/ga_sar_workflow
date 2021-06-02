@@ -39,7 +39,6 @@ class ProcConfig:
         "list_dir",
         "error_dir",
         "raw_data_dir",
-        "pre_proc_dir",
     ]
 
     __filename_attribs__ = [
@@ -76,9 +75,8 @@ class ProcConfig:
         "ref_master_scene",
         "min_connect",
         "max_connect",
-        "extract_raw_data",
         "workflow",
-        "clean_up",
+        "cleanup",
         "s1_resize_ref_slc",
         "dem_patch_window",
         "dem_rpos",
@@ -151,7 +149,7 @@ class ProcConfig:
         self.ifg_azpos = self.dem_azpos
 
         # Handle "auto" reference scene
-        if self.ref_master_scene.lower() == "auto":
+        if self.ref_master_scene.lower() == "auto" and outdir:
             # Read computed master scene and use it
             with open(pathlib.Path(outdir) / self.list_dir / 'primary_ref_scene', 'r') as ref_scene_file:
                 auto_master_scene = ref_scene_file.readline().strip()
@@ -187,22 +185,22 @@ class ProcConfig:
         msg = ""
 
         # Validate all attributes exist!
-        for s in self.__slots__:
-            if not hasattr(self, s):
-                msg += f"Missing attribute: {s}\n"
+        for name in self.__slots__:
+            if not hasattr(self, name) or getattr(self, name) is None:
+                msg += f"Missing attribute: {name}\n"
 
         # Validate paths/subdirs/filenames confirm to allowed characters
-        valid_path_chars = f"-_. {string.ascii_letters}{string.digits}"
+        valid_path_chars = f"-_./ {string.ascii_letters}{string.digits}"
         for name in itertools.chain(self.__path_attribs__, self.__subdir_attribs__, self.__filename_attribs__):
             if not hasattr(self, name):
                 continue
 
-            pathname = self[name]
+            pathname = str(getattr(self, name))
             validity_mask = [c in valid_path_chars for c in pathname]
             valid = all(validity_mask)
 
             if not valid:
-                invalid_chars = [c for i,c in enumerate(pathname) if validity_mask[i]]
+                invalid_chars = [c for i,c in enumerate(pathname) if not validity_mask[i]]
                 msg += f"Attribute {name} is not a valid path name: {pathname} (must not contain {invalid_chars})\n"
 
         # Validate sensor
@@ -255,14 +253,12 @@ def is_valid_config_line(line):
 PBS_job_dirs = namedtuple(
     "PBS_job_dirs",
     [
-        "extract_raw_batch_dir",
         "slc_batch_dir",
         "ml_batch_dir",
         "base_batch_dir",
         "dem_batch_dir",
         "co_slc_batch_dir",
         "ifg_batch_dir",
-        "extract_raw_manual_dir",
         "slc_manual_dir",
         "ml_manual_dir",
         "base_manual_dir",

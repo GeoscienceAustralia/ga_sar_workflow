@@ -506,11 +506,13 @@ def package(
             # currently we only produce coregistered data (and SLC.for_path
             # only looks for coregistered data), so this is fine for now...
             if is_orbit_precise:
-                p.maturity = "interim"
-            else:
                 p.maturity = "final"
+            else:
+                p.maturity = "interim"
 
-            p.region_code = f"{int(common_attrs['relative_orbit']):03}{frame}"
+            assert(int(track[1:-1]) == int(common_attrs['relative_orbit']))
+
+            p.region_code = f"{track[0]}{int(common_attrs['relative_orbit']):03}{track[-1]}{frame}"
             p.producer = "ga.gov.au"
 
             p.properties["constellation"] = "sentinel-1"
@@ -532,7 +534,7 @@ def package(
 
             # FIXME: S1A and S1B are different
             # src only: p.properties["sat:platform_international_designator"] = "2014-016A"
-            p.properties["sat:orbit_state"] = "ascending"  # Hard-coded for now (we don't support descending)
+            p.properties["sat:orbit_state"] = "descending"  # Hard-coded for now (we don't support ascending)
             p.properties["sat:absolute_orbit"] = common_attrs["absolute_orbit"]
             p.properties["sat:relative_orbit"] = common_attrs["relative_orbit"]
             # TODO: sat:anx_datetime
@@ -547,8 +549,8 @@ def package(
             p.dataset_version = "1.0.0"
 
             # TBD: Apparently this should be a "link" - eod3 doesn't seem to have anything about links?
-            p.properties["tbd:orbit-data-file"] = orbit_file
-            p.properties["tbd:elevation-model"] = workflow_metadata["dem_path"]
+            p.properties["tbd:orbit_data_file"] = orbit_file
+            p.properties["tbd:elevation_model"] = workflow_metadata["dem_path"]
 
             # note the software versions used
             p.note_software_version("gamma", "http://www/gamma-rs.ch", workflow_metadata["gamma_version"])

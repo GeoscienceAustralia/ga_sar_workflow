@@ -5,6 +5,7 @@ PBS submission scripts.
 """
 
 from __future__ import print_function
+from gamma_insar.insar.project import ProcConfig
 
 import os
 import uuid
@@ -13,6 +14,7 @@ import json
 import click
 import warnings
 import subprocess
+import datetime
 from pathlib import Path
 from os.path import join as pjoin, dirname, exists, basename
 from insar.scripts.process_gamma import ARDWorkflow
@@ -205,13 +207,13 @@ def _submit_pbs(pbs_scripts, test):
 )
 @click.option(
     "--proc-file",
-    type=click.Path(exists=True, readable=True),
+    type=click.Path(exists=True, readable=True, file_okay=True, dir_okay=False),
     help="The file containing gamma process config variables",
 )
 @click.option(
-    "--taskfile",
-    type=click.Path(exists=True, readable=True),
-    help="The file containing the list of " "tasks to be performed",
+    "--shape-file",
+    type=click.Path(exists=True, readable=True, file_okay=True, dir_okay=False),
+    help="The path to the shapefile for SLC acquisition",
 )
 @click.option(
     "--start-date",
@@ -222,38 +224,40 @@ def _submit_pbs(pbs_scripts, test):
 @click.option(
     "--end-date",
     type=click.DateTime(),
-    default="2019-12-31",
+    default="2021-04-30",
     help="The end date of SLC acquisition",
 )
 @click.option(
     "--workdir",
-    type=click.Path(exists=True, writable=True),
+    type=click.Path(exists=True, writable=True, file_okay=False, dir_okay=True),
     help="The base working and scripts output directory.",
 )
 @click.option(
     "--outdir",
-    type=click.Path(exists=True, writable=True),
+    type=click.Path(exists=True, writable=True, file_okay=False, dir_okay=True),
     help="The output directory for processed data",
 )
 @click.option(
     "--polarization",
-    default=["VV", "VH"],
+    type=click.Choice(["VV", "VH"], case_sensitive=False),
     multiple=True,
     help="Polarizations to be processed VV or VH, arg can be specified multiple times",
 )
 @click.option(
     "--ncpus",
-    type=click.INT,
+    type=click.IntRange(min=1, max=48),
     help="The total number of cpus per job" "required if known",
     default=48,
 )
 @click.option(
-    "--memory", type=click.INT, help="Total memory required if per node", default=48 * 4,
+    "--memory",
+    type=click.IntRange(min=4, max=192),
+    help="Total memory required if per node", default=48 * 4,
 )
 @click.option(
     "--queue",
-    type=click.STRING,
-    help="Queue {express, normal, hugemem} to submit the job",
+    type=click.Choice(["normal", "express"], case_sensitive=False),
+    help="Queue {express, normal} to submit the job",
     default="normal",
 )
 @click.option("--hours", type=click.INT, help="Job walltime in hours.", default=24)
@@ -269,7 +273,12 @@ def _submit_pbs(pbs_scripts, test):
 @click.option(
     "--workers", type=click.INT, help="Number of workers", default=0,
 )
-@click.option("--jobfs", type=click.INT, help="Jobfs required in GB per node", default=2)
+@click.option(
+    "--jobfs",
+    type=click.IntRange(min=2, max=400),
+    help="Jobfs required in GB per node",
+    default=2
+)
 @click.option(
     "--storage",
     "-s",
@@ -300,7 +309,7 @@ def _submit_pbs(pbs_scripts, test):
 @click.option("--num-threads", type=click.INT, help="The number of threads to use for each Luigi worker.", default=2)
 @click.option(
     "--sensor",
-    type=click.STRING,
+    type=click.Choice(["S1A", "S1B", "ALL", "MAJORITY"], case_sensitive=False),
     help="The sensor to use for processing (or 'MAJORITY' to use the sensor w/ the most data for the date range)",
     required=False
 )
@@ -341,7 +350,7 @@ def ard_insar(
     polarization: click.Tuple,
     ncpus: click.INT,
     memory: click.INT,
-    queue: click.INT,
+    queue: click.STRING,
     hours: click.INT,
     email: click.STRING,
     nodes: click.INT,
@@ -374,11 +383,6 @@ def ard_insar(
     if outdir.find("home") != -1:
         warnings.warn(warn_msg.format("outdir"))
 
-    if (queue != "normal") and (queue != "express") and (queue != "hugemem"):
-        warnings.warn("\nqueue must either be normal, express or hugemem")
-        # set queue to normal
-        queue = "normal"
-
     # The polarization command for gamma_insar ARD is a Luigi
     # ListParameter, where the list is a <JSON string>
     # e.g.
@@ -397,8 +401,18 @@ def ard_insar(
         print("Number of threads must be greater than 0!")
         exit(1)
 
+    # Load taskfile and validate
+    error = False
     with open(taskfile, "r") as src:
         tasklist = src.readlines()
+
+        for shapefile in tasklist:
+            if not Path(shapefile.strip()).exists():
+                print("Shape file does not exist:", shapefile)
+                error = True
+
+    if error:
+        exit(1)
 
     scattered_tasklist = scatter(tasklist, nodes)
     storage_names = "".join([STORAGE.format(proj=p) for p in storage])
@@ -429,6 +443,23 @@ def ard_insar(
     else:
         scattered_jobs = [(f"{uuid.uuid4().hex[0:6]}-{idx+1}", i) for idx, i in enumerate(scattered_tasklist)]
 
+    # Validate date range
+    if start_date < datetime.datetime(year=2016):
+        print("Dates prior to 2016 are currently not supported due to poor sensor data.")
+
+    # TODO: Would be good to query the database for the latest date available, to use as an end-date bound
+
+    # Validate .proc file
+    with open(proc_file, "r") as proc_file_obj:
+        proc_config = ProcConfig.from_file(proc_file_obj, outdir)
+
+    proc_valid_error = proc_config.validate()
+    if proc_valid_error:
+        print("Provided .proc configuration file is invalid:")
+        print(proc_valid_error)
+        exit(1)
+
+    # Generate and submit the PBS script to run the job
     pbs_scripts = _gen_pbs(
         proc_file,
         scattered_jobs,

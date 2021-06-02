@@ -2516,9 +2516,11 @@ class ARD(luigi.WrapperTask):
             "DEM/**/*_geo.lv_phi.tif",
             "DEM/**/*_geo.lv_theta.tif",
             "DEM/**/*_rdc.dem",
+            "DEM/**/*.lsmap*",
 
-            # Keep all lists and top level files
+            # Keep all lists, metadata, and top level files
             "lists/*",
+            "**/metadata*.json",
             "*"
         ]
 

@@ -5,7 +5,6 @@ PBS submission scripts.
 """
 
 from __future__ import print_function
-from gamma_insar.insar.project import ProcConfig
 
 import os
 import uuid
@@ -17,7 +16,7 @@ import subprocess
 import datetime
 from pathlib import Path
 from os.path import join as pjoin, dirname, exists, basename
-from insar.scripts.process_gamma import ARDWorkflow
+from insar.project import ARDWorkflow, ProcConfig
 
 # Note that {email} is absent from PBS_RESOURCES
 PBS_RESOURCES = """#!/bin/bash
@@ -41,7 +40,7 @@ export TMP=$TMPDIR
 
 gamma_insar ARD \
     --proc-file {proc_file} \
-    --vector-file-list {vector_file_list} \
+    --shape-file {shape_file} \
     --start-date {start_date} \
     --end-date {end_date} \
     --workdir {workdir} \
@@ -81,7 +80,8 @@ def scatter(iterable, n):
 
 def _gen_pbs(
     proc_file,
-    scattered_jobs,
+    jobid,
+    shape_file,
     env,
     workdir,
     outdir,
@@ -101,104 +101,94 @@ def _gen_pbs(
     """
     Generates a pbs scripts
     """
-    pbs_scripts = []
+    job_dir = pjoin(workdir, f"jobid-{jobid}")
+    if not exists(job_dir):
+        os.makedirs(job_dir)
 
-    for (jobid, block) in scattered_jobs:
-        job_dir = pjoin(workdir, f"jobid-{jobid}")
-        if not exists(job_dir):
-            os.makedirs(job_dir)
+    # Convert workflow from whatever human formatting was used
+    # into Capitalised formatting to match enum
+    workflow = workflow.capitalize()
 
-        out_fname = pjoin(job_dir, f"input-{jobid}.txt")
-        with open(out_fname, "w") as src:
-            src.writelines(block)
+    # Create PBS script from a template w/ all required params
+    pbs = PBS_TEMPLATE.format(
+        pbs_resources=pbs_resource,
+        env=env,
+        proc_file=proc_file,
+        shape_file=shape_file,
+        start_date=start_date,
+        end_date=end_date,
+        workdir=job_dir,
+        outdir=outdir,
+        json_polar=json_polar,
+        worker=num_workers,
+        num_threads=num_threads,
+        cleanup="true" if cleanup else "false",
+        workflow=workflow
+    )
 
-        # Convert workflow from whatever human formatting was used
-        # into Capitalised formatting to match enum
-        workflow = workflow.capitalize()
+    # Append onto the end of this script any optional params
+    if sensor is not None and len(sensor) > 0:
+        pbs += " \\\n    --sensor " + sensor
 
-        # Create PBS script from a template w/ all required params
-        pbs = PBS_TEMPLATE.format(
-            pbs_resources=pbs_resource,
-            env=env,
-            proc_file=proc_file,
-            vector_file_list=basename(out_fname),
-            start_date=start_date,
-            end_date=end_date,
-            workdir=job_dir,
-            outdir=outdir,
-            json_polar=json_polar,
-            worker=num_workers,
-            num_threads=num_threads,
-            cleanup="true" if cleanup else "false",
-            workflow=workflow
-        )
+    if resume:
+        pbs += " \\\n    --resume"
 
-        # Append onto the end of this script any optional params
-        if sensor is not None and len(sensor) > 0:
-            pbs += " \\\n    --sensor " + sensor
+    if reprocess_failed:
+        pbs += " \\\n    --reprocess_failed"
 
-        if resume:
-            pbs += " \\\n    --resume"
+    # If we're resuming a job, generate the resume script
+    out_fname = Path(job_dir) / f"job{jobid}.bash"
 
-        if reprocess_failed:
-            pbs += " \\\n    --reprocess_failed"
+    if resume or reprocess_failed:
+        # Drop everything after the -<node> suffix in job ID, which is what older job names were
+        old_fname = out_fname.parent / (out_fname.name[:out_fname.name.rfind("-")] + ".bash")
 
-        # If we're resuming a job, generate the resume script
-        out_fname = Path(job_dir) / f"job{jobid}.bash"
+        # Detect and use old name jobs if it exists (eg: from initial processing datasets)
+        if not out_fname.exists() and old_fname.exists():
+            out_fname = old_fname
 
-        if resume or reprocess_failed:
-            # Drop everything after the -<node> suffix in job ID, which is what older job names were
-            old_fname = out_fname.parent / (out_fname.name[:out_fname.name.rfind("-")] + ".bash")
+        if not out_fname.exists():
+            print(f"Failed to resume, job script does not exist: {out_fname}")
+            exit(1)
 
-            # Detect and use old name jobs if it exists (eg: from initial processing datasets)
-            if not out_fname.exists() and old_fname.exists():
-                out_fname = old_fname
+        # Create resumption job
+        resume_fname = out_fname.parent / (out_fname.stem + "_resume.bash")
 
-            if not out_fname.exists():
-                print(f"Failed to resume, job script does not exist: {out_fname}")
-                exit(1)
+        with resume_fname.open("w") as src:
+            src.writelines(pbs)
+            src.write("\n")
 
-            # Create resumption job
-            resume_fname = out_fname.parent / (out_fname.stem + "_resume.bash")
+        print('Resuming existing job:', out_fname.parent)
+        return resume_fname
 
-            with resume_fname.open("w") as src:
-                src.writelines(pbs)
-                src.write("\n")
+    # Otherwise, create the new fresh job script
+    else:
+        with out_fname.open("w") as src:
+            src.writelines(pbs)
+            src.write("\n")
 
-            print('Resuming existing job:', out_fname.parent)
-            pbs_scripts.append(resume_fname)
-
-        # Otherwise, create the new fresh job script
-        else:
-            with out_fname.open("w") as src:
-                src.writelines(pbs)
-                src.write("\n")
-
-            pbs_scripts.append(out_fname)
-
-    return pbs_scripts
+        return out_fname
 
 
-def _submit_pbs(pbs_scripts, test):
+def _submit_pbs(job_path, test):
     """
     Submits a pbs job or mocks if set to test
     """
-    for scripts in pbs_scripts:
-        print(scripts)
-        if test:
-            time.sleep(1)
-            print("qsub {job}".format(job=basename(scripts)))
-        else:
-            time.sleep(1)
-            os.chdir(dirname(scripts))
+    print(job_path)
+    if test:
+        time.sleep(1)
+        print("qsub", job_path)
+    else:
+        time.sleep(1)
+        os.chdir(dirname(job_path))
 
-            for retry in range(11):
-                ret = subprocess.call(["qsub", basename(scripts)])
-                if ret == 0:
-                    break
+        for retry in range(11):
+            ret = subprocess.call(["qsub", basename(job_path)])
+            if ret == 0:
+                break
 
-                print(f"qsub failed, retrying ({retry+1}/10) in 10 seconds...")
-                time.sleep(10)
+            print(f"qsub failed, retrying ({retry+1}/10) in 10 seconds...")
+            time.sleep(10)
 
 
 @click.command(
@@ -342,7 +332,7 @@ def _submit_pbs(pbs_scripts, test):
 )
 def ard_insar(
     proc_file: click.Path,
-    taskfile: click.Path,
+    shape_file: click.Path,
     start_date: click.DateTime,
     end_date: click.DateTime,
     workdir: click.Path,
@@ -401,20 +391,10 @@ def ard_insar(
         print("Number of threads must be greater than 0!")
         exit(1)
 
-    # Load taskfile and validate
-    error = False
-    with open(taskfile, "r") as src:
-        tasklist = src.readlines()
-
-        for shapefile in tasklist:
-            if not Path(shapefile.strip()).exists():
-                print("Shape file does not exist:", shapefile)
-                error = True
-
-    if error:
+    if not Path(shape_file).exists():
+        print("Shape file does not exist:", shape_file)
         exit(1)
 
-    scattered_tasklist = scatter(tasklist, nodes)
     storage_names = "".join([STORAGE.format(proj=p) for p in storage])
     pbs_resources = PBS_RESOURCES.format(
         project_name=project,
@@ -438,10 +418,8 @@ def ard_insar(
         num_workers = workers
 
     # Assign job names to each node's job
-    if job_name:
-        scattered_jobs = [(f"{job_name}-{idx+1}", i) for idx, i in enumerate(scattered_tasklist)]
-    else:
-        scattered_jobs = [(f"{uuid.uuid4().hex[0:6]}-{idx+1}", i) for idx, i in enumerate(scattered_tasklist)]
+    if not job_name:
+        job_name = uuid.uuid4().hex[0:6]
 
     # Validate date range
     if start_date < datetime.datetime(year=2016):
@@ -459,10 +437,13 @@ def ard_insar(
         print(proc_valid_error)
         exit(1)
 
+    exit(1)
+
     # Generate and submit the PBS script to run the job
-    pbs_scripts = _gen_pbs(
+    pbs_script = _gen_pbs(
         proc_file,
-        scattered_jobs,
+        job_name,
+        shape_file,
         env,
         workdir,
         outdir,
@@ -480,7 +461,7 @@ def ard_insar(
         workflow
     )
 
-    _submit_pbs(pbs_scripts, test)
+    _submit_pbs(pbs_script, test)
 
 
 @click.command("ard-package", help="sar/insar analysis product packaging")

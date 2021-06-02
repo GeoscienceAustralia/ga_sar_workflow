@@ -5,7 +5,15 @@ Utilities for managing Gamma settings for the InSAR ARD workflow.
 import string
 import pathlib
 import itertools
+import enum
 from collections import namedtuple
+
+
+class ARDWorkflow(enum.Enum):
+    """Defines all the supported workflows of the processing script"""
+
+    Backscatter = 1, 'Produce all products up to (and including) SLC backscatter'
+    Interferogram = 2, 'Product all products up to (and including) interferograms'
 
 
 class ProcConfig:

@@ -521,16 +521,14 @@ def package(
             prefix = "tbd"
 
             p.properties[f"card4l:orbit_data_source"] = orbit_source
-            p.properties[f"{prefix}:orbit_data_file"] = orbit_file  # TBD: Apparently this should be a "link"
 
             p.properties["sar:polarizations"] = polarizations
 
-            p.properties[f"{prefix}:platform_heading"] = ard_slc_metadata["heading"]
+            p.properties["view:azimuth"] = ard_slc_metadata["heading"]
 
             # These are hard-coded assuptions, based on either our satellite/s (S1) or the data from it we support.
             p.properties["card4l:beam_id"] = "TOPS"
             p.properties["card4l:orbit_mean_altitude"] = 693
-            p.properties[f"{prefix}:dem"] = workflow_metadata["dem_path"]
 
             # FIXME: S1A and S1B are different
             # src only: p.properties["sat:platform_international_designator"] = "2014-016A"
@@ -547,6 +545,10 @@ def package(
 
             # TODO need better logical mechanism to determine dataset_version
             p.dataset_version = "1.0.0"
+
+            # TBD: Apparently this should be a "link" - eod3 doesn't seem to have anything about links?
+            p.properties["tbd:orbit-data-file"] = orbit_file
+            p.properties["tbd:elevation-model"] = workflow_metadata["dem_path"]
 
             # note the software versions used
             p.note_software_version("gamma", "http://www/gamma-rs.ch", workflow_metadata["gamma_version"])

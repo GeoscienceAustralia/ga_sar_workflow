@@ -222,15 +222,31 @@ class ProcConfig:
 
         if hasattr(self, "process_method"):
             if self.process_method != "sbas":
-                msg += "Attribute process_method must be sbas, not: {self.process_method} (currently only sbas is supported)"
+                msg += f"Attribute process_method must be sbas, not: {self.process_method} (currently only sbas is supported)"
 
         if hasattr(self, "workflow"):
-            # TODO: workflow matches ARDWorkflow
-            pass
+            workflow_values = [o.name.lower() for o in ARDWorkflow]
+            if self.workflow and self.workflow.lower() not in workflow_values:
+                msg += f"Attribute workflow must be one of {'/'.join(workflow_values)}, not {self.workflow}"
 
-        if hasattr(self, "cleanup"):
-            # TODO: cleanup is boolean
-            pass
+        # Validate flag properties
+        flag_values = ["yes", "no", "enable", "disable", "true", "false"]
+        flag_properties = ["cleanup", "ifg_unw_mask", "ifg_iterative"]
+        for name in flag_properties:
+            if hasattr(self, name):
+                value = getattr(self, name)
+
+                if value and value.lower() not in flag_values:
+                    msg += f"Attribute {name} must be one of {'/'.join(flag_values)}, not {value}"
+
+        # Validate date proeprties
+        date_properties = ["ref_master_scene", "s1_resize_ref_slc"]
+        for name in date_properties:
+            if hasattr(self, name):
+                value = getattr(self, name)
+
+                if value and value.lower() != "auto" and (value.isdigit() and len(value) == 8):
+                    msg += f"Attribute {name} must be a YYYYMMDD date or 'auto', not {value}"
 
         # Note: In the future we may want to limit some of the numeric values, but for now we
         # simply let them remain as-is.

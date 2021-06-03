@@ -566,7 +566,7 @@ class CreateGammaDem(luigi.Task):
             "gamma_dem_dir": gamma_dem_dir,
             "dem_img": self.dem_img,
             "track_frame": f"{self.track}_{self.frame}",
-            "shapefile": self.shape_file,
+            "shapefile": str(self.shape_file),
         }
 
         create_gamma_dem(**kwargs)

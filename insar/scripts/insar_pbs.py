@@ -439,8 +439,6 @@ def ard_insar(
         print(proc_valid_error)
         exit(1)
 
-    exit(1)
-
     # Generate and submit the PBS script to run the job
     pbs_script = _gen_pbs(
         proc_file,

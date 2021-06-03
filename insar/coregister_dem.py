@@ -30,6 +30,19 @@ pg = GammaInterface(
 )
 
 
+def append_suffix(
+    path: Union[pathlib.Path, str],
+    suffix: str,
+) -> pathlib.Path:
+    """
+    A simple filename append function that that only allows for a single '.' extension,
+    by keeping any existing extension as a '_' suffix.
+
+    Example: Appending .zip to test.tif, would result in test_tif.zip, instead of test.tif.zip
+    """
+    return path.parent / (path.name.replace(".", "_") + suffix)
+
+
 class CoregisterDem:
     """TODO: DEM Coregistration docs"""
 
@@ -180,30 +193,18 @@ class CoregisterDem:
         )
         attrs["dem_master_sigma0"] = outdir.joinpath(f"{slc_prefix}.sigma0")
         attrs["dem_master_sigma0_geo"] = outdir.joinpath(f"{slc_prefix}_geo.sigma0")
-        attrs["dem_master_sigma0_geo_tif"] = attrs["dem_master_sigma0_geo"].with_suffix(
-            "_" + attrs["dem_master_sigma0_geo"].suffix[1:] + ".tif"
-        )
+        attrs["dem_master_sigma0_geo_tif"] = append_suffix(attrs["dem_master_sigma0_geo"], ".tif")
         attrs["dem_master_gamma0"] = outdir.joinpath(f"{slc_prefix}.gamma0")
-        attrs["dem_master_gamma0_bmp"] = attrs["dem_master_gamma0"].with_suffix(
-            "_" + attrs["dem_master_gamma0"].suffix[1:] + ".bmp"
-        )
+        attrs["dem_master_gamma0_bmp"] = append_suffix(attrs["dem_master_gamma0"], ".bmp")
         attrs["dem_master_gamma0_geo"] = outdir.joinpath(f"{slc_prefix}_geo.gamma0")
-        attrs["dem_master_gamma0_geo_bmp"] = attrs["dem_master_gamma0_geo"].with_suffix(
-            "_" + attrs["dem_master_gamma0_geo"].suffix[1:] + ".bmp"
-        )
-        attrs["dem_master_gamma0_geo_tif"] = attrs["dem_master_gamma0_geo_bmp"].with_suffix(
-            ".tif"
-        )
+        attrs["dem_master_gamma0_geo_bmp"] = append_suffix(attrs["dem_master_gamma0_geo"], ".bmp")
+        attrs["dem_master_gamma0_geo_tif"] = append_suffix(attrs["dem_master_gamma0_geo_bmp"], ".tif")
 
         attrs["r_dem_master_slc"] = outdir.joinpath(f"{r_slc_prefix}.slc")
         attrs["r_dem_master_slc_par"] = outdir.joinpath(f"{r_slc_prefix}.slc.par")
         attrs["r_dem_master_mli"] = outdir.joinpath("r{}.mli".format(slc_prefix))
-        attrs["r_dem_master_mli_par"] = attrs["r_dem_master_mli"].with_suffix(
-            attrs["r_dem_master_mli"].suffix + ".par"
-        )
-        attrs["r_dem_master_mli_bmp"] = attrs["r_dem_master_mli"].with_suffix(
-            "_" + attrs["r_dem_master_mli"].suffix[1:] + ".bmp"
-        )
+        attrs["r_dem_master_mli_par"] = append_suffix(attrs["r_dem_master_mli"], ".par")
+        attrs["r_dem_master_mli_bmp"] = append_suffix(attrs["r_dem_master_mli"], ".bmp")
         return attrs
 
     @staticmethod
@@ -225,9 +226,7 @@ class CoregisterDem:
         attrs["geo_dem_par"] = attrs["geo_dem"].with_suffix(
             attrs["geo_dem"].suffix + ".par"
         )
-        attrs["geo_dem_geo"] = attrs["geo_dem"].with_suffix(
-            "_" + attrs["geo_dem"].suffix[1:] + ".tif"
-        )
+        attrs["geo_dem_geo"] = append_suffix(attrs["geo_dem"], ".tif")
         attrs["dem_lt_rough"] = outdir.joinpath(f"{dem_prefix}_rough_geo_to_rdc.lt")
         attrs["dem_geo_sim_sar"] = outdir.joinpath(f"{dem_prefix}_geo.sim")
         attrs["dem_loc_inc"] = outdir.joinpath(f"{dem_prefix}_geo.linc")
@@ -248,12 +247,8 @@ class CoregisterDem:
         attrs["dem_coffsets"] = outdir.joinpath(f"{dem_prefix}.coffsets")
         attrs["dem_lv_theta"] = outdir.joinpath(f"{dem_prefix}_geo.lv_theta")
         attrs["dem_lv_phi"] = outdir.joinpath(f"{dem_prefix}_geo.lv_phi")
-        attrs["dem_lv_theta_geo"] = attrs["dem_lv_theta"].with_suffix(
-            "_" + attrs["dem_lv_theta"].suffix[1:] + ".tif"
-        )
-        attrs["dem_lv_phi_geo"] = attrs["dem_lv_phi"].with_suffix(
-            "_" + attrs["dem_lv_phi"].suffix[1:] + ".tif"
-        )
+        attrs["dem_lv_theta_geo"] = append_suffix(attrs["dem_lv_theta"], ".tif")
+        attrs["dem_lv_phi_geo"] = append_suffix(attrs["dem_lv_phi"],".tif")
 
         # external image parameters to be used in co-registration
         attrs["ext_image_flt"] = outdir.joinpath(f"{dem_prefix}_ext_img_sar.flt")

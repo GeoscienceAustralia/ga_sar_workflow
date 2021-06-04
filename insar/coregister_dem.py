@@ -1107,7 +1107,7 @@ class CoregisterDem:
         ls_map_img[ls_map_img != 1] = 0
 
         # Save this back out as a geotiff w/ identical projection as the lsmap
-        ls_map_mask_tif = append_suffix(self.dem_lsmap, ".mask.tif")
+        ls_map_mask_tif = append_suffix(self.dem_lsmap, "_mask.tif")
         ls_mask_file = gdal.GetDriverByName("GTiff").Create(
             ls_map_mask_tif.as_posix(),
             ls_map_img.shape[1], ls_map_img.shape[0], 1,

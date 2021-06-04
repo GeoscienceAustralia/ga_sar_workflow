@@ -522,6 +522,7 @@ class CreateGammaDem(luigi.Task):
         }
 
         create_gamma_dem(**kwargs)
+
         with self.output().open("w") as out_fid:
             out_fid.write("")
 
@@ -2434,13 +2435,13 @@ class ARD(luigi.WrapperTask):
 
             # DEM files
             "DEM/**/*rlks_geo_to_rdc.lt",
-            "DEM/**/*_geo.dem",
+            "DEM/**/*_geo_dem.tif",
             "DEM/**/*_geo.dem.par",
             "DEM/**/diff_*rlks.par",
-            "DEM/**/*_geo.lv_phi",
-            "DEM/**/*_geo.lv_theta",
+            "DEM/**/*_geo_lv_phi.tif",
+            "DEM/**/*_geo_lv_theta.tif",
             "DEM/**/*_rdc.dem",
-            "DEM/**/*.lsmap*",
+            "DEM/**/*lsmap*",
 
             # Keep all lists, metadata, and top level files
             "lists/*",

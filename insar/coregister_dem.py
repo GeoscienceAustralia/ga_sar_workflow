@@ -9,7 +9,7 @@ from pathlib import Path
 import structlog
 from PIL import Image
 import numpy as np
-import gdal
+from osgeo import gdal
 
 from insar.py_gamma_ga import GammaInterface, auto_logging_decorator, subprocess_wrapper
 from insar.subprocess_utils import working_directory, run_command
@@ -31,9 +31,9 @@ pg = GammaInterface(
 
 
 def append_suffix(
-    path: Union[pathlib.Path, str],
+    path: Union[Path, str],
     suffix: str,
-) -> pathlib.Path:
+) -> Path:
     """
     A simple filename append function that that only allows for a single '.' extension,
     by keeping any existing extension as a '_' suffix.
@@ -203,7 +203,9 @@ class CoregisterDem:
         attrs["r_dem_master_slc"] = outdir.joinpath(f"{r_slc_prefix}.slc")
         attrs["r_dem_master_slc_par"] = outdir.joinpath(f"{r_slc_prefix}.slc.par")
         attrs["r_dem_master_mli"] = outdir.joinpath("r{}.mli".format(slc_prefix))
-        attrs["r_dem_master_mli_par"] = append_suffix(attrs["r_dem_master_mli"], ".par")
+        attrs["r_dem_master_mli_par"] = attrs["r_dem_master_mli"].with_suffix(
+            attrs["r_dem_master_mli"].suffix + ".par"
+        )
         attrs["r_dem_master_mli_bmp"] = append_suffix(attrs["r_dem_master_mli"], ".bmp")
         return attrs
 
@@ -1084,7 +1086,7 @@ class CoregisterDem:
             )
 
         # Convert lsmap to geotiff
-        ls_map_tif = str(self.dem_lsmap.with_suffix("_lsmap.tif"))
+        ls_map_tif = str(append_suffix(self.dem_lsmap, ".tif"))
         pg.data2geotiff(
             str(self.geo_dem_par),
             str(self.dem_lsmap),
@@ -1105,7 +1107,7 @@ class CoregisterDem:
         ls_map_img[ls_map_img != 1] = 0
 
         # Save this back out as a geotiff w/ identical projection as the lsmap
-        ls_map_mask_tif = self.dem_lsmap.with_suffix("_lsmap_mask.tif")
+        ls_map_mask_tif = append_suffix(self.dem_lsmap, ".mask.tif")
         ls_mask_file = gdal.GetDriverByName("GTiff").Create(
             ls_map_mask_tif.as_posix(),
             ls_map_img.shape[1], ls_map_img.shape[0], 1,

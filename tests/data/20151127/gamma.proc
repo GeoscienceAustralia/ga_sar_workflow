@@ -31,7 +31,6 @@ INT_DIR=INT
 BASE_DIR=baselines
 LIST_DIR=lists
 ERROR_DIR=error_results
-PDF_DIR=pdfs
 RAW_DATA_DIR=raw_data
 
 
@@ -125,7 +124,7 @@ WORKFLOW=INTERFEROGRAM
 S1_RESIZE_REF_SLC=auto
 
 # Clean up intermediate processing files
-CLEAN_UP=yes
+CLEANUP=yes
 
 
 -----DEM COREGISTRATION PARAMETERS----------------------------------------------------------------------

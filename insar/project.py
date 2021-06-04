@@ -98,6 +98,7 @@ class ProcConfig:
         "coreg_s1_cc_thresh",
         "coreg_s1_frac_thresh",
         "coreg_s1_stdev_thresh",
+        "ifg_geotiff",
         "ifg_coherence_threshold",
         "ifg_unw_mask",
         "ifg_patches_range",
@@ -231,7 +232,7 @@ class ProcConfig:
 
         # Validate flag properties
         flag_values = ["yes", "no", "enable", "disable", "true", "false"]
-        flag_properties = ["cleanup", "ifg_unw_mask", "ifg_iterative"]
+        flag_properties = ["cleanup", "ifg_unw_mask", "ifg_iterative", "ifg_geotiff"]
         for name in flag_properties:
             if hasattr(self, name):
                 value = getattr(self, name)

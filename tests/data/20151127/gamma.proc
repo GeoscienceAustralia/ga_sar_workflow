@@ -186,6 +186,8 @@ COREG_S1_STDEV_THRESH=0.8
 
 -----INTERFEROGRAM PARAMETERS---------------------------------------------------------------------------
 
+IFG_GEOTIFF=yes
+
     # Coherence threshold for masking
 IFG_COHERENCE_THRESHOLD=0.3
     # Mask unwrapped pixels below coherence threshold

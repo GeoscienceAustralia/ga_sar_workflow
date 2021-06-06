@@ -520,10 +520,6 @@ def package(
             p.properties["constellation"] = "sentinel-1"
 
             # NEEDS REVISION
-            # TBD: what should this prefix be called?
-            # or do we just throw them into the user metadata instead?
-            prefix = "tbd"
-
             p.properties[f"card4l:orbit_data_source"] = orbit_source
 
             p.properties["sar:polarizations"] = polarizations
@@ -551,8 +547,8 @@ def package(
             p.dataset_version = "1.0.0"
 
             # TBD: Apparently this should be a "link" - eod3 doesn't seem to have anything about links?
-            p.properties["tbd:orbit_data_file"] = orbit_file
-            p.properties["tbd:elevation_model"] = workflow_metadata["dem_path"]
+            p.extend_user_metadata("orbit_data_file", orbit_file)
+            p.extend_user_metadata("elevation_model", workflow_metadata["dem_path"])
 
             # note the software versions used
             p.note_software_version("gamma", "http://www/gamma-rs.ch", workflow_metadata["gamma_version"])
@@ -562,9 +558,10 @@ def package(
             for _key, _val in ard_slc_metadata.items():
                 p.properties[f"{product}:{_key}"] = _val
 
+            # DISABLED - Lan-Wei doesn't want this
             # store level-1 SLC metadata as extended user metadata
-            for key, val in esa_slc_metadata.items():
-                p.extend_user_metadata(key, val)
+            #for key, val in esa_slc_metadata.items():
+            #    p.extend_user_metadata(key, val)
 
             # find backscatter files and write
             _write_measurements(p, find_products(slc.slc_path, product_attrs["suffixs"]))

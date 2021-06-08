@@ -470,8 +470,7 @@ def get_prod_metadata(workflow_metadata: Dict, slc: SLC) -> Dict:
         "noise_removal_applied": False,
         # ?? is this true for gamma? "pixel_coordinate_convention": "center",
         "measurement_type": "gamma0",
-        # orbit_data_source is ambiguous / no clear mapping, InSAR team advised to disable
-        #"orbit_data_source": orbit_source,
+        "orbit_data_source": orbit_source,
         # measurement related metadata fields disabled until we go for CARD4L compliance
         #"measurement_convention": "",
     }
@@ -578,6 +577,9 @@ def package(
                 p.maturity = "final"
             else:
                 p.maturity = "interim"
+
+            # orbit_data_source is ambiguous / no clear mapping, InSAR team advised to disable
+            del ard_metadata["card4l"]["orbit_data_source"]
 
             assert(int(track[1:-1]) == int(common_attrs['relative_orbit']))
             padded_track = f"{track[0]}{int(track[1:-1]):03}{track[-1]}"

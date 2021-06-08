@@ -470,8 +470,10 @@ def get_prod_metadata(workflow_metadata: Dict, slc: SLC) -> Dict:
         "noise_removal_applied": False,
         # ?? is this true for gamma? "pixel_coordinate_convention": "center",
         "measurement_type": "gamma0",
+        # orbit_data_source is ambiguous / no clear mapping, InSAR team advised to disable
+        #"orbit_data_source": orbit_source,
+        # measurement related metadata fields disabled until we go for CARD4L compliance
         #"measurement_convention": "",
-        "orbit_data_source": orbit_source,
     }
 
     sar = {

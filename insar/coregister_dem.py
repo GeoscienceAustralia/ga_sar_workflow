@@ -30,10 +30,7 @@ pg = GammaInterface(
 )
 
 
-def append_suffix(
-    path: Union[Path, str],
-    suffix: str,
-) -> Path:
+def append_suffix(path: Path, suffix: str) -> Path:
     """
     A simple filename append function that that only allows for a single '.' extension,
     by keeping any existing extension as a '_' suffix.

@@ -2418,10 +2418,10 @@ class ARD(luigi.WrapperTask):
                     if len(dbf_tracks) != 1:
                         raise Exception("Supplied shapefile contains more than one track!")
 
-                    if dbf_frames[0].strip() != frame:
+                    if dbf_frames[0].strip().lower() != frame.lower():  # dbf has full TxxD track definition
                         raise Exception("Supplied shapefile frame does not match job frame")
 
-                    if dbf_tracks[0].strip() != track:
+                    if dbf_tracks[0].strip() != track[1:-1]:  # dbf only has track number
                         raise Exception("Supplied shapefile track does not match job track")
 
                 # Query SLC inputs for this location (extent specified by vector/shape file)

@@ -28,7 +28,8 @@ class ProcConfig:
         "ers_orbits",
         "s1_orbits",
         "s1_path",
-        "master_dem_image",
+        "poeorb_path",
+        "resorb_path"
     ]
 
     __subdir_attribs__ = [
@@ -42,6 +43,8 @@ class ProcConfig:
     ]
 
     __filename_attribs__ = [
+        "database_path",
+        "master_dem_image",
         "scene_list",
         "slave_list",
         "ifg_list",
@@ -58,6 +61,7 @@ class ProcConfig:
         *__filename_attribs__,
         "project",
         "track",
+        "orbit",
         "dem_area",
         "dem_name",
         "mdss_data_dir",
@@ -255,6 +259,16 @@ class ProcConfig:
         # At that stage we probably want a thirdparty data model validation solution, eg: marshmallow
 
         return msg
+
+    def save(self, file_obj):
+        for name in self.__slots__:
+            val_str = ""
+
+            if hasattr(self, name) and getattr(self, name):
+                val_str = str(getattr(self, name))
+
+            file_obj.write(f"{name.upper()}={val_str}\n")
+
 
 def is_valid_config_line(line):
     """

@@ -492,7 +492,7 @@ def get_prod_metadata(workflow_metadata: Dict, slc: SLC) -> Dict:
     eo = {
         "bands": [
             {
-                "name": "C",
+                "name": "SAR",
                 "description": "SENTINEL-1 carries a single C-band synthetic aperture radar instrument operating at a centre frequency of 5.405 GHz.",
                 "center_wavelength": 55465.76,  # wavelength (um) of 5.405 Ghz / S1 C-band
                 # Note: I don't think we can do "full_width_half_max" - bandwidth is programmable, and I'm not sure if we have the metadata for it?
@@ -571,7 +571,9 @@ def package(
             #
             # currently we only produce coregistered data (and SLC.for_path
             # only looks for coregistered data), so this is fine for now...
-            is_orbit_precise = ard_metadata["card4l"]["orbit_data_source"] == "definitive"
+            #is_orbit_precise = ard_metadata["card4l"]["orbit_data_source"] == "definitive"
+            # HACK: hard-coded to inprecise / interum maturity for now, pending InSAR go-ahead
+            is_orbit_precise = False
 
             if is_orbit_precise:
                 p.maturity = "final"
@@ -596,7 +598,7 @@ def package(
             p.datetime = ard_metadata["user"]["center_time"]
 
             # TODO need better logical mechanism to determine dataset_version
-            p.dataset_version = "1.0.0"
+            p.dataset_version = "0.0.1"
 
             # note the software versions used
             p.note_software_version("gamma", "http://www/gamma-rs.ch", workflow_metadata["gamma_version"])

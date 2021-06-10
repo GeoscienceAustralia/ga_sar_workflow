@@ -129,7 +129,7 @@ class ProcConfig:
         "ifg_azpos",
     ]
 
-    def __init__(self, outdir, **kwargs):
+    def __init__(self, **kwargs):
         """
         Create a ProcConfig instance.
         :param kwargs: mapping of keywords and values from a proc config settings file.

@@ -2442,7 +2442,7 @@ class ARD(luigi.WrapperTask):
         outdir = Path(proc_config.output_path)
         jobdir = Path(proc_config.job_path)
         proc_file = outdir / "config.proc"
-        orbit = proc_file.orbit[:1].upper()
+        orbit = proc_config.orbit[:1].upper()
 
         with open(proc_file, "w") as proc_fileobj:
             proc_config.save(proc_fileobj)

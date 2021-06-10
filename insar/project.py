@@ -153,16 +153,8 @@ class ProcConfig:
         self.ifg_rpos = self.dem_rpos
         self.ifg_azpos = self.dem_azpos
 
-        # Handle "auto" reference scene
-        if self.ref_master_scene.lower() == "auto" and outdir:
-            # Read computed master scene and use it
-            with open(pathlib.Path(outdir) / self.list_dir / 'primary_ref_scene', 'r') as ref_scene_file:
-                auto_master_scene = ref_scene_file.readline().strip()
-
-            self.ref_master_scene = auto_master_scene
-
     @classmethod
-    def from_file(cls, file_obj, outdir):
+    def from_file(cls, file_obj):
         """
         Returns a ProcConfig instantiated from the given file like obj.
 
@@ -179,7 +171,7 @@ class ProcConfig:
             pair[0] = pair[0].replace("-", "_")
 
         cfg = {e[0].strip().lower(): e[1].strip() for e in kv_pairs}
-        return ProcConfig(outdir, **cfg)
+        return ProcConfig(**cfg)
 
     def validate(self) -> str:
         """

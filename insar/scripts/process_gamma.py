@@ -2678,7 +2678,7 @@ class ARD(luigi.WrapperTask):
 
 def run():
     # Configure logging from built-in script logging config file
-    logging_conf = pkg_resources.resource_filename("insar", "scripts/logging.cfg")
+    logging_conf = pkg_resources.resource_filename("insar", "logging.cfg")
     logging.config.fileConfig(logging_conf)
 
     with open("insar-log.jsonl", "a") as fobj:

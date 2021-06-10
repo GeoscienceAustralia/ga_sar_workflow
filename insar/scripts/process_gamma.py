@@ -3,6 +3,7 @@
 import datetime
 import os
 import re
+from tempfile import TemporaryDirectory
 import traceback
 import os.path
 from os.path import exists, join as pjoin
@@ -496,6 +497,16 @@ class InitialSetup(luigi.Task):
 
         with self.output().open("w") as out_fid:
             out_fid.write("")
+
+        # Update .proc file "auto" reference scene
+        with open(self.proc_file, "r") as proc_file_obj:
+            proc_config = ProcConfig.from_file(proc_file_obj)
+
+        if proc_config.ref_master_scene.lower() == "auto":
+            proc_config.ref_master_scene = ref_scene_date.strftime(__DATE_FMT__)
+
+            with open(self.proc_file, "w") as proc_file_obj:
+                proc_config.save(proc_file_obj)
 
         # Write high level workflow metadata
         _, gamma_version = os.path.split(os.environ["GAMMA_INSTALL_DIR"])[-1].split("-")
@@ -1186,7 +1197,7 @@ class CalcInitialBaseline(luigi.Task):
 
         # Load the gamma proc config file
         with open(str(self.proc_file), "r") as proc_fileobj:
-            proc_config = ProcConfig.from_file(proc_fileobj, outdir)
+            proc_config = ProcConfig.from_file(proc_fileobj)
 
         slc_frames = get_scenes(self.burst_data_csv)
         slc_par_files = []
@@ -1351,7 +1362,7 @@ class CoregisterSlave(luigi.Task):
 
     def get_coreg_info(self):
         with open(str(self.proc_file), "r") as proc_fileobj:
-            proc_config = ProcConfig.from_file(proc_fileobj, self.outdir)
+            proc_config = ProcConfig.from_file(proc_fileobj)
 
         coreg = CoregisterSlc(
             proc=proc_config,
@@ -1393,7 +1404,7 @@ class CoregisterSlave(luigi.Task):
 
         # Load the gamma proc config file
         with open(str(self.proc_file), "r") as proc_fileobj:
-            proc_config = ProcConfig.from_file(proc_fileobj, self.outdir)
+            proc_config = ProcConfig.from_file(proc_fileobj)
 
         failed = False
 
@@ -1509,7 +1520,7 @@ class CreateCoregisterSlaves(luigi.Task):
 
         # Load the gamma proc config file
         with open(str(self.proc_file), "r") as proc_fileobj:
-            proc_config = ProcConfig.from_file(proc_fileobj, outdir)
+            proc_config = ProcConfig.from_file(proc_fileobj)
 
         slc_frames = get_scenes(self.burst_data_csv)
 
@@ -1564,7 +1575,7 @@ class CreateCoregisterSlaves(luigi.Task):
 
         # Load the gamma proc config file
         with open(str(self.proc_file), "r") as proc_fileobj:
-            proc_config = ProcConfig.from_file(proc_fileobj, outdir)
+            proc_config = ProcConfig.from_file(proc_fileobj)
 
         slc_frames = get_scenes(self.burst_data_csv)
 
@@ -1700,7 +1711,7 @@ class CreateBackscatter(luigi.Task):
 
         # Load the gamma proc config file
         with open(str(self.proc_file), "r") as proc_fileobj:
-            proc_config = ProcConfig.from_file(proc_fileobj, outdir)
+            proc_config = ProcConfig.from_file(proc_fileobj)
 
         slc_frames = get_scenes(self.burst_data_csv)
 
@@ -1852,7 +1863,7 @@ class ProcessIFG(luigi.Task):
     def run(self):
         # Load the gamma proc config file
         with open(str(self.proc_file), 'r') as proc_fileobj:
-            proc_config = ProcConfig.from_file(proc_fileobj, self.outdir)
+            proc_config = ProcConfig.from_file(proc_fileobj)
 
         log = STATUS_LOGGER.bind(
             outdir=self.outdir,
@@ -1921,7 +1932,7 @@ class CreateProcessIFGs(luigi.Task):
 
         # Load the gamma proc config file
         with open(str(self.proc_file), 'r') as proc_fileobj:
-            proc_config = ProcConfig.from_file(proc_fileobj, self.outdir)
+            proc_config = ProcConfig.from_file(proc_fileobj)
 
         # Remove our output to re-trigger this job, which will trigger ProcessIFGs
         # for all date pairs, however only those missing IFG outputs will run.
@@ -1985,7 +1996,7 @@ class CreateProcessIFGs(luigi.Task):
 
         # Load the gamma proc config file
         with open(str(self.proc_file), 'r') as proc_fileobj:
-            proc_config = ProcConfig.from_file(proc_fileobj, self.outdir)
+            proc_config = ProcConfig.from_file(proc_fileobj)
 
         # Parse ifg_list to schedule jobs for each interferogram
         with open(Path(self.outdir) / proc_config.list_dir / proc_config.ifg_list) as ifg_list_file:
@@ -2046,7 +2057,7 @@ class TriggerResume(luigi.Task):
     resume_token = luigi.Parameter()
 
     workflow = luigi.EnumParameter(
-        enum=ARDWorkflow, default=ARDWorkflow.Interferogram, significant=False
+        enum=ARDWorkflow, default=ARDWorkflow.Interferogram
     )
 
     def output_path(self):
@@ -2094,7 +2105,7 @@ class TriggerResume(luigi.Task):
 
         # Load the gamma proc config file
         with open(str(self.proc_file), 'r') as proc_fileobj:
-            proc_config = ProcConfig.from_file(proc_fileobj, outdir)
+            proc_config = ProcConfig.from_file(proc_fileobj)
 
         backscatter_task = CreateBackscatter(**kwargs)
         ifgs_task = CreateProcessIFGs(**kwargs)
@@ -2337,36 +2348,36 @@ class ARD(luigi.WrapperTask):
     proc_file = luigi.Parameter()
 
     # Query params (must be provided to task)
-    shape_file = luigi.Parameter(significant=False)
-    start_date = luigi.DateParameter(significant=False)
-    end_date = luigi.DateParameter(significant=False)
+    shape_file = luigi.Parameter()
+    start_date = luigi.DateParameter()
+    end_date = luigi.DateParameter()
 
     # Overridable query params (can come from .proc, or task)
-    sensor = luigi.Parameter(significant=False)
-    polarization = luigi.ListParameter(significant=False)
-    orbit = luigi.Parameter(significant=False)
+    sensor = luigi.Parameter(default=None)
+    polarization = luigi.ListParameter(default=None)
+    orbit = luigi.Parameter(default=None)
 
     # .proc overrides
     cleanup = luigi.BoolParameter(
         default=None, significant=False, parsing=luigi.BoolParameter.EXPLICIT_PARSING
     )
-    outdir = luigi.Parameter(significant=False)
-    workdir = luigi.Parameter(significant=False)
-    database_name = luigi.Parameter(significant=False)
-    master_dem_image = luigi.Parameter(significant=False)
-    multi_look = luigi.IntParameter(significant=False)
-    poeorb_path = luigi.Parameter(significant=False)
-    resorb_path = luigi.Parameter(significant=False)
+    outdir = luigi.Parameter(default=None)
+    workdir = luigi.Parameter(default=None)
+    database_name = luigi.Parameter(default=None)
+    master_dem_image = luigi.Parameter(default=None)
+    multi_look = luigi.IntParameter(default=None)
+    poeorb_path = luigi.Parameter(default=None)
+    resorb_path = luigi.Parameter(default=None)
     workflow = luigi.EnumParameter(
-        enum=ARDWorkflow, default=None, significant=False
+        enum=ARDWorkflow, default=None
     )
 
     # Job resume triggers
     resume = luigi.BoolParameter(
-        default=False, significant=False, parsing=luigi.BoolParameter.EXPLICIT_PARSING
+        default=False, parsing=luigi.BoolParameter.EXPLICIT_PARSING
     )
     reprocess_failed = luigi.BoolParameter(
-        default=False, significant=False, parsing=luigi.BoolParameter.EXPLICIT_PARSING
+        default=False, parsing=luigi.BoolParameter.EXPLICIT_PARSING
     )
 
     def requires(self):
@@ -2377,15 +2388,18 @@ class ARD(luigi.WrapperTask):
 
         # Immediately read/override/copy input proc file into output dir
         with open(str(self.proc_file), "r") as proc_fileobj:
-            proc_config = ProcConfig.from_file(proc_fileobj, self.outdir)
+            proc_config = ProcConfig.from_file(proc_fileobj)
+
+        # Map luigi params to compatible names
+        self.output_path = self.outdir
+        self.job_path = self.workdir
 
         override_params = [
             "sensor",
-
             "multi_look",
             "cleanup",
-            "outdir",
-            "workdir",
+            "output_path",
+            "job_path",
             "database_name",
             "master_dem_image",
             "poeorb_path",
@@ -2424,13 +2438,14 @@ class ARD(luigi.WrapperTask):
         else:
             pols = [proc_config.polarisation or "VV"]
 
-        outdir = Path(proc_config.outdir)
-
+        # Finally save final config and infer key variables from it
+        outdir = Path(proc_config.output_path)
+        jobdir = Path(proc_config.job_path)
         proc_file = outdir / "config.proc"
+        orbit = proc_file.orbit[:1].upper()
+
         with open(proc_file, "w") as proc_fileobj:
             proc_config.save(proc_fileobj)
-
-        orbit = proc_file.orbit[:1].upper()
 
         # generate (just once) a unique token for tasks that need to re-run
         if self.resume:
@@ -2518,14 +2533,15 @@ class ARD(luigi.WrapperTask):
 
         selected_sensors = "_".join(sorted(selected_sensors))
 
+        # Kick off processing task in appropriate frame dirs
         tfs = f"{track}_{frame}_{selected_sensors}"
-        outdir = Path(str(proc_config.outdir)) / tfs
-        workdir = Path(str(proc_config.workdir)) / tfs
+        outdir = Path(outdir) / tfs
+        jobdir = Path(jobdir) / tfs
 
         self.output_dirs.append(outdir)
 
         os.makedirs(outdir / 'lists', exist_ok=True)
-        os.makedirs(workdir, exist_ok=True)
+        os.makedirs(jobdir, exist_ok=True)
 
         kwargs = {
             "proc_file": proc_file,
@@ -2538,13 +2554,13 @@ class ARD(luigi.WrapperTask):
             "track": track,
             "frame": frame,
             "outdir": outdir,
-            "workdir": workdir,
+            "workdir": jobdir,
             "orbit": orbit,
             "dem_img": proc_config.master_dem_img,
             "poeorb_path": proc_config.poeorb_path,
             "resorb_path": proc_config.resorb_path,
             "multi_look": int(proc_config.multi_look),
-            "burst_data_csv": pjoin(outdir, f"{track}_{frame}_burst_data.csv"),
+            "burst_data_csv": outdir / f"{track}_{frame}_burst_data.csv",
             "cleanup": proc_config.cleanup,
         }
 
@@ -2565,13 +2581,13 @@ class ARD(luigi.WrapperTask):
 
         # Load template .proc config
         with open(str(self.proc_file), "r") as proc_fileobj:
-            proc_config = ProcConfig.from_file(proc_fileobj, self.outdir)
+            proc_config = ProcConfig.from_file(proc_fileobj)
 
         # Get outdir & load final .proc config
-        outdir = Path(proc_config.outdir)
+        outdir = Path(self.outdir or proc_config.outdir)
         proc_file = outdir / "config.proc"
         with open(proc_file, "r") as proc_fileobj:
-            proc_config = ProcConfig.from_file(proc_fileobj, outdir)
+            proc_config = ProcConfig.from_file(proc_fileobj)
 
         # Finally once all ARD pipeline dependencies are complete (eg: data processing is complete)
         # - we cleanup files that are no longer required as outputs.

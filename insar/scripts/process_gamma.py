@@ -2333,23 +2333,35 @@ class ARD(luigi.WrapperTask):
     }
     """
 
+    # .proc config path (holds all settings except query)
     proc_file = luigi.Parameter()
+
+    # Query params (must be provided to task)
     shape_file = luigi.Parameter(significant=False)
     start_date = luigi.DateParameter(significant=False)
     end_date = luigi.DateParameter(significant=False)
-    sensor = luigi.Parameter(significant=False, default=None)
-    polarization = luigi.ListParameter(default=["VV", "VH"], significant=False)
+
+    # Overridable query params (can come from .proc, or task)
+    sensor = luigi.Parameter(significant=False)
+    polarization = luigi.ListParameter(significant=False)
+    orbit = luigi.Parameter(significant=False)
+
+    # .proc overrides
     cleanup = luigi.BoolParameter(
-        default=False, significant=False, parsing=luigi.BoolParameter.EXPLICIT_PARSING
+        default=None, significant=False, parsing=luigi.BoolParameter.EXPLICIT_PARSING
     )
     outdir = luigi.Parameter(significant=False)
     workdir = luigi.Parameter(significant=False)
-    database_name = luigi.Parameter()
-    orbit = luigi.Parameter()
-    dem_img = luigi.Parameter()
-    multi_look = luigi.IntParameter()
-    poeorb_path = luigi.Parameter()
-    resorb_path = luigi.Parameter()
+    database_name = luigi.Parameter(significant=False)
+    master_dem_image = luigi.Parameter(significant=False)
+    multi_look = luigi.IntParameter(significant=False)
+    poeorb_path = luigi.Parameter(significant=False)
+    resorb_path = luigi.Parameter(significant=False)
+    workflow = luigi.EnumParameter(
+        enum=ARDWorkflow, default=None, significant=False
+    )
+
+    # Job resume triggers
     resume = luigi.BoolParameter(
         default=False, significant=False, parsing=luigi.BoolParameter.EXPLICIT_PARSING
     )
@@ -2357,12 +2369,68 @@ class ARD(luigi.WrapperTask):
         default=False, significant=False, parsing=luigi.BoolParameter.EXPLICIT_PARSING
     )
 
-    workflow = luigi.EnumParameter(
-        enum=ARDWorkflow, default=ARDWorkflow.Interferogram, significant=False
-    )
-
     def requires(self):
         log = STATUS_LOGGER.bind(shape_file=self.shape_file)
+
+        # We currently infer track/frame from the shapefile name... this isn't ideal
+        pass
+
+        # Immediately read/override/copy input proc file into output dir
+        with open(str(self.proc_file), "r") as proc_fileobj:
+            proc_config = ProcConfig.from_file(proc_fileobj, self.outdir)
+
+        override_params = [
+            "sensor",
+
+            "multi_look",
+            "cleanup",
+            "outdir",
+            "workdir",
+            "database_name",
+            "master_dem_image",
+            "poeorb_path",
+            "resorb_path"
+        ]
+
+        for name in override_params:
+            if hasattr(self, name) and getattr(self, name):
+                override_value = getattr(self, name)
+                log.info("Overriding .proc setting",
+                    setting=name,
+                    old_value=getattr(proc_config, name),
+                    value=override_value
+                )
+                setattr(proc_config, name, override_value)
+
+        # Explicitly handle workflow enum
+        workflow = self.workflow
+        if workflow:
+            proc_config.workflow = str(workflow)
+
+        else:
+            matching_workflow = [name for name in ARDWorkflow if name.lower() == proc_config.workflow.lower()]
+            if not matching_workflow:
+                raise Exception(f"Failed to match .proc workflow {proc_config.workflow} to ARDWorkflow enum!")
+
+            workflow = matching_workflow[0]
+
+        pols = self.polarization
+        if pols:
+            # Note: proc_config only takes the primary polarisation
+            # - this is the polarisation used for IFGs, not secondary.
+            #
+            # We assume first polarisation is the primary.
+            proc_config.polarisation = pols[0]
+        else:
+            pols = [proc_config.polarisation or "VV"]
+
+        outdir = Path(proc_config.outdir)
+
+        proc_file = outdir / "config.proc"
+        with open(proc_file, "w") as proc_fileobj:
+            proc_config.save(proc_fileobj)
+
+        orbit = proc_file.orbit[:1].upper()
 
         # generate (just once) a unique token for tasks that need to re-run
         if self.resume:
@@ -2417,17 +2485,17 @@ class ARD(luigi.WrapperTask):
             if dbf_tracks[0].strip() != track[1:-1]:  # dbf only has track number
                 raise Exception("Supplied shapefile track does not match job track")
 
-        # Query SLC inputs for this location (extent specified by \shape file)
+        # Query SLC inputs for this location (extent specified by shape file)
         rel_orbit = int(re.findall(r"\d+", str(track))[0])
         slc_query_results = query_slc_inputs(
-            str(self.database_name),
+            proc_config.database_name,
             str(shape_file),
             self.start_date,
             self.end_date,
-            str(self.orbit),
+            orbit,
             rel_orbit,
-            list(self.polarization),
-            self.sensor
+            pols,
+            proc_config.sensor
         )
 
         if slc_query_results is None:
@@ -2435,7 +2503,7 @@ class ARD(luigi.WrapperTask):
                 f"Nothing was returned for {track}_{frame} "
                 f"start_date: {self.start_date} "
                 f"end_date: {self.end_date} "
-                f"orbit: {self.orbit}"
+                f"orbit: {orbit}"
             )
 
         # Determine the selected sensor(s) from the query, for directory naming
@@ -2451,8 +2519,8 @@ class ARD(luigi.WrapperTask):
         selected_sensors = "_".join(sorted(selected_sensors))
 
         tfs = f"{track}_{frame}_{selected_sensors}"
-        outdir = Path(str(self.outdir)) / tfs
-        workdir = Path(str(self.workdir)) / tfs
+        outdir = Path(str(proc_config.outdir)) / tfs
+        workdir = Path(str(proc_config.workdir)) / tfs
 
         self.output_dirs.append(outdir)
 
@@ -2460,44 +2528,54 @@ class ARD(luigi.WrapperTask):
         os.makedirs(workdir, exist_ok=True)
 
         kwargs = {
-            "proc_file": self.proc_file,
+            "proc_file": proc_file,
             "shape_file": shape_file,
             "start_date": self.start_date,
             "end_date": self.end_date,
-            "sensor": self.sensor,
-            "database_name": self.database_name,
-            "polarization": self.polarization,
+            "sensor": proc_config.sensor,
+            "database_name": proc_config.database_name,
+            "polarization": pols,
             "track": track,
             "frame": frame,
             "outdir": outdir,
             "workdir": workdir,
-            "orbit": self.orbit,
-            "dem_img": self.dem_img,
-            "poeorb_path": self.poeorb_path,
-            "resorb_path": self.resorb_path,
-            "multi_look": self.multi_look,
+            "orbit": orbit,
+            "dem_img": proc_config.master_dem_img,
+            "poeorb_path": proc_config.poeorb_path,
+            "resorb_path": proc_config.resorb_path,
+            "multi_look": int(proc_config.multi_look),
             "burst_data_csv": pjoin(outdir, f"{track}_{frame}_burst_data.csv"),
-            "cleanup": self.cleanup,
+            "cleanup": proc_config.cleanup,
         }
 
         # Yield appropriate workflow
         if self.resume:
-            ard_tasks.append(TriggerResume(resume_token=self.resume_token, workflow=self.workflow, **kwargs))
-        elif self.workflow == ARDWorkflow.Backscatter:
+            ard_tasks.append(TriggerResume(resume_token=self.resume_token, workflow=workflow, **kwargs))
+        elif workflow == ARDWorkflow.Backscatter:
             ard_tasks.append(CreateBackscatter(**kwargs))
-        elif self.workflow == ARDWorkflow.Interferogram:
+        elif workflow == ARDWorkflow.Interferogram:
             ard_tasks.append(CreateProcessIFGs(**kwargs))
         else:
-            raise Exception(f'Unsupported workflow provided: {self.workflow}')
+            raise Exception(f'Unsupported workflow provided: {workflow}')
 
         yield ard_tasks
 
     def run(self):
         log = STATUS_LOGGER
 
+        # Load template .proc config
+        with open(str(self.proc_file), "r") as proc_fileobj:
+            proc_config = ProcConfig.from_file(proc_fileobj, self.outdir)
+
+        # Get outdir & load final .proc config
+        outdir = Path(proc_config.outdir)
+        proc_file = outdir / "config.proc"
+        with open(proc_file, "r") as proc_fileobj:
+            proc_config = ProcConfig.from_file(proc_fileobj, outdir)
+
         # Finally once all ARD pipeline dependencies are complete (eg: data processing is complete)
         # - we cleanup files that are no longer required as outputs.
-        if not self.cleanup:
+        if not proc_config.cleanup:
             log.info("Cleanup of unused files skipped, all files being kept")
             return
 

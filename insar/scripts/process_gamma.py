@@ -3,23 +3,22 @@
 import datetime
 import os
 import re
-from tempfile import TemporaryDirectory
 import traceback
 import os.path
 from os.path import exists, join as pjoin
 from pathlib import Path
-import zipfile
 import luigi
 import luigi.configuration
+import logging
+import logging.config
 import pandas as pd
 from luigi.util import requires
-import zlib
 import structlog
 import shutil
-import enum
 import osgeo.gdal
 import json
 import geopandas
+import pkg_resources
 
 import insar
 from insar.constant import SCENE_DATE_FMT, SlcFilenames, MliFilenames
@@ -370,7 +369,6 @@ class InitialSetup(luigi.Task):
     start_date = luigi.Parameter()
     end_date = luigi.Parameter()
     shape_file = luigi.Parameter()
-    database_name = luigi.Parameter()
     orbit = luigi.Parameter()
     sensor = luigi.Parameter()
     polarization = luigi.ListParameter(default=["VV"])
@@ -395,7 +393,10 @@ class InitialSetup(luigi.Task):
         log = STATUS_LOGGER.bind(track_frame=f"{self.track}_{self.frame}")
         log.info("initial setup task", sensor=self.sensor)
 
-        outdir = Path(self.outdir)
+        with open(self.proc_file, "r") as proc_file_obj:
+            proc_config = ProcConfig.from_file(proc_file_obj)
+
+        outdir = Path(proc_config.output_path)
         pols = list(self.polarization)
 
         # get the relative orbit number, which is int value of the numeric part of the track name
@@ -403,7 +404,7 @@ class InitialSetup(luigi.Task):
 
         # get slc input information
         slc_query_results = query_slc_inputs(
-            str(self.database_name),
+            str(proc_config.database_path),
             str(self.shape_file),
             self.start_date,
             self.end_date,
@@ -499,9 +500,6 @@ class InitialSetup(luigi.Task):
             out_fid.write("")
 
         # Update .proc file "auto" reference scene
-        with open(self.proc_file, "r") as proc_file_obj:
-            proc_config = ProcConfig.from_file(proc_file_obj)
-
         if proc_config.ref_master_scene.lower() == "auto":
             proc_config.ref_master_scene = ref_scene_date.strftime(__DATE_FMT__)
 
@@ -523,7 +521,7 @@ class InitialSetup(luigi.Task):
             "original_work_dir": Path(self.outdir).as_posix(),
             "original_job_dir": workdir.parent.as_posix(),
             "shapefile": str(self.shape_file),
-            "database": str(self.database_name),
+            "database": str(proc_config.database_path),
             "poeorb_path": str(self.poeorb_path),
             "resorb_path": str(self.resorb_path),
             "source_data_path": str(os.path.commonpath(list(download_list))),
@@ -2045,7 +2043,6 @@ class TriggerResume(luigi.Task):
     cleanup = luigi.BoolParameter()
     outdir = luigi.Parameter()
     workdir = luigi.Parameter()
-    database_name = luigi.Parameter()
     orbit = luigi.Parameter()
     dem_img = luigi.Parameter()
     multi_look = luigi.IntParameter()
@@ -2086,7 +2083,6 @@ class TriggerResume(luigi.Task):
             "start_date": self.start_date,
             "end_date": self.end_date,
             "sensor": self.sensor,
-            "database_name": self.database_name,
             "polarization": self.polarization,
             "track": self.track,
             "frame": self.frame,
@@ -2363,7 +2359,7 @@ class ARD(luigi.WrapperTask):
     )
     outdir = luigi.Parameter(default=None)
     workdir = luigi.Parameter(default=None)
-    database_name = luigi.Parameter(default=None)
+    database_path = luigi.Parameter(default=None)
     master_dem_image = luigi.Parameter(default=None)
     multi_look = luigi.IntParameter(default=None)
     poeorb_path = luigi.Parameter(default=None)
@@ -2383,82 +2379,16 @@ class ARD(luigi.WrapperTask):
     def requires(self):
         log = STATUS_LOGGER.bind(shape_file=self.shape_file)
 
-        # We currently infer track/frame from the shapefile name... this isn't ideal
-        pass
+        shape_file = Path(self.shape_file)
+        pols = self.polarization
 
-        # Immediately read/override/copy input proc file into output dir
         with open(str(self.proc_file), "r") as proc_fileobj:
             proc_config = ProcConfig.from_file(proc_fileobj)
 
-        # Map luigi params to compatible names
-        self.output_path = self.outdir
-        self.job_path = self.workdir
+        orbit = str(self.orbit or proc_config.orbit)[:1].upper()
 
-        override_params = [
-            "sensor",
-            "multi_look",
-            "cleanup",
-            "output_path",
-            "job_path",
-            "database_name",
-            "master_dem_image",
-            "poeorb_path",
-            "resorb_path"
-        ]
-
-        for name in override_params:
-            if hasattr(self, name) and getattr(self, name):
-                override_value = getattr(self, name)
-                log.info("Overriding .proc setting",
-                    setting=name,
-                    old_value=getattr(proc_config, name),
-                    value=override_value
-                )
-                setattr(proc_config, name, override_value)
-
-        # Explicitly handle workflow enum
-        workflow = self.workflow
-        if workflow:
-            proc_config.workflow = str(workflow)
-
-        else:
-            matching_workflow = [name for name in ARDWorkflow if name.lower() == proc_config.workflow.lower()]
-            if not matching_workflow:
-                raise Exception(f"Failed to match .proc workflow {proc_config.workflow} to ARDWorkflow enum!")
-
-            workflow = matching_workflow[0]
-
-        pols = self.polarization
-        if pols:
-            # Note: proc_config only takes the primary polarisation
-            # - this is the polarisation used for IFGs, not secondary.
-            #
-            # We assume first polarisation is the primary.
-            proc_config.polarisation = pols[0]
-        else:
-            pols = [proc_config.polarisation or "VV"]
-
-        # Finally save final config and infer key variables from it
-        outdir = Path(proc_config.output_path)
-        jobdir = Path(proc_config.job_path)
-        proc_file = outdir / "config.proc"
-        orbit = proc_config.orbit[:1].upper()
-
-        with open(proc_file, "w") as proc_fileobj:
-            proc_config.save(proc_fileobj)
-
-        # generate (just once) a unique token for tasks that need to re-run
-        if self.resume:
-            if not hasattr(self, 'resume_token'):
-                self.resume_token = datetime.datetime.now().strftime("%Y%m%d-%H%M")
-
-        # Coregistration processing
-        ard_tasks = []
-        self.output_dirs = []
-
-        shape_file = Path(self.shape_file)
-
-        # FIXME: assuming track/frame/sensor-filter info from shapefile path is... dodgy.
+        # We currently infer track/frame from the shapefile name... this is dodgy
+        pass
 
         # Match <track>_<frame> prefix syntax
         # Note: this doesn't match _<sensor> suffix which is unstructured
@@ -2500,17 +2430,18 @@ class ARD(luigi.WrapperTask):
             if dbf_tracks[0].strip() != track[1:-1]:  # dbf only has track number
                 raise Exception("Supplied shapefile track does not match job track")
 
+
         # Query SLC inputs for this location (extent specified by shape file)
         rel_orbit = int(re.findall(r"\d+", str(track))[0])
         slc_query_results = query_slc_inputs(
-            proc_config.database_name,
+            proc_config.database_path,
             str(shape_file),
             self.start_date,
             self.end_date,
             orbit,
             rel_orbit,
             pols,
-            proc_config.sensor
+            self.sensor
         )
 
         if slc_query_results is None:
@@ -2535,28 +2466,129 @@ class ARD(luigi.WrapperTask):
 
         # Kick off processing task in appropriate frame dirs
         tfs = f"{track}_{frame}_{selected_sensors}"
-        outdir = Path(outdir) / tfs
-        jobdir = Path(jobdir) / tfs
+
+        # Override input proc settings as required...
+        # - map luigi params to compatible names
+
+        # FIXME: We probably want to review this (forcing tfs subdirs), this is opinionated
+        # and there's no clear reason for us to be opinionated here... the DB query to do
+        # so is definitely complicates the code, potentially unnecessarily
+        #
+        # Also this causes a disconnect between --outdir (base dir to put tfs dir into)
+        # vs .proc OUTPUT_PATH which is the actual output path (not a base dir)
+        self.output_path = (Path(self.outdir) / tfs).as_posix() if self.outdir else None
+        self.job_path = (Path(self.workdir) / tfs).as_posix() if self.workdir else None
+
+        override_params = [
+            # Note: "sensor" is NOT over-written...
+            # ARD sensor parameter (satellite selector, eg: S1A vs. S1B) is not
+            # the same a .proc sensor (selects between constellations such as
+            # Sentinel-1 vs. RADARSAT)
+
+            "multi_look",
+            "cleanup",
+            "output_path",
+            "job_path",
+            "database_path",
+            "master_dem_image",
+            "poeorb_path",
+            "resorb_path"
+        ]
+
+        for name in override_params:
+            if hasattr(self, name) and getattr(self, name):
+                override_value = getattr(self, name)
+                log.info("Overriding .proc setting",
+                    setting=name,
+                    old_value=getattr(proc_config, name),
+                    value=override_value
+                )
+                setattr(proc_config, name, override_value)
+
+        # Explicitly handle workflow enum
+        workflow = self.workflow
+        if workflow:
+            proc_config.workflow = str(workflow)
+
+        else:
+            matching_workflow = [name for name in ARDWorkflow if name.lower() == proc_config.workflow.lower()]
+            if not matching_workflow:
+                raise Exception(f"Failed to match .proc workflow {proc_config.workflow} to ARDWorkflow enum!")
+
+            workflow = matching_workflow[0]
+
+        if pols:
+            # Note: proc_config only takes the primary polarisation
+            # - this is the polarisation used for IFGs, not secondary.
+            #
+            # We assume first polarisation is the primary.
+            proc_config.polarisation = pols[0]
+        else:
+            pols = [proc_config.polarisation or "VV"]
+
+        # Infer key variables from it
+        outdir = Path(proc_config.output_path)
+        jobdir = Path(proc_config.job_path)
+        orbit = proc_config.orbit[:1].upper()
+        proc_file = outdir / "config.proc"
+
+        # Create dirs
+        os.makedirs(outdir / proc_config.list_dir, exist_ok=True)
+        os.makedirs(jobdir, exist_ok=True)
+
+        # If proc_file already exists (eg: because this is a resume), assert that
+        # this job has identical settings to the last one, so we don't reuslt with
+        # inconsistent data.
+
+        if proc_file.exists():
+            with proc_file.open("r") as proc_fileobj:
+                existing_config = ProcConfig.from_file(proc_fileobj)
+
+            assert(existing_config.__slots__ == proc_config.__slots__)
+
+            conflicts = []
+            for name in proc_config.__slots__:
+                new_val = getattr(proc_config, name)
+                old_val = getattr(existing_config, name)
+
+                if str(new_val) != str(old_val):
+                    conflicts.append((name, new_val, old_val))
+
+            if conflicts:
+                msg = f"New .proc settings do not match existing {proc_file}"
+                error = Exception(msg)
+                error.state = { "conflicts": conflicts }
+                log.info(msg, **error.state)
+                raise error
+
+        # Finally save final config and
+        with open(proc_file, "w") as proc_fileobj:
+            proc_config.save(proc_fileobj)
+
+        # generate (just once) a unique token for tasks that need to re-run
+        if self.resume:
+            if not hasattr(self, 'resume_token'):
+                self.resume_token = datetime.datetime.now().strftime("%Y%m%d-%H%M")
+
+        # Coregistration processing
+        ard_tasks = []
+        self.output_dirs = []
 
         self.output_dirs.append(outdir)
-
-        os.makedirs(outdir / 'lists', exist_ok=True)
-        os.makedirs(jobdir, exist_ok=True)
 
         kwargs = {
             "proc_file": proc_file,
             "shape_file": shape_file,
             "start_date": self.start_date,
             "end_date": self.end_date,
-            "sensor": proc_config.sensor,
-            "database_name": proc_config.database_name,
+            "sensor": self.sensor,
             "polarization": pols,
             "track": track,
             "frame": frame,
             "outdir": outdir,
             "workdir": jobdir,
             "orbit": orbit,
-            "dem_img": proc_config.master_dem_img,
+            "dem_img": proc_config.master_dem_image,
             "poeorb_path": proc_config.poeorb_path,
             "resorb_path": proc_config.resorb_path,
             "multi_look": int(proc_config.multi_look),
@@ -2657,6 +2689,10 @@ class ARD(luigi.WrapperTask):
 
 
 def run():
+    # Configure logging from built-in script logging config file
+    logging_conf = pkg_resources.resource_filename("insar", "scripts/logging.cfg")
+    logging.config.fileConfig(logging_conf)
+
     with open("insar-log.jsonl", "a") as fobj:
         structlog.configure(logger_factory=structlog.PrintLoggerFactory(fobj))
 
@@ -2664,6 +2700,12 @@ def run():
             luigi.run()
         except:
             STATUS_LOGGER.error("Unhandled exception running ARD workflow", exc_info=True)
+
+        try:
+            luigi.run()
+        except Exception as e:
+            state = e.state if hasattr(e, "state") else {}
+            STATUS_LOGGER.error("Unhandled exception running ARD workflow", exc_info=True, **state)
 
 
 if __name__ == "__name__":

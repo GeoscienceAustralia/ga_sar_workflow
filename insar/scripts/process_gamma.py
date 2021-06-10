@@ -2537,8 +2537,13 @@ class ARD(luigi.WrapperTask):
         os.makedirs(jobdir, exist_ok=True)
 
         # If proc_file already exists (eg: because this is a resume), assert that
-        # this job has identical settings to the last one, so we don't reuslt with
+        # this job has identical settings to the last one, so we don't produce
         # inconsistent data.
+        #
+        # In this process we also re-inherit any auto/blank settings.
+        # Note: This is only required due to the less than ideal design we
+        # have where we have had to put a fair bit of logic into requires()
+        # which is in fact called multiple times (even after InitialSetup!)
 
         if proc_file.exists():
             with proc_file.open("r") as proc_fileobj:
@@ -2551,7 +2556,13 @@ class ARD(luigi.WrapperTask):
                 new_val = getattr(proc_config, name)
                 old_val = getattr(existing_config, name)
 
-                if str(new_val) != str(old_val):
+                # If there's no such new value or it's "auto", inherit old.
+                no_new_val = new_val is None or not str(new_val)
+                if no_new_val or str(new_val) == "auto":
+                    setattr(proc_config, name, old_val)
+
+                # Otherwise, ensure values match / haven't changed.
+                elif str(new_val) != str(old_val):
                     conflicts.append((name, new_val, old_val))
 
             if conflicts:

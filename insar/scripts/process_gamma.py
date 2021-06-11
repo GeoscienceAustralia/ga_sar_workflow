@@ -2504,14 +2504,14 @@ class ARD(luigi.WrapperTask):
             pols = [proc_config.polarisation or "VV"]
 
         # Infer key variables from it
-        outdir = Path(proc_config.output_path)
-        jobdir = Path(proc_config.job_path)
+        self.output_path = Path(proc_config.output_path)
+        self.job_path = Path(proc_config.job_path)
         orbit = proc_config.orbit[:1].upper()
-        proc_file = outdir / "config.proc"
+        proc_file = self.output_path / "config.proc"
 
         # Create dirs
-        os.makedirs(outdir / proc_config.list_dir, exist_ok=True)
-        os.makedirs(jobdir, exist_ok=True)
+        os.makedirs(self.output_path / proc_config.list_dir, exist_ok=True)
+        os.makedirs(self.job_path, exist_ok=True)
 
         # If proc_file already exists (eg: because this is a resume), assert that
         # this job has identical settings to the last one, so we don't produce
@@ -2560,9 +2560,7 @@ class ARD(luigi.WrapperTask):
 
         # Coregistration processing
         ard_tasks = []
-        self.output_dirs = []
-
-        self.output_dirs.append(outdir)
+        self.output_dirs = [self.output_path]
 
         kwargs = {
             "proc_file": proc_file,
@@ -2573,14 +2571,14 @@ class ARD(luigi.WrapperTask):
             "polarization": pols,
             "track": track,
             "frame": frame,
-            "outdir": outdir,
-            "workdir": jobdir,
+            "outdir": self.output_path,
+            "workdir": self.job_path,
             "orbit": orbit,
             "dem_img": proc_config.master_dem_image,
             "poeorb_path": proc_config.poeorb_path,
             "resorb_path": proc_config.resorb_path,
             "multi_look": int(proc_config.multi_look),
-            "burst_data_csv": outdir / f"{track}_{frame}_burst_data.csv",
+            "burst_data_csv": self.output_path / f"{track}_{frame}_burst_data.csv",
             "cleanup": proc_config.cleanup,
         }
 
@@ -2599,13 +2597,8 @@ class ARD(luigi.WrapperTask):
     def run(self):
         log = STATUS_LOGGER
 
-        # Load template .proc config
-        with open(str(self.proc_file), "r") as proc_fileobj:
-            proc_config = ProcConfig.from_file(proc_fileobj)
-
-        # Get outdir & load final .proc config
-        outdir = Path(self.outdir or proc_config.outdir)
-        proc_file = outdir / "config.proc"
+        # Load final .proc config
+        proc_file = self.output_path / "config.proc"
         with open(proc_file, "r") as proc_fileobj:
             proc_config = ProcConfig.from_file(proc_fileobj)
 

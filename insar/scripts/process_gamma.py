@@ -18,6 +18,7 @@ import shutil
 import osgeo.gdal
 import json
 import pkg_resources
+import geopandas
 
 import insar
 from insar.constant import SCENE_DATE_FMT, SlcFilenames, MliFilenames
@@ -2406,7 +2407,29 @@ class ARD(luigi.WrapperTask):
 
         # Extract <track>_<frame>_<sensor> from shapefile (eg: T118D_F32S_S1A.shp)
         track, frame, shapefile_sensor = vec_file_parts
-        # Issue #180: We should validate this against the actual metadata in the file
+
+        # Ensure shapefile is for a single track/frame IF it specifies such info
+        # and that it matches the specified track/frame intended for the job.
+        #
+        # Note: Ideally we don't get track/frame/sensor from shape file at all,
+        # these should be task parameters (still need to validate shapefile against that though)
+        shapefile_dbf = geopandas.GeoDataFrame.from_file(shape_file.with_suffix(".dbf"))
+
+        if hasattr(shapefile_dbf, "frame_ID") and hasattr(shapefile_dbf, "track"):
+            dbf_frames = shapefile_dbf.frame_ID.unique()
+            dbf_tracks = shapefile_dbf.track.unique()
+
+            if len(dbf_frames) != 1:
+                raise Exception("Supplied shapefile contains more than one frame!")
+
+            if len(dbf_tracks) != 1:
+                raise Exception("Supplied shapefile contains more than one track!")
+
+            if dbf_frames[0].strip().lower() != frame.lower():  # dbf has full TxxD track definition
+                raise Exception("Supplied shapefile frame does not match job frame")
+
+            if dbf_tracks[0].strip() != track[1:-1]:  # dbf only has track number
+                raise Exception("Supplied shapefile track does not match job track")
 
         # Query SLC inputs for this location (extent specified by shape file)
         rel_orbit = int(re.findall(r"\d+", str(track))[0])
@@ -2635,13 +2658,13 @@ class ARD(luigi.WrapperTask):
 
             # DEM files
             "DEM/**/*rlks_geo_to_rdc.lt",
-            "DEM/**/*_geo.dem.tif",
+            "DEM/**/*_geo_dem.tif",
             "DEM/**/*_geo.dem.par",
             "DEM/**/diff_*rlks.par",
-            "DEM/**/*_geo.lv_phi.tif",
-            "DEM/**/*_geo.lv_theta.tif",
+            "DEM/**/*_geo_lv_phi.tif",
+            "DEM/**/*_geo_lv_theta.tif",
             "DEM/**/*_rdc.dem",
-            "DEM/**/*.lsmap*",
+            "DEM/**/*lsmap*",
 
             # Keep all lists, metadata, and top level files
             "lists/*",
@@ -2678,7 +2701,11 @@ def run():
 
     with open("insar-log.jsonl", "a") as fobj:
         structlog.configure(logger_factory=structlog.PrintLoggerFactory(fobj))
-        luigi.run()
+
+        try:
+            luigi.run()
+        except:
+            STATUS_LOGGER.error("Unhandled exception running ARD workflow", exc_info=True)
 
         try:
             luigi.run()

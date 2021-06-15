@@ -2447,9 +2447,9 @@ class ARD(luigi.WrapperTask):
         # Override input proc settings as required...
         # - map luigi params to compatible names
 
-        # FIXME: We probably want to review this (forcing tfs subdirs), this is opinionated
+        # FIXME: We probably want to not do this (forcing tfs subdirs), this is opinionated
         # and there's no clear reason for us to be opinionated here... the DB query to do
-        # so is definitely complicates the code, potentially unnecessarily
+        # so definitely complicates the code (40+ lines above), unnecessarily
         #
         # Also this causes a disconnect between --outdir (base dir to put tfs dir into)
         # vs .proc OUTPUT_PATH which is the actual output path (not a base dir)
@@ -2461,6 +2461,8 @@ class ARD(luigi.WrapperTask):
             # ARD sensor parameter (satellite selector, eg: S1A vs. S1B) is not
             # the same a .proc sensor (selects between constellations such as
             # Sentinel-1 vs. RADARSAT)
+            # TODO: we probably want to rename these in the future... will need
+            # a review w/ InSAR team on their preferred terminology soon.
 
             "multi_look",
             "cleanup",

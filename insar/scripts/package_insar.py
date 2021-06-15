@@ -253,11 +253,11 @@ class SLC:
                 require_all_pols = False  # TBD: Not sure where we stand on this yet (maybe make it a flag)
 
                 if len(backscatter_files) != len(_pols):
-                    package_status = False
                     msg = f"{slc_scene_path} missing one or more polarised products, expected {_pols}"
                     _LOG.warning(msg, scene=slc_scene_path)
 
                     if require_all_pols:
+                        package_status = False
                         raise Exception(msg)
 
                 scene_date = datetime.datetime.strptime(

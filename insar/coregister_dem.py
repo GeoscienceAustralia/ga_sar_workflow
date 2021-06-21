@@ -30,15 +30,15 @@ pg = GammaInterface(
 )
 
 
-def append_suffix(
-    path: Union[Path, str],
-    suffix: str,
-) -> Path:
+def append_suffix(path: Path, suffix: str) -> Path:
     """
     A simple filename append function that that only allows for a single '.' extension,
     by keeping any existing extension as a '_' suffix.
 
     Example: Appending .zip to test.tif, would result in test_tif.zip, instead of test.tif.zip
+
+    >>> append_suffix(Path('/tmp/test.tif'), '.zip').as_posix()
+    '/tmp/test_tif.zip'
     """
     return path.parent / (path.name.replace(".", "_") + suffix)
 

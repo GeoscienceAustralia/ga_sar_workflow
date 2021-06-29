@@ -17,6 +17,7 @@ import structlog
 import shutil
 import osgeo.gdal
 import json
+import pkg_resources
 import geopandas
 import pkg_resources
 import geopandas

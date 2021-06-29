@@ -273,7 +273,7 @@ def is_valid_config_line(line):
     return False
 
 
-class DEMMasterNames:
+class DEMPrimaryNames:
     __slots__ = [
         "dem_primary_dir",
         "dem_primary_slc_name",

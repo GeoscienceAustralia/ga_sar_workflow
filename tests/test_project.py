@@ -89,7 +89,7 @@ def test_default_dem_primary_paths(mproc):
     polarisation = "polarisation"
     range_looks = "range-looks"
 
-    cfg = project.DEMMasterNames(mproc)
+    cfg = project.DEMPrimaryNames(mproc)
     assert len([x for x in dir(cfg) if x.startswith("dem_")]) == 12
     assert len([x for x in dir(cfg) if x.startswith("r_dem_")]) == 7
 
@@ -143,7 +143,7 @@ def test_default_dem_primary_paths_none_setting(mproc):
     mproc.slc_dir = None
 
     with pytest.raises(Exception):
-        project.DEMMasterNames(mproc)
+        project.DEMPrimaryNames(mproc)
 
 
 def test_default_dem_file_names(mproc):

@@ -317,7 +317,7 @@ class BaselineProcess:
         primary: datetime.date, secondaries: List[datetime.date], outfile: Path,
     ) -> None:
         """
-        Create single Master Interferogram List.
+        Create single primary interferogram list.
 
         :param primary:
             Acquisition date for slc primary scene.

@@ -121,7 +121,7 @@ class CoregisterSlc:
         self.r_dem_primary_mli_par = self.r_dem_primary_mli.with_suffix(".mli.par")
         if not self.r_dem_primary_mli_par.exists():
             self.log.error(
-                "DEM Master MLI par file not found",
+                "DEM primary MLI par file not found",
                 pathname=str(self.r_dem_primary_mli_par),
             )
 
@@ -130,17 +130,17 @@ class CoregisterSlc:
         self.r_dem_primary_slc_par = self.r_dem_primary_slc_par.parent / ("r" + self.r_dem_primary_slc_par.name)
         if not self.r_dem_primary_slc_par.exists():
             self.log.error(
-                "DEM Master SLC par file not found",
+                "DEM primary SLC par file not found",
                 pathname=str(self.r_dem_primary_slc_par),
             )
 
         self.slc_secondary_par = self.slc_secondary.with_suffix(".slc.par")
         if not self.slc_secondary_par.exists():
-            self.log.error("SLC Slave par file not found", pathname=str(self.slc_secondary_par))
+            self.log.error("SLC secondary par file not found", pathname=str(self.slc_secondary_par))
 
         self.secondary_mli_par = self.secondary_mli.with_suffix(".mli.par")
         if not self.secondary_mli_par.exists():
-            self.log.error("Slave MLI par file not found", pathname=str(self.secondary_mli_par))
+            self.log.error("Secondary MLI par file not found", pathname=str(self.secondary_mli_par))
 
         self.primary_sample = self.primary_sample_size()
 

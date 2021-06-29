@@ -234,7 +234,7 @@ def create_secondary_coreg_tree(primary_dt, date_list, thres_days=63):
     # I've opted for rhs vs. lhs because it's more obvious, newer scenes are to the right
     # in sequence as they're greater than, older scenes are to the left / less than.
 
-    # Initial Master<->Slave coreg list
+    # Initial Primary<->Secondary coreg list
     lhs, rhs = find_scenes_in_range(primary_dt, date_list, thres_days)
     last_list = lhs + rhs
 
@@ -1248,7 +1248,7 @@ class CalcInitialBaseline(luigi.Task):
 
 
 @requires(CreateGammaDem, CalcInitialBaseline)
-class CoregisterDemMaster(luigi.Task):
+class CoregisterDemPrimary(luigi.Task):
     """
     Runs co-registration of DEM and primary scene
     """
@@ -1316,7 +1316,7 @@ class CoregisterDemMaster(luigi.Task):
             out_fid.write("")
 
 
-class CoregisterSlave(luigi.Task):
+class CoregisterSecondary(luigi.Task):
     """
     Runs the primary-secondary co-registration task, followed by backscatter.
 
@@ -1453,8 +1453,8 @@ class CoregisterSlave(luigi.Task):
                 f.write("FAILED" if failed else "")
 
 
-@requires(CoregisterDemMaster)
-class CreateCoregisterSlaves(luigi.Task):
+@requires(CoregisterDemPrimary)
+class CreateCoregisterSecondaries(luigi.Task):
     """
     Runs the co-registration tasks.
 
@@ -1476,7 +1476,7 @@ class CreateCoregisterSlaves(luigi.Task):
     def trigger_resume(self, reprocess_dates, reprocess_failed_scenes):
         log = STATUS_LOGGER.bind(track_frame=f"{self.track}_{self.frame}")
 
-        # Remove our output to re-trigger this job, which will trigger CoregisterSlave
+        # Remove our output to re-trigger this job, which will trigger CoregisterSecondary
         # for all dates, however only those missing outputs will run.
         output = self.output()
 
@@ -1654,7 +1654,7 @@ class CreateCoregisterSlaves(luigi.Task):
                 secondary_slc_prefix = f"{slc_scene}_{primary_pol}"
                 kwargs["slc_secondary"] = secondary_dir / f"{secondary_slc_prefix}.slc"
                 kwargs["secondary_mli"] = secondary_dir / f"{secondary_slc_prefix}_{rlks}rlks.mli"
-                secondary_coreg_jobs.append(CoregisterSlave(**kwargs))
+                secondary_coreg_jobs.append(CoregisterSecondary(**kwargs))
 
 
         yield secondary_coreg_jobs
@@ -1663,7 +1663,7 @@ class CreateCoregisterSlaves(luigi.Task):
             f.write("")
 
 
-@requires(CreateCoregisterSlaves)
+@requires(CreateCoregisterSecondaries)
 class CreateBackscatter(luigi.Task):
     """
     Runs the backscatter tasks.
@@ -1686,7 +1686,7 @@ class CreateBackscatter(luigi.Task):
         # Note: We share identical parameters, so we just forward them a copy
         kwargs = {k:getattr(self,k) for k,_ in self.get_params()}
 
-        return CreateCoregisterSlaves(**kwargs)
+        return CreateCoregisterSecondaries(**kwargs)
 
     def trigger_resume(self, reprocess_dates, reprocess_failed_scenes):
         log = STATUS_LOGGER.bind(track_frame=f"{self.track}_{self.frame}")
@@ -1765,7 +1765,7 @@ class CreateBackscatter(luigi.Task):
             kwargs["slc_secondary"] = slc_primary_dir / f"{secondary_slc_prefix}.slc"
             kwargs["secondary_mli"] = slc_primary_dir / f"{secondary_slc_prefix}_{rlks}rlks.mli"
 
-            secondary_coreg_jobs.append(CoregisterSlave(**kwargs))
+            secondary_coreg_jobs.append(CoregisterSecondary(**kwargs))
 
         for list_index, list_dates in enumerate(coreg_tree):
             list_index += 1  # list index is 1-based
@@ -1805,7 +1805,7 @@ class CreateBackscatter(luigi.Task):
                 kwargs["secondary_mli"] = secondary_dir / f"{secondary_slc_prefix}_{rlks}rlks.mli"
                 kwargs["coreg_offset"] = None
                 kwargs["coreg_lut"] = None
-                primary_pol_task = CoregisterSlave(**kwargs)
+                primary_pol_task = CoregisterSecondary(**kwargs)
                 # Note: we are NOT scheduling this (until backscatter is separated from coreg)
                 # - coreg task currently schedules primary pol tasks, and we schedule others here
 
@@ -1827,7 +1827,7 @@ class CreateBackscatter(luigi.Task):
                     kwargs["coreg_offset"] = primary_pol_off
                     kwargs["coreg_lut"] = primary_pol_lt
 
-                    task = CoregisterSlave(**kwargs)
+                    task = CoregisterSecondary(**kwargs)
                     secondary_coreg_jobs.append(task)
 
 
@@ -2295,9 +2295,9 @@ class TriggerResume(luigi.Task):
                 # Trigger DEM tasks if we're re-processing SLC coreg as well
                 #
                 # Note: We don't add this to pre-requisite tasks, it's implied by
-                # CreateCoregisterSlaves's @requires
+                # CreateCoregisterSecondaries's @requires
                 dem_task = CreateGammaDem(**_forward_kwargs(CreateGammaDem, kwargs))
-                coreg_dem_task = CoregisterDemMaster(**_forward_kwargs(CoregisterDemMaster, kwargs))
+                coreg_dem_task = CoregisterDemPrimary(**_forward_kwargs(CoregisterDemPrimary, kwargs))
 
                 if dem_task.output().exists():
                     dem_task.output().remove()
@@ -2361,7 +2361,7 @@ class ARD(luigi.WrapperTask):
     outdir = luigi.Parameter(default=None)
     workdir = luigi.Parameter(default=None)
     database_path = luigi.Parameter(default=None)
-    master_dem_image = luigi.Parameter(default=None)
+    primary_dem_image = luigi.Parameter(default=None)
     multi_look = luigi.IntParameter(default=None)
     poeorb_path = luigi.Parameter(default=None)
     resorb_path = luigi.Parameter(default=None)
@@ -2492,7 +2492,7 @@ class ARD(luigi.WrapperTask):
             "output_path",
             "job_path",
             "database_path",
-            "master_dem_image",
+            "primary_dem_image",
             "poeorb_path",
             "resorb_path"
         ]
@@ -2599,7 +2599,7 @@ class ARD(luigi.WrapperTask):
             "outdir": self.output_path,
             "workdir": self.job_path,
             "orbit": orbit,
-            "dem_img": proc_config.master_dem_image,
+            "dem_img": proc_config.primary_dem_image,
             "poeorb_path": proc_config.poeorb_path,
             "resorb_path": proc_config.resorb_path,
             "multi_look": int(proc_config.multi_look),

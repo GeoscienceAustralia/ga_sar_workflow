@@ -22,8 +22,8 @@ source configs/activateNCI.env
 python3 -m venv $ENV_PATH
 source $ENV_PATH/bin/activate
 
-# Add env script for pbs-insar
-echo "source $REPO_DIR/configs/activateNCI.env $ENV_PATH" > $ENV_PATH/NCI.env
+# Add stand-alone env script for gamma_insar
+sed -e 's/VENV_PATH=$1'"/VENV_PATH=$ENV_PATH/" $REPO_ROOT/configs/activateNCI.env > $ENV_PATH/NCI.env
 
 # Upgrade pip (very important, wrong package version resolution with older PIP versions)
 python -m pip install --upgrade pip

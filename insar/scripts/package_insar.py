@@ -588,7 +588,7 @@ def package(
 
             # Check if the scene has already been packaged
             yaml_pattern = f"{scene_day}*/*{padded_track}{padded_frame}_{scene_year}-{scene_month}-{scene_day}*.odc-metadata.yaml"
-            odc_yamls = scene_pkg_YYYYMMdir.glob(yaml_pattern)
+            odc_yamls = list(scene_pkg_YYYYMMdir.glob(yaml_pattern))
             assert(len(odc_yamls) == 0 or len(odc_yamls) == 1)
             already_packaged = len(odc_yamls) == 1
 

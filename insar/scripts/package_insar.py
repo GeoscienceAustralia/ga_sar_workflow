@@ -8,7 +8,7 @@ import datetime
 import structlog
 import pandas as pd
 from pathlib import Path
-from typing import Dict, Iterable, List, Optional, Union
+from typing import Dict, Iterable, List, Optional, Union, Tuple
 import json
 
 from insar.py_gamma_ga import pg
@@ -588,7 +588,7 @@ def package(
 
             # Check if the scene has already been packaged
             yaml_pattern = f"{scene_day}*/*{padded_track}{padded_frame}_{scene_year}-{scene_month}-{scene_day}*.odc-metadata.yaml"
-            odc_yamls = scene_pkg_YYYYMMdir.glob(yaml_pattern)
+            odc_yamls = list(scene_pkg_YYYYMMdir.glob(yaml_pattern))
             assert(len(odc_yamls) == 0 or len(odc_yamls) == 1)
             already_packaged = len(odc_yamls) == 1
 
@@ -736,10 +736,28 @@ def package(
     help="Output pathname to contain the logging events.",
     default="packaging-insar-data.jsonl",
 )
+@click.option(
+    "--overwrite-existing",
+    type=click.BOOL, default=False, is_flag=True,
+    help="Ensures already packaged products in the pkgdir will be over-written with new packaged products.",
+)
+@click.option(
+    "--error-on-existing",
+    type=click.BOOL, default=False, is_flag=True,
+    help="Will cause any product that's requested to be packaged, which has already been packaged in pkgdir, to raise an error.",
+)
 def main(
-    track, frame, input_dir, pkgdir, yaml_dir, product, polarization, log_pathname,
+    track: str,
+    frame: str,
+    input_dir: str,
+    pkgdir: str,
+    yaml_dir: str,
+    product: str,
+    polarization: Tuple[str],
+    log_pathname: str,
+    overwrite_existing: bool,
+    error_on_existing: bool
 ):
-
     with open(log_pathname, "w") as fobj:
         structlog.configure(logger_factory=structlog.PrintLoggerFactory(fobj))
 
@@ -752,6 +770,8 @@ def main(
             yaml_base_dir=yaml_dir,
             product=product,
             polarizations=polarization,
+            overwrite_existing=bool(overwrite_existing),
+            error_on_existing=bool(error_on_existing)
         )
 
         try:
@@ -763,6 +783,8 @@ def main(
                 yaml_base_dir=yaml_dir,
                 product=product,
                 polarizations=polarization,
+                error_on_existing=error_on_existing,
+                overwrite_existing=overwrite_existing
             )
         except:
             _LOG.error("Unhandled exception while packaging", exc_info=True)

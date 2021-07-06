@@ -267,7 +267,7 @@ def get_coreg_date_pairs(outdir: Path, proc_config: ProcConfig):
     pairs = []
 
     for secondaries_list in list_dir.glob("secondaries*.list"):
-        list_index = int(secondaries_list.stem[11:-5])
+        list_index = int(secondaries_list.stem[11:])
         prev_list_idx = list_index - 1
 
         with secondaries_list.open("r") as file:
@@ -1691,9 +1691,6 @@ class ProcessBackscatter(luigi.Task):
         slc_date, slc_pol = Path(self.src_mli).stem.split('_')
 
         log = STATUS_LOGGER.bind(
-            outdir=self.outdir,
-            scene_date=slc_date,
-            polarization=slc_pol,
             slc=self.src_mli,
         )
 
@@ -1707,9 +1704,9 @@ class ProcessBackscatter(luigi.Task):
             structlog.threadlocal.clear_threadlocal()
             structlog.threadlocal.bind_threadlocal(
                 task="SLC backscatter",
-                slc_dir=self.out_dir,
-                primary_date=self.primary_date,
-                secondary_date=self.secondary_date
+                slc_dir=self.outdir,
+                slc_date=slc_date,
+                slc_pol=slc_pol
             )
 
             log.info("Beginning SLC backscatter")
@@ -1776,7 +1773,7 @@ class CreateCoregisteredBackscatter(luigi.Task):
         if reprocess_failed_scenes:
             for status_out in Path(self.workdir).glob("*_nbr_logs.out"):
                 mli = status_out.name[:-13] + ".mli"
-                scene_date = mli.split("_")[0]
+                scene_date = mli.split("_")[0].lstrip("r")
 
                 with status_out.open("r") as file:
                     contents = file.read().splitlines()
@@ -1791,7 +1788,7 @@ class CreateCoregisteredBackscatter(luigi.Task):
         for date in reprocess_dates:
             for status_out in Path(self.workdir).glob(f"*{date}_*_nbr_logs.out"):
                 mli = status_out.name[:-13] + ".mli"
-                scene_date = mli.split("_")[0]
+                scene_date = mli.split("_")[0].lstrip("r")
 
                 triggered_dates.append(scene_date)
 
@@ -2247,14 +2244,14 @@ class TriggerResume(luigi.Task):
                         # Add tertiary scene (if any)
                         for slc_scene in [primary_date, secondary_date]:
                             # Re-use slc coreg task for parameter acquisition
-                            coreg_kwargs = backscatter_task.get_base_kwargs()
+                            coreg_kwargs = coreg_task.get_base_kwargs()
                             del coreg_kwargs["proc_file"]
                             del coreg_kwargs["outdir"]
                             del coreg_kwargs["workdir"]
                             list_idx = "-"
 
                             for list_file_path in (outdir / proc_config.list_dir).glob("secondaries*.list"):
-                                list_file_idx = int(list_file_path.stem[6:])
+                                list_file_idx = int(list_file_path.stem[11:])
 
                                 with list_file_path.open('r') as file:
                                     list_dates = file.read().splitlines()
@@ -2271,9 +2268,9 @@ class TriggerResume(luigi.Task):
                             secondary_slc_prefix = f"{slc_scene}_{pol}"
                             coreg_kwargs["slc_secondary"] = secondary_dir / f"{secondary_slc_prefix}.slc"
                             coreg_kwargs["secondary_mli"] = secondary_dir / f"{secondary_slc_prefix}_{rlks}rlks.mli"
-                            coreg_task = CoregisterSlc(proc=proc_config, **coreg_kwargs)
+                            tertiary_task = CoregisterSlc(proc=proc_config, **coreg_kwargs)
 
-                            tertiary_date = coreg_task.get_tertiary_coreg_scene()
+                            tertiary_date = tertiary_task.get_tertiary_coreg_scene()
 
                             if tertiary_date:
                                 reprocessed_single_slcs.append(tertiary_date)
@@ -2292,8 +2289,8 @@ class TriggerResume(luigi.Task):
                 reprocessed_slc_backscatter.append(scene_date)
 
             reprocessed_slc_coregs = set(reprocessed_slc_coregs)
-            reprocessed_slc_backscatter = set(reprocessed_slc_backscatter) | reprocessed_slc_coregs
-            reprocessed_single_slcs = set(reprocessed_single_slcs) | reprocessed_slc_backscatter
+            reprocessed_single_slcs = set(reprocessed_single_slcs) | reprocessed_slc_coregs | set(reprocessed_single_slcs)
+            reprocessed_slc_backscatter = set(reprocessed_slc_backscatter) | reprocessed_single_slcs
 
             if len(reprocessed_single_slcs) > 0:
                 # Unfortunately if we're missing SLC coregs, we may also need to reprocess the SLC
@@ -2345,9 +2342,6 @@ class TriggerResume(luigi.Task):
                     prerequisite_tasks.append(slc_reprocess)
 
                 reprocessed_single_slcs -= existing_single_slcs
-                log.info("Re-processing singular SLCs", list=reprocessed_single_slcs)
-                log.info("Re-processing SLC coregistrations", list=reprocessed_slc_coregs)
-                log.info("Re-processing SLC backscatter", list=reprocessed_slc_backscatter)
 
                 # Trigger DEM tasks if we're re-processing SLC coreg as well
                 #
@@ -2363,6 +2357,9 @@ class TriggerResume(luigi.Task):
                     coreg_dem_task.output().remove()
 
             self.triggered_path().touch()
+            log.info("Re-processing singular SLCs", list=reprocessed_single_slcs)
+            log.info("Re-processing SLC coregistrations", list=reprocessed_slc_coregs)
+            log.info("Re-processing SLC backscatter", list=reprocessed_slc_backscatter)
 
             # Yield pre-requisite tasks first
             if prerequisite_tasks:
@@ -2555,7 +2552,7 @@ class ARD(luigi.WrapperTask):
         ]
 
         for name in override_params:
-            if hasattr(self, name) and getattr(self, name):
+            if hasattr(self, name) and getattr(self, name) is not None:
                 override_value = getattr(self, name)
                 log.info("Overriding .proc setting",
                     setting=name,
@@ -2612,6 +2609,10 @@ class ARD(luigi.WrapperTask):
 
             conflicts = []
             for name in proc_config.__slots__:
+                # special case for cleanup, which we allow to change
+                if name == "cleanup":
+                    continue
+
                 new_val = getattr(proc_config, name)
                 old_val = getattr(existing_config, name)
 
@@ -2661,7 +2662,7 @@ class ARD(luigi.WrapperTask):
             "resorb_path": proc_config.resorb_path,
             "multi_look": int(proc_config.multi_look),
             "burst_data_csv": self.output_path / f"{track}_{frame}_burst_data.csv",
-            "cleanup": proc_config.cleanup,
+            "cleanup": bool(proc_config.cleanup),
         }
 
         # Yield appropriate workflow

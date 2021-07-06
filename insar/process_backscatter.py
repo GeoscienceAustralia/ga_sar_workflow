@@ -12,6 +12,7 @@ import insar.constant as const
 
 _LOG = structlog.get_logger("insar")
 
+
 class SlcBackscatterException(Exception):
     pass
 
@@ -22,6 +23,7 @@ pg = GammaInterface(
     )
 )
 
+
 def generate_normalised_backscatter(
     outdir: Path,
     src_mli: Path,
@@ -29,13 +31,28 @@ def generate_normalised_backscatter(
     dem_pix_gamma0: Path,
     dem_lt_fine: Path,
     geo_dem_par: Path,
-    dst_stem: Path
+    dst_stem: Path,
 ):
     """
     Normalised radar backscatter.
 
     Generate Gamma0 backscatter image for secondary scene according to equation in
     Section 10.6 of Gamma Geocoding and Image Registration Users Guide.
+
+    :param outdir:
+        The output directory where all outputs of the processing should go.
+    :param src_mli:
+        The source scene (typically an mli) to produce backscatter for.
+    :param ellip_pix_sigma0:
+        A full path to a sigma0 product generated during primary-dem co-registration.
+    :param dem_pix_gamma0:
+        A full path to a gamma0 product generated during primary-dem co-registration.
+    :param dem_lt_fine:
+        A full path to a geo_to_rdc look-up table generated during primary-dem co-registration.
+    :param geo_dem_par:
+        A full path to a geo dem par generated during primary-dem co-registration.
+    :param dst_stem:
+        The destination path stem, which all outputs will be prefixed with.
     """
     dst_geo_stem = dst_stem.parent / (dst_stem.stem + "_geo" + dst_stem.suffix)
     secondary_gamma0 = outdir / dst_stem.with_suffix(".gamma0")
@@ -107,7 +124,7 @@ def generate_normalised_backscatter(
 
             # Convert the bitmap to a PNG w/ black pixels made transparent
             img = Image.open(temp_bmp.as_posix())
-            img = np.array(img.convert('RGBA'))
+            img = np.array(img.convert("RGBA"))
             img[(img[:, :, :3] == (0, 0, 0)).all(axis=-1)] = (0, 0, 0, 0)
             Image.fromarray(img).save(secondary_png.as_posix())
 

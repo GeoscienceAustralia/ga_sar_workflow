@@ -59,7 +59,7 @@ def generate_normalised_backscatter(
     secondary_gamma0_geo = outdir / dst_geo_stem.with_suffix(".gamma0")
     secondary_sigma0_geo = secondary_gamma0_geo.with_suffix(".sigma0")
 
-    par_mli = pg.ParFile(str(src_mli))
+    par_mli = pg.ParFile(str(src_mli.with_suffix(src_mli.suffix + ".par")))
     mli_width = par_mli.get_value("range_samples", dtype=int, index=0)
 
     geo_dem_par_vals = pg.ParFile(str(geo_dem_par))

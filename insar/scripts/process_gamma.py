@@ -2040,7 +2040,7 @@ class CreateProcessIFGs(luigi.Task):
                     contents = file.read().splitlines()
 
                 if len(contents) > 0 and "FAILED" in contents[0]:
-                    primary_date, secondary_date = re.split("[-_]", status_out.stem)[2:3]
+                    primary_date, secondary_date = re.split("[-_]", status_out.stem)[3:5]
 
                     log.info(f"Resuming IFG ({primary_date},{secondary_date}) because of FAILED processing")
                     reprocess_pairs.append((primary_date, secondary_date))

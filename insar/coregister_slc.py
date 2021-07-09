@@ -1350,10 +1350,10 @@ class CoregisterSlc:
         )
 
 
-    def main(self, inc_backscatter=True):
+    def main(self):
         """Main method to process SLC coregistration products."""
 
-        # Re-bind thread local context to IFG processing state
+        # Re-bind thread local context
         try:
             structlog.threadlocal.clear_threadlocal()
             structlog.threadlocal.bind_threadlocal(
@@ -1368,6 +1368,39 @@ class CoregisterSlc:
                 self.get_lookup()
                 self.reduce_offset()
                 self.fine_coregistration(self.secondary_date, self.list_idx)
+
+                # Note: for now, resampling/multilook remains part of "coregistration"
+                # - this is technically 1) the application of the coregisration and 2) downsampling...
+                self.resample_full()
+                self.multi_look()
+
+        finally:
+            structlog.threadlocal.clear_threadlocal()
+
+
+    def apply_coregistration(
+        self,
+        secondary_off: Optional[Path],
+        lookup_table: Optional[Path]
+    ):
+        """Applies a coregistration to to SLC products."""
+
+        # Re-bind thread local context
+        try:
+            structlog.threadlocal.clear_threadlocal()
+            structlog.threadlocal.bind_threadlocal(
+                task="SLC coregistration resampling",
+                slc_dir=self.out_dir,
+                primary_date=self.primary_date,
+                secondary_date=self.secondary_date
+            )
+
+            # Set coregistration LUTs
+            self.secondary_lt = lookup_table
+            self.secondary_off = secondary_off
+
+            with working_directory(self.out_dir):
+                self.set_tab_files()
 
                 # Note: for now, resampling/multilook remains part of "coregistration"
                 # - this is technically 1) the application of the coregisration and 2) downsampling...

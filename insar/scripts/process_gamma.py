@@ -2971,11 +2971,6 @@ def run():
 
         try:
             luigi.run()
-        except:
-            STATUS_LOGGER.error("Unhandled exception running ARD workflow", exc_info=True)
-
-        try:
-            luigi.run()
         except Exception as e:
             state = e.state if hasattr(e, "state") else {}
             STATUS_LOGGER.error("Unhandled exception running ARD workflow", exc_info=True, **state)

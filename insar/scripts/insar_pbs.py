@@ -375,15 +375,15 @@ def ard_insar(
 
     if resume:
         if not workpath.exists() or not any(workpath.iterdir()):
-            print("Error: Provided job work directory has no existing job!")
+            click.echo("Error: Provided job work directory has no existing job!", err=True)
             exit(1)
     else:
         if workpath.exists() and any(workpath.iterdir()):
-            print("Error: Provided job work directory already exists!")
+            click.echo("Error: Provided job work directory already exists!", err=True)
             exit(1)
 
         if outpath.exists() and any(outpath.iterdir()):
-            print("Error: Provided job output directory already exists!")
+            click.echo("Error: Provided job output directory already exists!", err=True)
             exit(1)
 
         workpath.mkdir(parents=True, exist_ok=True)
@@ -407,11 +407,11 @@ def ard_insar(
     # Sanity check number of threads
     num_threads = int(num_threads)
     if num_threads <= 0:
-        print("Number of threads must be greater than 0!")
+        click.echo("Number of threads must be greater than 0!", err=True)
         exit(1)
 
     if not Path(shape_file).exists():
-        print("Shape file does not exist:", shape_file)
+        click.echo(f"Shape file does not exist: {shape_file}", err=True)
         exit(1)
 
     storage_names = "".join([STORAGE.format(proj=p) for p in storage])
@@ -448,7 +448,7 @@ def ard_insar(
     # Validate date range
     for from_date, to_date in include_dates:
         if from_date.year < 2016 or to_date.year < 2016:
-            print("[WARNING] Dates prior to 2016 are currently not supported due to poor sensor data.")
+            click.echo("[WARNING] Dates prior to 2016 are well not supported due to poor sensor data.", err=True)
 
     # TODO: Would be good to query the database for the latest date available, to use as an end-date bound
 
@@ -458,8 +458,7 @@ def ard_insar(
 
     proc_valid_error = proc_config.validate()
     if proc_valid_error:
-        print("Provided .proc configuration file is invalid:")
-        print(proc_valid_error)
+        click.echo(f"Provided .proc configuration file is invalid:\n{proc_valid_error}", err=True)
         exit(1)
 
     # Convert dates into string format

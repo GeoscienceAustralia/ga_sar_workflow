@@ -51,7 +51,7 @@ Using `gamma_insar` on NCI of course requires a user account (to access the NCI)
 
 ```
 v10: DEA Operations and code repositories
-up71:
+up71: Storage resources for GA ARD development
 dg9: InSAR research
 u46: DEA Development and Science (GA internal)
 fj7: Sentinel Data
@@ -104,7 +104,7 @@ This takes typically less than 30 seconds and will install the latest code from 
 
 ## GAMMA-INSAR Unit Testing
 
-Running unit tests for `gamma_insar` is is as simple as running `pytest` from the project directory on a supported platform (docker options below).  The test suite was written with the assumption that GAMMA is *unavailable*, but all other dependencies are required - this is suitable for testing on a wider range of systems (such as developers machines & CI testing environments which likely won't have GAMMA licenses).
+Running unit tests for `gamma_insar` is as simple as running `pytest` from the project directory on a supported platform (docker options below).  The test suite was written with the assumption that GAMMA is *unavailable*, but all other dependencies are required - this is suitable for testing on a wider range of systems (such as developers machines & CI testing environments which likely won't have GAMMA licenses).
 
 As a result of this design decision, the *unit* tests only test the logic of the workflow - not the correctness of the processed data.
 

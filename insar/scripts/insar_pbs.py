@@ -106,10 +106,6 @@ def _gen_pbs(
     include_dates = ','.join([f'{d1}-{d2}' for d1,d2 in include_dates])
     exclude_dates = ','.join([f'{d1}-{d2}' for d1,d2 in exclude_dates])
 
-    # Convert workflow from whatever human formatting was used
-    # into Capitalised formatting to match enum
-    workflow = workflow.capitalize()
-
     # Create PBS script from a template w/ all required params
     pbs = PBS_TEMPLATE.format(
         pbs_resources=pbs_resource,

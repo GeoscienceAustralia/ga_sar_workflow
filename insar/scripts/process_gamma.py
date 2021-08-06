@@ -726,7 +726,7 @@ class InitialSetup(luigi.Task):
         with (outdir / "metadata.json").open("w") as file:
             json.dump(metadata, file, indent=2)
 
-        with (workdir.parent / "metadata.json").open("w") as file:
+        with (workdir / "metadata.json").open("w") as file:
             json.dump(metadata, file, indent=2)
 
 

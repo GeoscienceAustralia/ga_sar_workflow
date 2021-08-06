@@ -1939,9 +1939,12 @@ class CreateCoregisteredBackscatter(luigi.Task):
         # Remove completion status files for any failed SLC coreg tasks
         triggered_dates = []
 
+        nbr_outfile_pattern = "*_nbr_logs.out"
+        nbr_outfile_suffix_len = len(nbr_outfile_pattern)-1
+
         if reprocess_failed_scenes:
-            for status_out in tdir(self.workdir).glob("*_nbr_logs.out"):
-                mli = status_out.name[:-13] + ".mli"
+            for status_out in Path(self.workdir).glob(nbr_outfile_pattern):
+                mli = status_out.name[:-nbr_outfile_suffix_len] + ".mli"
                 scene_date = mli.split("_")[0].lstrip("r")
 
                 with status_out.open("r") as file:
@@ -1955,8 +1958,8 @@ class CreateCoregisteredBackscatter(luigi.Task):
 
         # Remove completion status files for any we're asked to
         for date in reprocess_dates:
-            for status_out in tdir(self.workdir).glob(f"*{date}_*_nbr_logs.out"):
-                mli = status_out.name[:-13] + ".mli"
+            for status_out in Path(self.workdir).glob(f"*{date}_" + nbr_outfile_pattern):
+                mli = status_out.name[:-nbr_outfile_suffix_len] + ".mli"
                 scene_date = mli.split("_")[0].lstrip("r")
 
                 triggered_dates.append(scene_date)
@@ -2057,7 +2060,7 @@ class ProcessNRTBackscatter(luigi.Task):
     def output(self):
         return luigi.LocalTarget(
             Path(self.workdir).joinpath(
-                f"{Path(str(self.src_path)).stem}_nrt_backscatter_logs.out"
+                f"{Path(str(self.src_path)).stem}_nrt_nbr_logs.out"
             )
         )
 
@@ -2122,7 +2125,7 @@ class CreateNRTBackscatter(luigi.Task):
     def output(self):
         return luigi.LocalTarget(
             Path(self.workdir).joinpath(
-                f"{self.track}_{self.frame}_nrt_backscatter_status_logs.out"
+                f"{self.track}_{self.frame}_nrt_nbr_status_logs.out"
             )
         )
 
@@ -2137,9 +2140,12 @@ class CreateNRTBackscatter(luigi.Task):
         # Remove completion status files for any failed SLC coreg tasks
         triggered_dates = []
 
+        nbr_outfile_pattern = "*_nrt_nbr_logs.out"
+        nbr_outfile_suffix_len = len(nbr_outfile_pattern)-1
+
         if reprocess_failed_scenes:
-            for status_out in Path(self.workdir).glob("*_nbr_logs.out"):
-                mli = status_out.name[:-13] + ".mli"
+            for status_out in Path(self.workdir).glob(nbr_outfile_pattern):
+                mli = status_out.name[:-nbr_outfile_suffix_len] + ".mli"
                 scene_date = mli.split("_")[0].lstrip("r")
 
                 with status_out.open("r") as file:
@@ -2153,8 +2159,8 @@ class CreateNRTBackscatter(luigi.Task):
 
         # Remove completion status files for any we're asked to
         for date in reprocess_dates:
-            for status_out in Path(self.workdir).glob(f"*{date}_*_nbr_logs.out"):
-                mli = status_out.name[:-13] + ".mli"
+            for status_out in Path(self.workdir).glob(f"*{date}_" + nbr_outfile_pattern):
+                mli = status_out.name[:-nbr_outfile_suffix_len] + ".mli"
                 scene_date = mli.split("_")[0].lstrip("r")
 
                 triggered_dates.append(scene_date)

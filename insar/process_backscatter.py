@@ -231,6 +231,9 @@ def generate_nrt_backscatter(
     dst_sigma0_path = with_suffix(dst_stem, "_sigma0")
     dst_gamma0_path = with_suffix(dst_stem, "_gamma0")
 
+    # This code branch is disabled as there's some gc_map2 related quirks we need to handle
+    # - the end goal is to use gc_map2 though...
+    # GH issue: https://github.com/GeoscienceAustralia/gamma_insar/issues/232
     if False:
         pg.gc_map2(
             # Inputs
@@ -264,10 +267,12 @@ def generate_nrt_backscatter(
         )
     else:
         pg.gc_map1(
+            # Inputs
             src_par_path,
             const.NOT_PROVIDED,
             dem_par_path,
             dem_attitude_override or dem_path,
+            # Outputs
             geo_dem_par_path,
             geo_dem_path,
             geo_dem_lut_path,
@@ -280,8 +285,9 @@ def generate_nrt_backscatter(
             const.NOT_PROVIDED,
             const.NOT_PROVIDED,
             lsmap_path,
-            8,
-            const.NOT_PROVIDED,
+            # Settings
+            8,  # frame pixels (padding pixels around the edge)
+            const.NOT_PROVIDED,   # no lsmap scaling
         )
 
     pg.pixel_area(
@@ -330,48 +336,38 @@ def generate_nrt_backscatter(
     dst_gamma0_cal_par_path = with_suffix(dst_gamma0_path, "_cal.par")
     dst_gamma0_cal_area_path = with_suffix(dst_gamma0_path, "_cal_area")
 
-    if False:
-        pg.radcal_SLC(
-            src_path,
-            src_par_path,
-            dst_sigma0_cal_path,
-            dst_sigma0_cal_par_path,
-            const.NOT_PROVIDED,  # antenna
-            const.NOT_PROVIDED,  # No range spread correction
-            const.NOT_PROVIDED,  # No antenna correction
-            1,  # sigma0
-            const.NOT_PROVIDED,  # no db scaling
-            const.NOT_PROVIDED,  # no calibration factor
-            dst_sigma0_cal_area_path,
-        )
-    else:
-        pg.radcal_MLI(
-            src_path,
-            src_par_path,
-            const.NOT_PROVIDED,
-            dst_sigma0_cal_path,
-            const.NOT_PROVIDED,  # antenna
-            0,  # No range spread correction
-            0,  # No antenna correction
-            1,  # sigma0
-            const.NOT_PROVIDED,  # no db scaling
-            const.NOT_PROVIDED,  # no calibration factor
-            dst_sigma0_cal_area_path,
-        )
+    # Apply radiometric calibration
+    # In this prototype, this produces 2 things:
+    # 1) direct outputs of radiometrically calibrated sigma0 and gamma0 products!
+    # 2) scaling factors to apply sigma0/gamma0 terrain correction to manually
+    #    produce our own products w/ float_math...
+    pg.radcal_MLI(
+        src_path,
+        src_par_path,
+        const.NOT_PROVIDED,
+        dst_sigma0_cal_path,
+        const.NOT_PROVIDED,  # antenna
+        0,  # No range spread correction
+        0,  # No antenna correction
+        1,  # sigma0
+        const.NOT_PROVIDED,  # no db scaling
+        const.NOT_PROVIDED,  # no calibration factor
+        dst_sigma0_cal_area_path,
+    )
 
-        pg.radcal_MLI(
-            src_path,
-            src_par_path,
-            const.NOT_PROVIDED,
-            dst_gamma0_cal_path,
-            const.NOT_PROVIDED,  # antenna
-            0,  # No range spread correction
-            0,  # No antenna correction
-            2,  # gamma0
-            const.NOT_PROVIDED,  # no db scaling
-            const.NOT_PROVIDED,  # no calibration factor
-            dst_gamma0_cal_area_path,
-        )
+    pg.radcal_MLI(
+        src_path,
+        src_par_path,
+        const.NOT_PROVIDED,
+        dst_gamma0_cal_path,
+        const.NOT_PROVIDED,  # antenna
+        0,  # No range spread correction
+        0,  # No antenna correction
+        2,  # gamma0
+        const.NOT_PROVIDED,  # no db scaling
+        const.NOT_PROVIDED,  # no calibration factor
+        dst_gamma0_cal_area_path,
+    )
 
     # Generate Gamma0 backscatter image for primary scene according to equation
     # in Section 10.6 of Gamma Geocoding and Image Registration Users Guide

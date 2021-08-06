@@ -727,7 +727,7 @@ class InitialSetup(luigi.Task):
         with (outdir / "metadata.json").open("w") as file:
             json.dump(metadata, file, indent=2)
 
-        with (workdir.parent / "metadata.json").open("w") as file:
+        with (workdir / "metadata.json").open("w") as file:
             json.dump(metadata, file, indent=2)
 
 
@@ -1449,7 +1449,7 @@ class CoregisterDemPrimary(luigi.Task):
 
             # Read rlks/alks from multilook status
             ml_file = f"{self.track}_{self.frame}_createmultilook_status_logs.out"
-            rlks, alks = read_rlks_alks(Path(self.workdir) / ml_file)
+            rlks, alks = read_rlks_alks(tdir(self.workdir) / ml_file)
 
             primary_slc = pjoin(
                 outdir,
@@ -1943,7 +1943,7 @@ class CreateCoregisteredBackscatter(luigi.Task):
         nbr_outfile_suffix_len = len(nbr_outfile_pattern)-1
 
         if reprocess_failed_scenes:
-            for status_out in Path(self.workdir).glob(nbr_outfile_pattern):
+            for status_out in tdir(self.workdir).glob(nbr_outfile_pattern):
                 mli = status_out.name[:-nbr_outfile_suffix_len] + ".mli"
                 scene_date = mli.split("_")[0].lstrip("r")
 
@@ -1958,7 +1958,7 @@ class CreateCoregisteredBackscatter(luigi.Task):
 
         # Remove completion status files for any we're asked to
         for date in reprocess_dates:
-            for status_out in Path(self.workdir).glob(f"*{date}_" + nbr_outfile_pattern):
+            for status_out in tdir(self.workdir).glob(f"*{date}_" + nbr_outfile_pattern):
                 mli = status_out.name[:-nbr_outfile_suffix_len] + ".mli"
                 scene_date = mli.split("_")[0].lstrip("r")
 
@@ -2059,7 +2059,7 @@ class ProcessNRTBackscatter(luigi.Task):
 
     def output(self):
         return luigi.LocalTarget(
-            Path(self.workdir).joinpath(
+            tdir(self.workdir).joinpath(
                 f"{Path(str(self.src_path)).stem}_nrt_nbr_logs.out"
             )
         )
@@ -2124,7 +2124,7 @@ class CreateNRTBackscatter(luigi.Task):
 
     def output(self):
         return luigi.LocalTarget(
-            Path(self.workdir).joinpath(
+            tdir(self.workdir).joinpath(
                 f"{self.track}_{self.frame}_nrt_nbr_status_logs.out"
             )
         )
@@ -2144,7 +2144,7 @@ class CreateNRTBackscatter(luigi.Task):
         nbr_outfile_suffix_len = len(nbr_outfile_pattern)-1
 
         if reprocess_failed_scenes:
-            for status_out in Path(self.workdir).glob(nbr_outfile_pattern):
+            for status_out in tdir(self.workdir).glob(nbr_outfile_pattern):
                 mli = status_out.name[:-nbr_outfile_suffix_len] + ".mli"
                 scene_date = mli.split("_")[0].lstrip("r")
 
@@ -2159,7 +2159,7 @@ class CreateNRTBackscatter(luigi.Task):
 
         # Remove completion status files for any we're asked to
         for date in reprocess_dates:
-            for status_out in Path(self.workdir).glob(f"*{date}_" + nbr_outfile_pattern):
+            for status_out in tdir(self.workdir).glob(f"*{date}_" + nbr_outfile_pattern):
                 mli = status_out.name[:-nbr_outfile_suffix_len] + ".mli"
                 scene_date = mli.split("_")[0].lstrip("r")
 
@@ -2184,7 +2184,7 @@ class CreateNRTBackscatter(luigi.Task):
         slc_frames = get_scenes(self.burst_data_csv)
 
         # get range and azimuth looked values
-        ml_file = Path(self.workdir).joinpath(
+        ml_file = tdir(self.workdir).joinpath(
             f"{self.track}_{self.frame}_createmultilook_status_logs.out"
         )
         rlks, alks = read_rlks_alks(ml_file)

@@ -359,11 +359,17 @@ def merge_overlapping_date_ranges(dates: List[Tuple[datetime.date]]) -> List[Tup
     dates = sorted(dates, key=lambda x: x[0])
     result = []
     current = dates[0]
-    assert(current[1] >= current[0])  # Sanity check, range should be (from, to)
+
+    # Range should be (from, to)
+    if(current[1] < current[0]):
+        raise RuntimeError("Provided date ranges should be (min, max) order")
 
     for date in dates[1:]:
         lhs, rhs = date
-        assert(rhs >= lhs)  # Sanity check, range should be (from, to)
+
+        # Range should be (from, to)
+        if(rhs < lhs):
+            raise RuntimeError("Provided date ranges should be (min, max) order")
 
         # Simple 1D line intersection of date ranges
         overlaps = (current[1] + one_day) >= lhs and (rhs + one_day) >= current[0]

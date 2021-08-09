@@ -100,7 +100,7 @@ def _gen_pbs(
     workflow
 ):
     """
-    Generates a pbs scripts
+    Generates a PBS submission script for the stack processing job
     """
     # Convert dates into comma separated range strings
     include_dates = ','.join([f'{d1}-{d2}' for d1,d2 in include_dates])

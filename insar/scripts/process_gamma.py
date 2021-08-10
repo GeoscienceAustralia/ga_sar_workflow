@@ -986,7 +986,7 @@ class CreateFullSlc(luigi.Task):
         # (as we can't subset smaller scenes to larger)
         if resize_primary_tab is None:
             raise ValueError(
-                f"Not a single complete frames were available {self.stack_id}"
+                f"Failed to find a single 'complete' scene to use as a subsetting reference for stack: {self.stack_id}"
             )
 
         slc_tasks = []
@@ -1159,7 +1159,7 @@ class CreateSlcMosaic(luigi.Task):
         # TODO Generate a new reference frame using scene that has least number of missing burst
         if resize_primary_tab is None:
             raise ValueError(
-                f"Not a single complete frames were available {self.stack_id}"
+                f"Failed to find a single 'complete' scene to use as a subsetting reference for stack: {self.stack_id}"
             )
 
         slc_tasks = []
@@ -1329,7 +1329,7 @@ class ReprocessSingleSLC(luigi.Task):
             yield slc_task
 
         if not slc.exists():
-            raise ValueError(f'Critical failure reprocessing SLC, slc file not found: {slc}')
+            raise ValueError(f'Critical failure reprocessing, SLC file not found: {slc}')
 
         if self.progress() == "slc_task":
             mosaic_task = ProcessSlcMosaic(
@@ -1901,7 +1901,7 @@ class CreateCoregisterSecondaries(luigi.Task):
         # TODO choose other polarization or raise Error.
         if self.primary_scene_polarization not in primary_polarizations[0]:
             raise ValueError(
-                f"{self.primary_scene_polarization}  not available in SLC data for {primary_scene}"
+                f"{self.primary_scene_polarization} not available in SLC data for {primary_scene}"
             )
 
         primary_pol = str(self.primary_scene_polarization).upper()

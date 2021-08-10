@@ -7,7 +7,6 @@ import pathlib
 import itertools
 import enum
 import numbers
-from collections import namedtuple
 
 
 class ARDWorkflow(enum.Enum):

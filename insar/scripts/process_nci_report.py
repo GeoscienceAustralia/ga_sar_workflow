@@ -811,7 +811,7 @@ if __name__ == "__main__":
             if dirs_match:
                 print(f"Warning: Skipping duplicate summary for {stack_id}...")
             else:
-                print(f"Error: Multiple jobs found for {stack_id}, thus script can only handle 1 occurance of each frame.")
+                print(f"Error: Multiple jobs found for {stack_id}, thus script can only handle 1 occurrence of each frame.")
                 exit(1)
 
         summaries[stack_id] = summary

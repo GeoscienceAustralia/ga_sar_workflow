@@ -22,7 +22,7 @@ releases any other way than via github.
 
 `gamma_insar` assumes some pre-existing native dependencies are installed on the system prior to installation:
  * [Python](https://www.python.org/) (3.6+)
- * [sqlite3](https://www.sqlite.org/index.html) w/ [spatialite](https://www.gaia-gis.it/fossil/libspatialite/index) extension
+ * [sqlite3](https://www.sqlite.org/index.html) with [spatialite](https://www.gaia-gis.it/fossil/libspatialite/index) extension
  * [GAMMA](http://www/gamma-rs.ch)
  * [GDAL](https://gdal.org/) (2.4+ and 3.0+ have been tested)
    * Note: version required is dictated by GAMMA release
@@ -176,7 +176,7 @@ slc-archive slc-ingest-yaml \
 ```
 Note: the run time can be quite long depending on how many yaml files there are.
 
-#### Data processing w/ geospatial query
+#### Data processing with geospatial query
 
 The data proccessing workflow queries the DB with a date range and shapefile to determine the source data that meets those parameters, and processes them into derived products (such as backscatter or interferograms).
 

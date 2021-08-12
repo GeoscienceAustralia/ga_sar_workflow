@@ -1,8 +1,14 @@
+import re
+import datetime
+from pathlib import Path
+
+from insar.sensors.s1 import ANY_S1_SAFE_PATTERN
+from insar.meta_data.s1_gridding_utils import generate_slc_metadata
 
 def identify_data_source(name: str):
     # TODO: Should we return a product type as well? (eg: ESA S1 provides various Level 0/1 products we may be interested in, like SLC and GRD)
 
-    s1_match = re.match(SLC_PATTERN, name)
+    s1_match = re.match(ANY_S1_SAFE_PATTERN, name)
     if s1_match:
         return "Sentinel-1", s1_match.group("sensor")
 
@@ -13,7 +19,7 @@ def get_data_swath_info(data_path: str):
     constellation, sensor = identify_data_source(data_path.name)
 
     if constellation == "Sentinel-1":
-        s1_match = re.match(SLC_PATTERN, data_path.name)
+        s1_match = re.match(ANY_S1_SAFE_PATTERN, data_path.name)
         slc_metadata = generate_slc_metadata(data_path)
 
         date = datetime.datetime.strptime(s1_match.group("start"), "%Y%m%dT%H%M%S")

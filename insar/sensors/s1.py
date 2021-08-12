@@ -15,7 +15,3 @@ ANY_S1_SAFE_PATTERN = (
     r"(?P<productIdentifier>[0-9A-F]{4})"
     r"(?P<extension>.SAFE|.zip)$"
 )
-
-metadata = {
-    "": ""
-}

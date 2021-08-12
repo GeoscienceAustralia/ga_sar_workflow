@@ -45,7 +45,7 @@ def run():
     logging.config.fileConfig(logging_conf)
 
     with open("insar-log.jsonl", "a") as fobj:
-        structlog.configure(logger_factory=structlog.PrintLoggerFactory(fobj))
+        structlog.configure(logger_factory=structlog.PrintLoggerFactory(fobj), processors=COMMON_PROCESSORS)
 
         try:
             luigi.run()

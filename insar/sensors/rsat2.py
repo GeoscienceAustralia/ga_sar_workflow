@@ -14,6 +14,3 @@ ANY_DATA_PATTERN = (
     r"(?P<product>SLC)$"
 )
 
-metadata = {
-    "": ""
-}

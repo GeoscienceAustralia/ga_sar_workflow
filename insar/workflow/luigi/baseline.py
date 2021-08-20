@@ -19,7 +19,6 @@ class CalcInitialBaseline(luigi.Task):
     """
 
     proc_file = luigi.Parameter()
-    primary_scene_polarization = luigi.Parameter(default="VV")
 
     def output(self):
         return luigi.LocalTarget(
@@ -38,7 +37,8 @@ class CalcInitialBaseline(luigi.Task):
 
         slc_frames = get_scenes(self.burst_data_csv)
         slc_par_files = []
-        polarizations = [self.primary_scene_polarization]
+        primary_pol = proc_config.polarisation
+        polarizations = [primary_pol]
 
         # Explicitly NOT supporting cross-polarisation IFGs, for now
         enable_cross_pol_ifgs = False
@@ -47,8 +47,8 @@ class CalcInitialBaseline(luigi.Task):
             slc_scene = _dt.strftime(SCENE_DATE_FMT)
             scene_dir = outdir / proc_config.slc_dir / slc_scene
 
-            if self.primary_scene_polarization in _pols:
-                slc_par = f"{slc_scene}_{self.primary_scene_polarization}.slc.par"
+            if primary_pol in _pols:
+                slc_par = f"{slc_scene}_{primary_pol}.slc.par"
             elif not enable_cross_pol_ifgs:
                 continue
             else:

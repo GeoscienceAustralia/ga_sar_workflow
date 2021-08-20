@@ -20,7 +20,6 @@ class CreateSlcMosaic(luigi.Task):
     Runs the final mosaics for all scenes, for all polarisations.
     """
 
-    proc_file = luigi.Parameter()
     multi_look = luigi.IntParameter()
 
     def output(self):

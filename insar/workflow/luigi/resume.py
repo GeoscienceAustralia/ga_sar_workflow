@@ -13,7 +13,7 @@ from insar.project import ProcConfig, IfgFileNames, ARDWorkflow
 from insar.logs import TASK_LOGGER, STATUS_LOGGER, COMMON_PROCESSORS
 
 from insar.workflow.luigi.utils import DateListParameter, read_primary_date, tdir, read_rlks_alks
-from insar.workflow.luigi.stack_setup import SlcDataDownload
+from insar.workflow.luigi.stack_setup import DataDownload
 from insar.workflow.luigi.s1 import ProcessSlc
 from insar.workflow.luigi.mosaic import ProcessSlcMosaic
 from insar.workflow.luigi.multilook import Multilook
@@ -130,8 +130,8 @@ class ReprocessSingleSLC(luigi.Task):
                 url_scene_date = Path(slc_url).name.split("_")[5].split("T")[0]
 
                 if url_scene_date == self.scene_date:
-                    download_task = SlcDataDownload(
-                        slc_scene=slc_url.rstrip(),
+                    download_task = DataDownload(
+                        data_path=slc_url.rstrip(),
                         polarization=self.polarization,
                         poeorb_path=self.poeorb_path,
                         resorb_path=self.resorb_path,

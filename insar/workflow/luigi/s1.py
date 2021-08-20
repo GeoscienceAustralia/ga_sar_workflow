@@ -62,8 +62,6 @@ class CreateFullSlc(luigi.Task):
     Runs the create full slc tasks
     """
 
-    proc_file = luigi.Parameter()
-
     def output(self):
         return luigi.LocalTarget(
             tdir(self.workdir) / f"{self.stack_id}_createfullslc_status_logs.out"

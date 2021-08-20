@@ -4,8 +4,12 @@ import datetime
 from insar.constant import SCENE_DATE_FMT
 from pathlib import Path
 import geopandas
+import tempfile
+import os
+from typing import Tuple, Optional, List
 
 import insar.constant as const
+from insar.subprocess_utils import run_command
 
 
 def rm_file(path):
@@ -19,105 +23,6 @@ def rm_file(path):
 def parse_date(scene_name):
     """ Parse str scene_name into datetime object. """
     return datetime.datetime.strptime(scene_name, SCENE_DATE_FMT)
-
-
-def coregristration_candidates(
-    scenes, primary_idx, threshold, max_secondary_idx=None,
-):
-    """
-    Returns secondary scene index  to be co-registered with primary scene and
-    checks if co-registration of scenes are complete or not.
-    """
-    if primary_idx == len(scenes) - 1:
-        return None, True
-
-    secondary_idx = None
-    is_complete = False
-    _primary_date = parse_date(scenes[primary_idx])
-
-    for idx, scene in enumerate(scenes[primary_idx + 1 :], primary_idx + 1):
-        if max_secondary_idx and idx > max_secondary_idx:
-            break
-        if abs((parse_date(scene) - _primary_date).days) > threshold:
-            break
-        secondary_idx = idx
-
-    if secondary_idx and secondary_idx == len(scenes) - 1:
-        is_complete = True
-
-    if not secondary_idx and idx < len(scenes) - 1:
-        secondary_idx = idx
-
-    return secondary_idx, is_complete
-
-
-def coreg_candidates_after_primary_scene(
-    scenes, primaries_list, main_primary,
-):
-    """
-    Return co-registration pairs for scenes after main primary scene's date.
-    :param scenes: list of scenes strings in '%Y%m%d' format.
-    :param primaries: list of primary scenes strings in '%Y%m%d format.
-    :return coregistration_scenes as a dict with key = primary and
-            values = list of secondary scenes for a primary to be coregistered with.
-    """
-    # secondary primaries(inclusive of main primary scene) are sorted in ascending order with
-    # main primary scene as a starting scene
-    primaries = [
-        scene for scene in primaries_list if parse_date(scene) >= parse_date(main_primary)
-    ]
-    primaries.sort(key=lambda date: datetime.datetime.strptime(date, SCENE_DATE_FMT))
-
-    coregistration_scenes = {}
-    for idx, primary in enumerate(primaries):
-        tmp_list = []
-        if idx < len(primaries) - 1:
-            for scene in scenes:
-                if parse_date(primary) < parse_date(scene) < parse_date(primaries[idx + 1]):
-                    tmp_list.append(scene)
-            coregistration_scenes[primary] = tmp_list
-        else:
-            for scene in scenes:
-                if parse_date(scene) > parse_date(primary):
-                    tmp_list.append(scene)
-            coregistration_scenes[primary] = tmp_list
-    return coregistration_scenes
-
-
-def coreg_candidates_before_primary_scene(
-    scenes, primaries_list, main_primary,
-):
-    """
-    Return co-registration pairs for scenes before main primary scene's date.
-
-    :param scenes: list of scenes strings in '%Y%m%d' format.
-    :param primaries: list of primary scenes strings in '%Y%m%d format.
-    :return coregistration_scenes: dict with primary(key) and scenes(value)
-    """
-    # secondary primaries (inclusive of primary scene) are sorted in descending order with
-    # main primary scene as starting scene
-    primaries = [
-        scene for scene in primaries_list if parse_date(scene) <= parse_date(main_primary)
-    ]
-    primaries.sort(
-        key=lambda date: datetime.datetime.strptime(date, SCENE_DATE_FMT), reverse=True,
-    )
-
-    coregistration_scenes = {}
-    for idx, primary in enumerate(primaries):
-        tmp_list = []
-        if idx < len(primaries) - 1:
-            for scene in scenes:
-                if parse_date(primary) > parse_date(scene) > parse_date(primaries[idx + 1]):
-                    tmp_list.append(scene)
-
-            coregistration_scenes[primary] = tmp_list
-        else:
-            for scene in scenes:
-                if parse_date(scene) < parse_date(primary):
-                    tmp_list.append(scene)
-            coregistration_scenes[primary] = tmp_list
-    return coregistration_scenes
 
 
 def read_land_center_coords(shapefile: Path):
@@ -180,3 +85,59 @@ def latlon_to_px(pg, mli_par: Path, lat, lon):
 
     rpos, azpos = matched[0].split()[-2:]
     return (int(rpos), int(azpos))
+
+
+def create_diff_par(
+    first_par_path: Path,
+    second_par_path: Optional[Path],
+    diff_par_path: Path,
+    offset: Optional[Tuple[int, int]] = (0, 0),
+    num_measurements: Optional[Tuple[int, int]] = (32, 32),
+    window_sizes: Optional[Tuple[int, int]] = (256, 256),
+    cc_thresh: float = 0.15,
+) -> None:
+    """
+    TODO: Documentation
+    """
+
+    with tempfile.TemporaryDirectory() as temp_dir:
+        return_file = Path(temp_dir) / "returns"
+
+        with return_file.open("w") as fid:
+            fid.write("\n")
+
+            for pair_param in [offset, num_measurements, window_sizes]:
+                if pair_param:
+                    fid.write("{} {}\n".format(*pair_param))
+                else:
+                    fid.write("\n")
+
+            fid.write("{}".format(cc_thresh))
+
+        command = [
+            "create_diff_par",
+            str(first_par_path),
+            str(second_par_path or const.NOT_PROVIDED),
+            str(diff_par_path),
+            "1", # Interactive mode (so we can pipe in our params that have no CLI options)
+            "<",
+            return_file.as_posix(),
+        ]
+        run_command(command, os.getcwd())
+
+
+def grep_stdout(std_output: List[str], match_start_string: str) -> str:
+    """
+    A helper method to return matched string from std_out.
+
+    :param std_output:
+        A list containing the std output collected by py_gamma.
+    :param match_start_string:
+        A case sensitive string to be scanned in stdout.
+
+    :returns:
+        A full string line of the matched string.
+    """
+    for line in std_output:
+        if line.startswith(match_start_string):
+            return line

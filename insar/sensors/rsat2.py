@@ -6,8 +6,10 @@ from numpy import source
 import rasterio
 from zipfile import ZipFile
 import shutil
+import xml.etree.ElementTree as etree
 
 from insar.sensors.types import SensorMetadata
+from insar.xml_util import getNamespaces
 
 # Example: RS2_OK127568_PK1123201_DK1078370_F0W2_20170430_084253_HH_SLC
 # Parts: RS2_OK{order key}_PK{product key}_DK{delivery key}_{beam mode}_{acquisition date}_{start time}_{polarisation}_{product type}
@@ -47,34 +49,47 @@ def get_data_swath_info(data_path: Path):
     date = datetime.strptime(start_date+start_time, "%Y%m%d%H%M%S")
     pol = match.group("polarisation").upper()
 
-    # FIXME: This actually isn't good for .zip files, extracting image is slow
-    # we should move to product.xml which is smaller/faster
+    # Load product XML
+    if data_path.is_dir():
+        with (data_path / f"product.xml").open("r") as fileobj:
+            prod_xml = etree.fromstring(fileobj.read())
 
-    # Measure swath extent
-    #
-    # Note: We can also get this from product.xml, but it's easier to let rasterio
-    # grab the GCPs out of the GeoTIFF instead - no need to reinvent the wheel
-    image_path = data_path / f"imagery_{pol}.tif"
+    elif data_path.suffix == ".zip":
+        with ZipFile(data_path, "r") as archive:
+            prod_xml = archive.read("product.xml").decode("utf-8")
 
-    with rasterio.open(image_path) as data:
-        gcps = data.gcps[0]
-        crs = data.gcps[1]
+    else:
+        raise RuntimeError("Unsupported RS2 source data file!")
 
-        # Ensure we're WGS84 (east, north) coords like the rest of our code...
-        # if this ever fails, we may need to add a transform here. currently
-        # all RSAT2 data is EPSG 4326.
-        if crs.to_epsg() != 4326:
-            raise RuntimeError("Unexpected CRS encountered, expected WGS84!")
+    p = "{http://www.rsi.ca/rs2/prod/xml/schemas}"
 
-        minx = min(i.x for i in gcps)
-        miny = min(i.y for i in gcps)
-        maxx = max(i.x for i in gcps)
-        maxy = max(i.y for i in gcps)
+    # Ensure we're WGS84 (east, north) coords like the rest of our code...
+    # if this ever fails, we may need to add a transform here.
+    # currently all RSAT2 data is EPSG 4326.
+    geo_xml = prod_xml.find(f"./{p}imageAttributes/{p}geographicInformation")
+    if geo_xml.find(f"./{p}referenceEllipsoidParameters/{p}ellipsoidName").text != "WGS 1984":
+        raise RuntimeError("Unexpected CRS encountered, expected WGS84!")
 
-        swath_extent = (
-            (minx, miny),
-            (maxx, maxy)
-        )
+    # Extract lat/lon coords of GCPs
+    lats = []
+    lons = []
+
+    for gcp_coord in geo_xml.findall(f".//{p}geodeticCoordinate"):
+        lat = gcp_coord.find(f"{p}latitude")
+        lon = gcp_coord.find(f"{p}longitude")
+
+        lats.append(float(lat.text))
+        lons.append(float(lon.text))
+
+    minx = min(i for i in lons)
+    miny = min(i for i in lats)
+    maxx = max(i for i in lons)
+    maxy = max(i for i in lats)
+
+    swath_extent = (
+        (minx, miny),
+        (maxx, maxy)
+    )
 
     # RSAT2 data only has a single frame, which we return as a single "swath"
     # - as opposed to S1, where we return 3 subswaths.

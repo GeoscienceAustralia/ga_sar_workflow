@@ -97,7 +97,31 @@ def create_diff_par(
     cc_thresh: float = 0.15,
 ) -> None:
     """
-    TODO: Documentation
+    This is a wrapper around the GAMMA `create_diff_par` program.
+
+    `create_diff_par --help`:
+    Create DIFF/GEO parameter file for geocoding and differential interferometry.
+
+    This is an initial stage in coregistration that kicks off the offset model
+    refinement stage.  At a high level it makes a few measurements at similar
+    locations across both images, and correlates them to determine an initial
+    set of polynomials from which the offset model is initalised.
+
+    :param first_par_path:
+        (input) image parameter file 1 (see PAR_type option)
+    :param second_par_path:
+        (input) image parameter file 2 (or - if not provided)
+    :param diff_par_path:
+        (input/output) DIFF/GEO parameter file
+    :param offset:
+        The known pixel offset estimate between first_par_path and second_par_path
+    :param num_measurements:
+        The number of measurements to make along each axis.
+    :param window_sizes:
+        The window sizes (in pixels) of measurements being made.
+    :param cc_thresh:
+        The cross correlation threshold that must be met by measurements
+        to be included in the resulting diff.
     """
 
     with tempfile.TemporaryDirectory() as temp_dir:
@@ -119,7 +143,7 @@ def create_diff_par(
             str(first_par_path),
             str(second_par_path or const.NOT_PROVIDED),
             str(diff_par_path),
-            "1", # Interactive mode (so we can pipe in our params that have no CLI options)
+            "1", # SLC/MLI_par input types
             "<",
             return_file.as_posix(),
         ]

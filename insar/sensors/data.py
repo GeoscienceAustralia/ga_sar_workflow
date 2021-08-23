@@ -12,6 +12,14 @@ _sensors = {
 }
 
 def identify_data_source(name: str):
+    """
+    Identify the constellation/satellite name a source data path is for.
+
+    :param name:
+        The source data path name to be identified.
+    :returns:
+        A tuple of (constellation, satellite) names identified.
+    """
     # Note: In the future we may want to return a product type as well...
     # (eg: Level 0/1 products we may be interested in, like SLC and GRD)
 
@@ -54,7 +62,20 @@ def get_data_swath_info(data_path: str):
 # to support non-local-file paths in the future (eg: S3 buckets or NCI MDSS paths)
 def acquire_source_data(source_path: str, dst_dir: Path, pols: Optional[List[str]] = None, **kwargs):
     """
-    TODO: Documentation
+    Acquires the data products for processing from a source data product.
+
+    An example of a source data product is S1 .SAFE or RS2 multi-file structures.
+
+    This function simply lets us treat source data as a path, from which we can
+    simply extract data for polarisations we are interested in processing.
+
+    :param source_path:
+        The source data path to extract polarised data from.
+    :param alks:
+        The directory to extract the acquired data into.
+    :param pols:
+        An optional list of polarisations we are interested in acquiring data for,
+        if not provided all possible to be processed will be acquired.
     """
     try:
         local_path = Path(source_path)

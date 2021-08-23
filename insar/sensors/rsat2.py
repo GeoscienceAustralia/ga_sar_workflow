@@ -22,7 +22,8 @@ ANY_DATA_PATTERN = (
     r"(?P<start_date>[0-9]{8})_"
     r"(?P<start_time>[0-9]{6})_"
     r"(?P<polarisation>VV|HH|HV|VH)_"
-    r"(?P<product>SLC)$"
+    r"(?P<product>SLC)"
+    r"(?P<extension>.zip)?$"
 )
 
 SOURCE_DATA_PATTERN = ANY_DATA_PATTERN
@@ -56,7 +57,28 @@ def get_data_swath_info(data_path: Path):
 
     elif data_path.suffix == ".zip":
         with ZipFile(data_path, "r") as archive:
-            prod_xml = archive.read("product.xml").decode("utf-8")
+            listing = archive.namelist()
+
+            prod_xml_list = [i for i in listing if i.endswith("product.xml")]
+            if not prod_xml_list:
+                raise FileNotFoundError("RS2 .zip file does not contain a product.xml!")
+
+            if len(prod_xml_list) > 1:
+                raise RuntimeError("Unsupported RS2 .zip file, contains more than one product!")
+
+            # Expecting multi-file structure defined here:
+            # https://www.pcigeomatics.com/geomatica-help/references/gdb_r/RADARSAT-2.html
+            #
+            # Living within a top-level directory w/ the same RS2 name as the .zip itself
+            prod_xml = prod_xml_list[0]
+            if len(prod_xml.split('/')) != 2:
+                raise RuntimeError("Unsupported RS2 .zip file structure, expected multi-file RS2 structure in a top-level dir")
+
+            if prod_xml.split('/')[0] != data_path.stem:
+                raise RuntimeError("Unsupported RS2 .zip file structure, top-level dir does not match RS2 product name!")
+
+            prod_xml = archive.read(prod_xml).decode("utf-8")
+            prod_xml = etree.fromstring(prod_xml)
 
     else:
         raise RuntimeError("Unsupported RS2 source data file!")
@@ -81,14 +103,9 @@ def get_data_swath_info(data_path: Path):
         lats.append(float(lat.text))
         lons.append(float(lon.text))
 
-    minx = min(i for i in lons)
-    miny = min(i for i in lats)
-    maxx = max(i for i in lons)
-    maxy = max(i for i in lats)
-
     swath_extent = (
-        (minx, miny),
-        (maxx, maxy)
+        (min(lons), min(lats)),
+        (max(lons), max(lats))
     )
 
     # RSAT2 data only has a single frame, which we return as a single "swath"
@@ -121,9 +138,16 @@ def acquire_source_data(source_path: str, dst_dir: Path, pols: Optional[List[str
         shutil.copytree(source_path, dst_dir / source_path.stem)
 
     elif source_path.suffix == ".zip":
-        # FIXME: apply pols filter
         with ZipFile(source_path, "r") as zip:
-            zip.extractall(dst_dir)
+            filtered_list = None
+
+            # Only extract imagery for pols we care about
+            if pols:
+                filtered_list = zip.namelist()
+                included_imagery = [f"imagery_{p}" for p in pols]
+                filtered_list = [i for i in filtered_list if "imagery" not in i or Path(i).stem in included_imagery]
+
+            zip.extractall(dst_dir, filtered_list)
 
     else:
         raise RuntimeError("Unsupported source data path...")

@@ -111,7 +111,7 @@ def create_diff_par(
     All optional parameters will defer to GAMMA's defaults if set to `None`.
 
     This is an initial stage in coregistration that kicks off the offset model
-    refinement stage.  At a high level it makes a few measurements at similar
+    refinement stage.  At a high level it makes a few measurements at regular
     locations across both images, and correlates them to determine an initial
     set of polynomials from which the offset model is initalised.
 

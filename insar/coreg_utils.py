@@ -91,16 +91,24 @@ def create_diff_par(
     first_par_path: Path,
     second_par_path: Optional[Path],
     diff_par_path: Path,
-    offset: Optional[Tuple[int, int]] = (0, 0),
-    num_measurements: Optional[Tuple[int, int]] = (32, 32),
-    window_sizes: Optional[Tuple[int, int]] = (256, 256),
-    cc_thresh: float = 0.15,
+    offset: Optional[Tuple[int, int]],
+    num_measurements: Optional[Tuple[int, int]],
+    window_sizes: Optional[Tuple[int, int]],
+    cc_thresh: Optional[float]
 ) -> None:
     """
     This is a wrapper around the GAMMA `create_diff_par` program.
 
+    The wrapper exists as unlike most GAMMA programs `create_diff_par` cannot
+    actually be given all of it's settings via command line arguments, instead
+    it relies on an 'interactive' mode where it takes a sequence of settings
+    via the terminal's standard input (which this function constructs as a temp
+    file, and pipes into it so we can treat it like a non-interactive function)
+
     `create_diff_par --help`:
     Create DIFF/GEO parameter file for geocoding and differential interferometry.
+
+    All optional parameters will defer to GAMMA's defaults if set to `None`.
 
     This is an initial stage in coregistration that kicks off the offset model
     refinement stage.  At a high level it makes a few measurements at similar
@@ -114,7 +122,7 @@ def create_diff_par(
     :param diff_par_path:
         (input/output) DIFF/GEO parameter file
     :param offset:
-        The known pixel offset estimate between first_par_path and second_par_path
+        The known pixel offset estimate between first_par_path and second_par_path.
     :param num_measurements:
         The number of measurements to make along each axis.
     :param window_sizes:
@@ -136,7 +144,10 @@ def create_diff_par(
                 else:
                     fid.write("\n")
 
-            fid.write("{}".format(cc_thresh))
+            if cc_thresh is not None:
+                fid.write("{}".format(cc_thresh))
+            else:
+                fid.write("\n")
 
         command = [
             "create_diff_par",

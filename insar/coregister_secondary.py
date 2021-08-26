@@ -91,7 +91,7 @@ def coregister_secondary(
     ]
 
     for p in input_paths:
-        if not primary_slc_path.exists():
+        if not p.exists():
             raise FileNotFoundError(f"Input path does not exist: {p}")
 
     # Check outputs do NOT exist (don't want to implicitly overwrite data)
@@ -154,10 +154,10 @@ def coregister_secondary(
         secondary_mli_par_path,
         secondary_mli_par_path,
         diff_par_path,
-        offset = None,
-        num_measurements = num_measurements,
-        window_sizes = window_sizes,
-        cc_thresh = cc_thresh
+        None,
+        num_measurements,
+        window_sizes,
+        cc_thresh
     )
 
     # Measure offset between slave MLI and resampled slave MLI
@@ -388,9 +388,9 @@ def apply_coregistration(
         off_path
     ]
 
-    for input in input_files:
-        if not input.exists():
-            raise FileNotFoundError(f"Missing input file: {input}")
+    for p in input_files:
+        if not p.exists():
+            raise FileNotFoundError(f"Missing input file: {p}")
 
     primary_slc_par_path = par_file(primary_slc_path)
     primary_mli_par_path = par_file(primary_mli_path)

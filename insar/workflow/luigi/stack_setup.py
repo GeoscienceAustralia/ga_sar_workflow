@@ -5,7 +5,6 @@ import os
 import re
 import os.path
 from pathlib import Path
-from typing import List, Tuple
 import luigi
 import luigi.configuration
 import pandas as pd
@@ -19,7 +18,7 @@ from insar.sensors import identify_data_source, get_data_swath_info, acquire_sou
 from insar.sensors.s1 import ANY_S1_SAFE_PATTERN
 from insar.project import ProcConfig
 from insar.generate_slc_inputs import query_slc_inputs, slc_inputs
-from insar.logs import TASK_LOGGER, STATUS_LOGGER, COMMON_PROCESSORS
+from insar.logs import STATUS_LOGGER
 
 from insar.workflow.luigi.utils import DateListParameter, tdir, simplify_dates, calculate_primary
 

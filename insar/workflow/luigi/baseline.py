@@ -1,7 +1,6 @@
 import luigi
 from luigi.util import requires
 from pathlib import Path
-from typing import List, Tuple
 
 from insar.constant import SCENE_DATE_FMT
 from insar.project import ProcConfig

@@ -4,13 +4,12 @@ import pandas as pd
 import datetime
 import luigi
 import luigi.configuration
-from typing import List, Tuple
 
 from insar.constant import SCENE_DATE_FMT, SlcFilenames, MliFilenames
 from insar.coregister_slc import CoregisterSlc
 from insar.process_ifg import validate_ifg_input_files, ProcessIfgException
 from insar.project import ProcConfig, IfgFileNames, ARDWorkflow
-from insar.logs import TASK_LOGGER, STATUS_LOGGER, COMMON_PROCESSORS
+from insar.logs import STATUS_LOGGER
 
 from insar.workflow.luigi.utils import DateListParameter, read_primary_date, tdir, read_rlks_alks
 from insar.workflow.luigi.stack_setup import DataDownload

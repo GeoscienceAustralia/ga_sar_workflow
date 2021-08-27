@@ -1,6 +1,6 @@
 import datetime
 from pathlib import Path
-from typing import Dict, List, Tuple, Any
+from typing import Dict, List, Any
 import luigi
 import luigi.configuration
 from luigi.util import requires
@@ -14,7 +14,7 @@ from insar.coregister_slc import CoregisterSlc
 from insar.coregister_secondary import coregister_secondary, apply_coregistration
 from insar.project import ProcConfig
 
-from insar.logs import TASK_LOGGER, STATUS_LOGGER, COMMON_PROCESSORS
+from insar.logs import STATUS_LOGGER
 
 from insar.workflow.luigi.utils import read_primary_date, tdir, load_settings, read_rlks_alks, get_scenes, read_file_line, mk_clean_dir
 from insar.workflow.luigi.dem import CreateGammaDem
@@ -339,6 +339,9 @@ class CoregisterDemPrimary(luigi.Task):
 # coregister_slc / minimise code changes for review.  This should be
 # temporary code, until coregister_slc is also refactored to functional
 # style & we can unify the functional coreg API then.
+#
+# TODO: This will need revision when coregister_slc.py is refactored into
+# process_ifg.py style functional code.
 class CoregisterSecondaryProcessor:
     kwargs: Dict[str, Any]
 

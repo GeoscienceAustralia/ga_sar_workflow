@@ -6,7 +6,7 @@ def append_suffix(path: Path, suffix: str) -> Path:
 
     Note: This explicitly does NOT enforce any defactor suffix standards, such
     as the concept of a suffix needing to begin with a '.', as such this also
-    supports our use-case of uaving '_' based suffixes for many files.
+    supports our use-case of having '_' based suffixes for many files.
 
     >>> append_suffix(Path('/tmp/test_geo'), '_int').as_posix()
     '/tmp/test_geo_int'

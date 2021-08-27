@@ -60,7 +60,12 @@ def get_data_swath_info(data_path: str):
 
 # Note: source_path is explicitly a str... it's possible we may need
 # to support non-local-file paths in the future (eg: S3 buckets or NCI MDSS paths)
-def acquire_source_data(source_path: str, dst_dir: Path, pols: Optional[List[str]] = None, **kwargs):
+def acquire_source_data(
+    source_path: str,
+    dst_dir: Path,
+    pols: Optional[List[str]] = None,
+    **kwargs
+):
     """
     Acquires the data products for processing from a source data product.
 
@@ -71,7 +76,7 @@ def acquire_source_data(source_path: str, dst_dir: Path, pols: Optional[List[str
 
     :param source_path:
         The source data path to extract polarised data from.
-    :param alks:
+    :param dst_dir:
         The directory to extract the acquired data into.
     :param pols:
         An optional list of polarisations we are interested in acquiring data for,

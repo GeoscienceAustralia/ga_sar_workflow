@@ -182,9 +182,20 @@ class GammaInterface:
         _LOG.info("GAMMA install location", install_dir=install_dir)
 
     def __getattr__(self, name):
-        """Dynamically lookup Gamma programs as methods to avoid hardcoding."""
+        """
+        Dynamically lookup Gamma programs as methods to avoid hardcoding.
 
-        # Forward to proxy if we're using one
+        By default this will scan the GAMMA_INSTALL_DIR env var for executable
+        programs/scripts, to determine what GAMMA calls are available... however
+        it's also possible for the user to set a proxy object to use for
+        implementing a GAMMA-like interface instead.
+
+        If a proxy object is available it takes priority over any underlying
+        GAMMA install (if any exists).
+        """
+
+        # Forward to a proxy object's version of the call/program, if the user
+        # has set a GAMMA proxy (typically used by unit tests).
         proxy = self._gamma_proxy or GammaInterface._gamma_proxy
         if proxy:
             return getattr(proxy, name)
@@ -216,6 +227,11 @@ class GammaInterface:
 
     @classmethod
     def set_proxy(cls, proxy_object):
+        """
+        Sets the GAMMA-like proxy object to use for GAMMA programs/calls.
+
+        See :func:`~.GammaInterface.__getattr__`
+        """
         GammaInterface._gamma_proxy = proxy_object
 
 try:

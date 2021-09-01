@@ -67,11 +67,11 @@ def run_ard_inline(args: Dict[str, Any]):
     This is opposed to `luigi.run` and `luigi.build` DAG execution which runs the tasks
     in one (or more) separate processes (assuming local scheduler).
 
-    Ignoring difference scheduling of tasks to processes/threads, logically this function
-    sgould exacute same tasks with the exact same arguments, in dependency order, and
-    thus should produce identical outcomes to `luigi.run` / `luigi.build`.
+    Ignoring differences in scheduling of tasks to processes/threads, logically this
+    function should execute the same tasks with the exact same arguments (in dependency
+    order), and thus should produce identical outcomes to `luigi.run` / `luigi.build`.
 
-    The reason we have this function is priamrily for unit testing - where we want to be
+    The reason we have this function is primarily for unit testing - where we want to be
     able to have assertions and exceptions raised up the stack into pytest, which does
     not happen while using `luigi.run` or `luigi.build` as tasks run in other processes
     and exceptions get eaten by Luigi's own exception handling/logging code.

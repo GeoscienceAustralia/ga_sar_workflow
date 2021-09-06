@@ -61,7 +61,7 @@ def do_ard_workflow_validation(
     pols: List[str],
     proc_file_path: Path,
     expected_errors: int = 0,
-    expected_calls: int = 10,
+    min_gamma_calls: int = 10,
     validate_slc: bool = True,
     validate_ifg: bool = True,
     cleanup: bool = True,
@@ -113,10 +113,10 @@ def do_ard_workflow_validation(
     assert(pgp.error_count == expected_errors)
 
     # Assert we did call some GAMMA functions
-    if expected_calls == 0:
+    if min_gamma_calls == 0:
         assert(len(pgp.call_sequence) == 0)
     else:
-        assert(len(pgp.call_sequence) >= expected_calls)
+        assert(len(pgp.call_sequence) >= min_gamma_calls)
 
     # Assert raw data was extracted from source data
     if not cleanup and source_data:
@@ -321,7 +321,7 @@ def test_ard_workflow_pol_mismatch_produces_no_data(pgp, pgmock, rs2_test_data, 
         source_data,
         pols,
         rs2_proc,
-        expected_calls=0,
+        min_gamma_calls=0,
         debug=True
     )
 
@@ -362,9 +362,12 @@ def test_ard_workflow_excepts_on_dag_errors(monkeypatch, pgp, pgmock, rs2_test_d
 
 
 def test_ard_workflow_processing_errors_do_not_except(pgp, pgmock, rs2_test_data, rs2_proc):
-    # We inject a processing error into the backscatter code which should not cause
-    # any exception should not flow out of the workflow (they should be captured and
-    # the workflow should soldier on). float_math is only done for gamma0 calcs
+    # We inject a processing error into the backscatter code which should not cause any
+    # exception, as it should not flow out of the workflow (they should be captured and
+    # the workflow should soldier on when raised within a processing module).
+    #
+    # float_math is only done for gamma0 calcs, this was chosen to cause backscatter
+    # to fail in this unit test.
     def raise_error(*args, **kwargs):
         raise Exception("Test error!")
 
@@ -415,7 +418,7 @@ def test_ard_workflow_excepts_on_invalid_proc(pgp, pgmock, rs2_test_data, rs2_pr
             source_data,
             pols,
             bad_proc,
-            expected_calls=0
+            min_gamma_calls=0
         )
 
     # Assert no GAMMA calls were ever made
@@ -436,7 +439,7 @@ def test_ard_workflow_no_op_for_empty_data(pgp, pgmock, rs2_proc):
         pols,
         rs2_proc,
         # Except no GAMMA calls w/ no data inputs
-        expected_calls=0
+        min_gamma_calls=0
     )
 
 

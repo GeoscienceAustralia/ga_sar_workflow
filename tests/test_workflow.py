@@ -101,15 +101,12 @@ def do_ard_workflow_validation(
     rlks = int(proc_config.range_looks)
 
     # DEBUG for visualising output in tempdir
-    print_out_dir = debug
-
-    if print_out_dir:
+    if debug:
         print("===== DEBUG =====")
         print_dir_tree(out_dir)
         print("==="*5)
+        print((job_dir / "status-log.jsonl").read_text())
     # END DEBUG
-
-    print((job_dir / "status-log.jsonl").read_text())
 
     # Assert there were no GAMMA errors
     assert(pgp.error_count == expected_errors)
@@ -208,7 +205,6 @@ def do_ard_workflow_validation(
 
     # Assert each IFG date pair has phase unwrapped geolocated data
     if validate_ifg:
-        print_dir_tree(out_dir)
         if not ifgs_list:
             assert(not ifg_dir.exists() or len(list(ifg_dir.iterdir())) == 0)
         else:
@@ -345,8 +341,7 @@ def test_ard_workflow_pol_mismatch_produces_no_data(pgp, pgmock, rs2_test_data, 
         source_data,
         pols,
         rs2_proc,
-        min_gamma_calls=0,
-        debug=True
+        min_gamma_calls=0
     )
 
     assert(not (out_dir / 'lists' / 'scenes.list').read_text().strip())

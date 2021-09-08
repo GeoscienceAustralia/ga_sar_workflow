@@ -52,8 +52,20 @@ def test_s1_slc_processing(pgp, pgmock, temp_out_dir, s1_proc, s1_test_data, s1_
 
 
 def test_s1_slc_fails_with_missing_input(pgp, pgmock, temp_out_dir, s1_proc, s1_test_data, s1_test_data_csv):
-    # TODO: with missing s1_test_data
-    pass
+    missing_data_dir = temp_out_dir / "does_not_exist"
+
+    # Run w/ intentional typo
+    with pytest.raises(Exception):
+        process_s1_slc(
+            missing_data_dir,
+            temp_out_dir,
+            s1_proc,
+            s1_test_data_csv,
+            "VV"
+        )
+
+    # Ensure not a single GAMMA call occured & no output exists
+    assert(len(pgp.call_sequence) == 0)
 
 
 def test_s1_slc_fails_with_bad_polarisation(pgp, pgmock, temp_out_dir, s1_proc, s1_test_data, s1_test_data_csv):

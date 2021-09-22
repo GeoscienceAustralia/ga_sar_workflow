@@ -604,7 +604,7 @@ def package(
                 elif overwrite_existing:
                     _LOG.info("re-packaging existing scene", slc_scene=str(slc.slc_path))
                     for dir in scene_pkg_YYYYMMdir.glob(f"{scene_day}*"):
-                        _LOG.info(f"Deleting existing packaged scene: {dir}")
+                        _LOG.info("Deleting existing packaged scene", dir=str(dir))
                         shutil.rmtree(dir)
 
                 # Otherwise, skip packaging this product

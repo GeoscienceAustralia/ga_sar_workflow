@@ -35,8 +35,13 @@ def read_land_center_coords(shapefile: Path):
     :return (latitude, longitude) coordinates
     """
 
+    path = shapefile.with_suffix(".dbf")
+
+    if not path.exists():
+        raise FileNotFoundError(path)
+
     # Load the land center from shape file
-    dbf = geopandas.GeoDataFrame.from_file(shapefile.with_suffix(".dbf"))
+    dbf = geopandas.GeoDataFrame.from_file(path)
 
     north_lat, east_lon = None, None
 

@@ -1,4 +1,3 @@
-from xml.etree.ElementTree import indent
 import pytest
 import tempfile
 import shutil

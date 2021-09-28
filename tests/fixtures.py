@@ -659,7 +659,6 @@ def logging_ctx():
 
         # Configure logging from built-in script logging config file
         logging_conf = pkg_resources.resource_filename("insar", "logging.cfg")
-        print("logging_conf = ", logging_conf)
         logging.config.fileConfig(logging_conf)
 
         insar_log_path = Path(temp_path) / "insar-log.jsonl"

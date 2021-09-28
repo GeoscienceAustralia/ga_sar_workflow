@@ -67,8 +67,21 @@ def validate_subswath_info(
     assert(subswath_info["acquisition_datetime"].strftime("%Y%m%d") == expected_date)
 
     # All our test data is in Australia, so just generally assert we're somewhere
-    # in this region of the planet.
-    #assert(subswath_info["swath_extent"] ...)
+    # in this region of the planet.  These are just arbitrary bounding points
+    # I picked off a map (good enough for the sanity checking of this test)
+    aus_extent = (
+        (111.5426204243644, -9.422961279563507),
+        (154.39182862611165, -44.792798109513356)
+    )
+
+    def point_in_aus(lon, lat):
+        lon_in_bounds = lon >= aus_extent[0][0] and lon <= aus_extent[1][0]
+        lat_in_bounds = lat <= aus_extent[0][1] and lat >= aus_extent[1][1]
+
+        return lon_in_bounds and lat_in_bounds
+
+    assert(point_in_aus(*subswath_info["swath_extent"][0]))
+    assert(point_in_aus(*subswath_info["swath_extent"][1]))
 
     assert(subswath_info["sensor"] == expected_sensor)
     assert(str(subswath_info["url"]) == str(expected_source))
@@ -97,16 +110,16 @@ def test_s1_swath_data_fails_for_missing_input():
 
 
 def test_s1_swath_data_fails_for_invalid_input(temp_out_dir, pgp, pgmock, logging_ctx, s1_test_data):
-    # Make a copy of some test data and
+    # Make a copy of some test data...
     safe_name = s1_test_data[0].name
     safe_copy = temp_out_dir / safe_name
     safe_copy_zip = safe_copy.with_suffix(".zip")
     shutil.copytree(s1_test_data[0], safe_copy)
 
-    # Then invalidate it by deleting an important manifest file
+    # ... and then invalidate it by deleting an important manifest file
     shutil.rmtree(safe_copy / "annotation")
 
-    # Convert it back into a .zip file (which S1 source data hase to be currently...)
+    # Convert it back into a .zip file (which S1 source data has to be currently...)
     shutil.make_archive(safe_copy_zip, 'zip', safe_copy)
 
     # Assert we fail to get swath info from invalid data products

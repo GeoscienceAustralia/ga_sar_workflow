@@ -97,16 +97,16 @@ def test_s1_swath_data_fails_for_missing_input():
 
 
 def test_s1_swath_data_fails_for_invalid_input(temp_out_dir, pgp, pgmock, logging_ctx, s1_test_data):
-    # Make a copy of some test data and
+    # Make a copy of some test data...
     safe_name = s1_test_data[0].name
     safe_copy = temp_out_dir / safe_name
     safe_copy_zip = safe_copy.with_suffix(".zip")
     shutil.copytree(s1_test_data[0], safe_copy)
 
-    # Then invalidate it by deleting an important manifest file
+    # ... and then invalidate it by deleting an important manifest file
     shutil.rmtree(safe_copy / "annotation")
 
-    # Convert it back into a .zip file (which S1 source data hase to be currently...)
+    # Convert it back into a .zip file (which S1 source data has to be currently...)
     shutil.make_archive(safe_copy_zip, 'zip', safe_copy)
 
     # Assert we fail to get swath info from invalid data products

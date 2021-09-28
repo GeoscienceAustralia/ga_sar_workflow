@@ -1,7 +1,6 @@
 from pathlib import Path
 from datetime import datetime
 import re
-import shutil
 from typing import List, Optional
 
 from insar.sensors.types import SensorMetadata

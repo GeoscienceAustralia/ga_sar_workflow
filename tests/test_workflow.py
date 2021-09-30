@@ -251,7 +251,8 @@ def test_ard_workflow_ifg_smoketest_two_date_s1_stack(pgp, pgmock, s1_proc, s1_t
         ARDWorkflow.Interferogram,
         source_data,
         pols,
-        s1_proc
+        s1_proc,
+        debug=True
     )
 
 

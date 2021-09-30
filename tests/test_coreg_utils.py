@@ -9,9 +9,8 @@ def test_read_land_center_coords():
     shape_path = Path("tests/data/T147D_F28S_S1A.shp")
     coords = coreg_utils.read_land_center_coords(shape_path)
 
-    ncoord, ecoord = coords
-    assert ncoord == -28.129263619  # from manual extraction using ogr2ogr
-    assert ecoord == 152.169759163
+    # from manual extraction using ogr2ogr
+    assert coords == (-28.129263619, 152.169759163), "Got: " + str(coords)
 
 
 def test_read_land_center_coords_missing_file():
@@ -22,7 +21,6 @@ def test_read_land_center_coords_missing_file():
 
 
 def test_missing_land_centre_attrs():
-    # TODO: log if there no land centre in the shapefile & test?
     with mock.patch("pathlib.Path.exists") as exists_mock:
         exists_mock.return_value = True
 

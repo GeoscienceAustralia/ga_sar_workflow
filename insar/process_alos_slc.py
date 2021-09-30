@@ -66,8 +66,8 @@ def level0_lslc(
     mode: str,
     output_slc_path: Path
 ) -> ALOSPaths:
-    LED = list(product_path.glob("LED-*"))
-    IMG = list(product_path.glob(f"IMG-{pol}-*"))
+    leader_path = list(product_path.glob("LED-*"))
+    img_path = list(product_path.glob(f"IMG-{pol}-*"))
 
     paths = ALOSPaths.create(scene_date, proc_config.stack_id, pol, output_slc_path)
 
@@ -75,21 +75,21 @@ def level0_lslc(
     tx_pol1 = 0 if pol[0] == "H" else 1
     rx_pol1 = 0 if pol[1] == "H" else 1
 
-    if len(LED) == 0 or len(IMG) == 0:
+    if len(leader_path) == 0 or len(img_path) == 0:
         raise ProcessSlcException("Invalid product path, could not find LED and/or IMG data!")
 
-    if len(LED) > 1 or len(IMG) > 1:
+    if len(leader_path) > 1 or len(img_path) > 1:
         raise ProcessSlcException("Invalid product path, multiple LED and/or IMG products detected!")
 
-    LED = LED[0]
-    IMG = IMG[0]
+    leader_path = leader_path[0]
+    img_path = img_path[0]
 
     with working_directory(output_slc_path.parent):
         pg.PALSAR_proc(
-            LED,
+            leader_path,
             paths.sensor_par,
             paths.msp_par,
-            IMG,
+            img_path,
             paths.raw,
             tx_pol1,
             rx_pol1
@@ -240,25 +240,25 @@ def level1_slc(
     pol: str,
     output_slc_path: Path
 ) -> ALOSPaths:
-    LED = list(product_path.glob("LED-ALOS*"))
-    IMG = list(product_path.glob(f"IMG-{pol}-ALOS*"))
+    leader_path = list(product_path.glob("LED-ALOS*"))
+    img_path = list(product_path.glob(f"IMG-{pol}-ALOS*"))
 
-    if len(LED) == 0 or len(IMG) == 0:
+    if len(leader_path) == 0 or len(img_path) == 0:
         raise ProcessSlcException("Invalid product path, could not find LED and/or IMG data!")
 
-    if len(LED) > 1 or len(IMG) > 1:
+    if len(leader_path) > 1 or len(img_path) > 1:
         raise ProcessSlcException("Invalid product path, multiple LED and/or IMG products detected!")
 
-    LED = LED[0]
-    IMG = IMG[0]
+    leader_path = leader_path[0]
+    img_path = img_path[0]
 
     paths = ALOSPaths.create(scene_date, proc_config.stack_id, pol, output_slc_path)
 
     with working_directory(output_slc_path.parent):
         pg.par_EORC_PALSAR(
-            LED,
+            leader_path,
             paths.slc_par,
-            IMG,
+            img_path,
             paths.slc
         )
 

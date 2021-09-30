@@ -234,7 +234,7 @@ class InitialSetup(luigi.Task):
                 selected_sensors = slc_inputs_df.sensor.unique()
                 selected_sensors = "_".join(sorted(selected_sensors))
 
-                download_list = download_list + slc_inputs_df.url.unique()
+                download_list = download_list + list(slc_inputs_df.url.unique())
 
             # download slc data
             download_dir = outdir / proc_config.raw_data_dir

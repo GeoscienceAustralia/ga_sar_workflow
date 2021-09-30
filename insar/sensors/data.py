@@ -88,6 +88,13 @@ def get_data_swath_info(
 
     :param source_data:
         The source data path name to be identified.
+
+    :param raw_data_path:
+        An optional path to a local path which contains the contents of the acquired `source_data`.
+
+        This allows the backend to get swath info without having to extract/download contents from
+        the source data path which may have already been acquired (reduced duplication of work).
+
     :returns:
         A list of dictionary objects representing swaths (or subswaths) in the data product.
     """

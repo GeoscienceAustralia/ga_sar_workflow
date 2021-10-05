@@ -10,7 +10,7 @@ VOLUME ["/usr/src/gamma_insar"]
 # Setup container environment
 WORKDIR /usr/src/install
 COPY requirements.txt ./
-RUN apt-get update --fix-missing
+RUN apt-get update
 
 # Note: freetype/postgress dev requirements are weird native dependencies of some of our python deps...
 RUN apt-get install -y python3-pip libfreetype-dev libpq-dev sqlite3 libsqlite3-mod-spatialite

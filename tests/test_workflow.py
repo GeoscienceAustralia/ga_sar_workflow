@@ -1,4 +1,3 @@
-from logging import debug
 from pathlib import Path
 from typing import Generator, List, Tuple, Optional
 import tempfile
@@ -505,8 +504,7 @@ def test_ard_workflow_with_good_s1_db_query(logging_ctx, pgp, pgmock, s1_test_db
         ["VV", "VH"],
         s1_proc,
         geospatial_query=query,
-        expected_scenes=2,
-        debug=True
+        expected_scenes=2
     )
 
     # Note: do_ard_workflow_validation does all the validation we care about

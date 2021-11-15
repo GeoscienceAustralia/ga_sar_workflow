@@ -375,12 +375,8 @@ def append_secondary_coreg_tree(primary_dt, old_date_lists, new_date_list, thres
     final_tree = og_tree.copy()
     last_list = final_tree[-1]
 
-    print("!!!!! new_date_lists")
-    print(len(new_date_lists))
-
     # For each set of new dates, add a new level to the tree
     for new_dates in new_date_lists:
-        print(new_dates)
         new_dates = [standardise_date(i) for i in new_dates]
 
         # Sanity check new dates, we only accept new dates within thres_days of

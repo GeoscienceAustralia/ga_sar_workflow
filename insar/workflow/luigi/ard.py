@@ -194,9 +194,6 @@ class ARD(luigi.WrapperTask):
             removed_scenes = existing_scenes - (new_scenes - added_scenes)
             scenes_differ = bool(added_scenes or removed_scenes)
 
-            print("new_scenes", new_scenes)
-            print("existing_scenes", existing_scenes)
-
             if removed_scenes:
                 # This is not currently a use case we require (thus do not support)
                 # - supporting it gets complicated (makes the whole stack mutable)

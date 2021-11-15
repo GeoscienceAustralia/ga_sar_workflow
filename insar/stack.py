@@ -89,10 +89,7 @@ def load_stack_scenes(proc_config: ProcConfig) -> List[Tuple[datetime.date, List
 
         for values in metadata.values():
             if "src_url" in values:
-                print("src_url!", values["src_url"])
                 date_source_files.append(Path(values["src_url"]))
-            else:
-                print("UH OH", date)
 
         result.append((date, date_source_files))
 

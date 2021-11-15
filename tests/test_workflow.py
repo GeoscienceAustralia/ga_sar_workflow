@@ -163,6 +163,8 @@ def do_ard_workflow_validation(
         primary_ref_scene = out_dir / proc_config.list_dir / "primary_ref_scene"
         primary_ref_scene = primary_ref_scene.read_text().strip()
 
+        print("!@#", finalised_proc_path)
+        print(proc_config.ref_primary_scene)
         assert(primary_ref_scene == proc_config.ref_primary_scene)
 
     ifg_dir = out_dir / proc_config.int_dir

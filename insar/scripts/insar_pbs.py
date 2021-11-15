@@ -7,6 +7,7 @@ PBS submission scripts.
 import os
 import uuid
 import time
+import datetime
 import json
 import click
 import warnings
@@ -17,6 +18,7 @@ from typing import List
 from pathlib import Path
 from os.path import dirname, exists, basename
 from insar.project import ARDWorkflow, ProcConfig
+from insar.constant import SCENE_DATE_FMT
 
 # Note that {email} is absent from PBS_RESOURCES
 PBS_RESOURCES = """#!/bin/bash
@@ -87,6 +89,7 @@ def _gen_pbs(
     num_threads,
     sensor,
     cleanup,
+    append,
     resume,
     reprocess_failed,
     workflow
@@ -127,6 +130,9 @@ def _gen_pbs(
     if sensor is not None and len(sensor) > 0:
         pbs += " \\\n    --sensor " + sensor
 
+    if append:
+        pbs += " \\\n    --append"
+
     if resume:
         pbs += " \\\n    --resume"
 
@@ -138,10 +144,21 @@ def _gen_pbs(
 
     # If we're resuming a job, generate the resume script
     out_fname = Path(job_dir) / f"job.bash"
+    token = datetime.datetime.now().strftime("%Y%m%d_%H%M")
 
-    if resume or reprocess_failed:
+    if append:
         # Create resumption job
-        resume_fname = Path(job_dir) / f"job_resume.bash"
+        append_fname = Path(job_dir) / f"job_append_{token}.bash"
+
+        with append_fname.open("w") as src:
+            src.writelines(pbs)
+            src.write("\n")
+
+        print('Appending stack:', out_fname.parent)
+        return append_fname
+    elif resume or reprocess_failed:
+        # Create resumption job
+        resume_fname = Path(job_dir) / f"job_resume_{token}.bash"
 
         with resume_fname.open("w") as src:
             src.writelines(pbs)
@@ -313,6 +330,13 @@ def fatal_error(msg: str, exit_code: int = 1):
     required=False
 )
 @click.option(
+    "--append",
+    type=click.BOOL,
+    is_flag=True,
+    help="Indicates the job is appending new dates to an existing stack.",
+    default=False
+)
+@click.option(
     "--resume",
     type=click.BOOL,
     is_flag=True,
@@ -364,6 +388,7 @@ def ard_insar(
     cleanup: click.BOOL,
     num_threads: click.INT,
     sensor: click.STRING,
+    append: click.BOOL,
     resume: click.BOOL,
     reprocess_failed: click.BOOL,
     job_name: click.STRING,
@@ -406,7 +431,7 @@ def ard_insar(
     workpath = Path(workdir)
     outpath = Path(outdir)
 
-    if resume:
+    if resume or append:
         if not workpath.exists() or not any(workpath.iterdir()):
             click.echo("Error: Provided job work directory has no existing job!", err=True)
             exit(1)
@@ -558,6 +583,7 @@ def ard_insar(
         num_threads,
         sensor,
         cleanup,
+        append,
         resume,
         reprocess_failed,
         workflow

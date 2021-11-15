@@ -105,8 +105,8 @@ class AppendDatesToStack(luigi.Task):
                 shape_file
             )
 
-            appended_dates = set(slc_inputs_df["date"].unique()) - set(original_slc_inputs_df["date"].unique())
-            appended_dates = [i.strftime(SCENE_DATE_FMT) for i in appended_dates]
+            append_dates = set(slc_inputs_df["date"].unique()) - set(original_slc_inputs_df["date"].unique())
+            append_dates = [i.strftime(SCENE_DATE_FMT) for i in append_dates]
 
             # Drop duplicates (this is because of how Luigi works, run() is called multiple times w/ dynamic deps being yielded)
             # pandas can't handle lists? slc_inputs_df = slc_inputs_df.drop_duplicates()

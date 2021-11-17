@@ -107,6 +107,28 @@ def resolve_stack_scene_additional_files(
     This function inserts additional source files into a stack query
     by resolving their dates and determining burst availability before
     finally inserting them into the stack's pandas dataframe.
+
+    In addition to determining burst availability, if a shapefile is provided which
+    contains burst information - that burst information is used as a 'reference'
+    which is then used to determine 'missing' bursts (eg: what bursts a scene does
+    not have, which the shapefile does).  This matches the geospatial DB logic.
+
+    :param slc_inputs_df:
+        A pandas dataframe to append resolved scenes into.
+    :param proc_config:
+        The stack .proc config which contains all the stack's processing information.
+    :param polarisations:
+        The polarisations of interest to be extracted from source data / acquisitions.
+    :param include_source_files:
+        A list of source data paths to add into the stack / dataframe.
+    :param shape_file:
+        If a shapefile is provided AND contains burst information (for S1) it is used
+        to filter out unwanted bursts in scenes from processing in the dataframe... as
+        well as identify missing bursts that a date doesn't have (but shapefile does).
+
+    :returns:
+        A new dataframe which is a copy of the original with the newly resolved / additional
+        scenes that were added by this function.
     """
     download_dir = Path(proc_config.output_path) / proc_config.raw_data_dir
 
@@ -189,15 +211,53 @@ def resolve_stack_scene_additional_files(
 
 def resolve_stack_scene_query(
     proc_config: ProcConfig,
-    include_queries: List[Union[Path, datetime.date, str]],
+    include_queries: List[Union[Path, datetime.date, Tuple[datetime.date, datetime.date], str]],
     sensors: List[str],
     orbit: str,
     polarisations: List[str],
     sensor_filters: List[Optional[str]],
     shape_file: Optional[Path] = None,
-) -> List[Tuple[datetime.date, List[Path]]]:
+) -> Tuple[List[Tuple[datetime.date, List[Path]]], pd.DataFrame]:
     """
-    TODO: Documentation
+    Resolve a scene query (a set of dates, date ranges, or source data files) to a set
+    of source data paths through a geospatial-temporal query from the scene DB using
+    the provided shape-file (if none provided it's just a temporal query) that match
+    the specified parameters (sensor/orbit/polarisation).
+
+    :param proc_config:
+        The stack .proc config which contains all the stack's processing information.
+    :param include_queries:
+        A list of either source data path's to use directly, or dates and date ranges to
+        query the DB with for source data.
+    :param sensors:
+        A list of sensors to query scenes for.
+    :param orbit:
+        The orbit type to query scenes for ("A" for ascending, "D" for descending)
+    :param polarisations:
+        The polarisations scenes produced from the query must contain to be processed.
+    :param sensor_filters:
+        A list (one per `sensor` entry) of filters to apply to each sensor, varies by
+        satellite constellation - to further refine what scenes from the query to
+        accept into the stack.
+
+        For `"S1"` satellites, allowed filters are: `["S1A", "S1B"]`
+    :param shape_file:
+        An optional shapefile to use which constrains the DB query w/ a geospatial extent
+        in which to find scenes (if not provided, no geospatial constraint is applied).
+
+        Additionally, if the shapefile contains burst information (for S1) it is also
+        used to filter out unwanted bursts in scenes from processing - this is useful
+        as not all S1 acquisitions are consistent (bursts in acquisitions vary over time).
+        As well as identify what bursts from the shapefile are missing for each date (if any).
+
+    :returns:
+        Returns two values (scene_list, scene_dataframe).
+
+        A list for every date in which at least one valid scene was identified, of elements
+        that are tuples containing the date and a list of source data paths to acquisitions
+        that matched the include query and passed all the specified filters.
+
+        A dataframe which contains the satellite acquisition details for all identified scenes.
     """
 
     include_dates = []

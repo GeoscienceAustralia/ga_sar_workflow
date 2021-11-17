@@ -228,7 +228,7 @@ class AppendDatesToStack(luigi.Task):
 
         # Produce a subset of scenes that includes ALL of the new dates and some
         # of the already-processed dates to produce connections with...
-        num_connections = min(len(prior_dates), 5) # TODO: number of connections between 'stacks' should be a .proc setting?
+        num_connections = min(len(prior_dates), int(proc_config.num_linked_append_dates))
         network_scenes = prior_dates[-num_connections:] + list(append_dates)
 
         # Create SBAS network from the scene subset & write to ifg date-pair list

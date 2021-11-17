@@ -374,16 +374,19 @@ def append_secondary_coreg_tree(primary_dt, old_date_lists, new_date_list, thres
 
     final_tree = og_tree.copy()
     last_list = final_tree[-1]
+    latest_stack_date = max(last_list)
 
     # For each set of new dates, add a new level to the tree
     for new_dates in new_date_lists:
         new_dates = [standardise_date(i) for i in new_dates]
 
-        # Sanity check new dates, we only accept new dates within thres_days of
-        # the right-most bottom of tree (eg: the last date)
-        assert(all(abs(dt - last_list[-1]) <= thresh_dt for dt in new_dates))
-        # FIXME: it really should just need at least 'one' within 'either' the start or end...
-        # - and all within thres_days of each other - to produce a chain from old_date_list into all new dates
+        # Sanity check new dates, we require all new dates within thres_days of
+        # each other AND at least one is within thres_days of the latest date
+        # already in the stack (eg: there's a chain from latest to all these dates)
+        assert(any(abs(latest_stack_date - dt) <= thresh_dt for dt in new_dates))
+
+        for date in new_dates:
+            assert(any(abs(date - dt) <= thresh_dt for dt in new_dates if dt != date))
 
         # Note: This design really works best when we only append new dates 'after' (or before) the whole set
         # of dates already in the stack... in theory it's possible to back-and-forward for any order of dates

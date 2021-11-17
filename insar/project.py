@@ -133,6 +133,7 @@ class ProcConfig:
         "dem_noff2",
         "ifg_rpos",
         "ifg_azpos",
+        "num_linked_append_dates"
     ]
 
     def __init__(self, **kwargs):

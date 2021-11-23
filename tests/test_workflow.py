@@ -305,6 +305,67 @@ def test_ard_workflow_ifg_smoketest_two_date_rs2_stack(pgp, pgmock, rs2_test_dat
     )
 
 
+def test_ard_workflow_ifg_smoketest_single_alos1_scene(pgp, pgmock, test_data_dir, alos1_test_zips, alos1_proc_config_path):
+    # Setup test workflow arguments, taking just a single RS2 acquisition
+    source_data = [str(alos1_test_zips[0])]
+    pols = ["HH"]
+
+    # Run standard ifg workflow validation test for this data
+    do_ard_workflow_validation(
+        pgp,
+        ARDWorkflow.Interferogram,
+        source_data,
+        pols,
+        alos1_proc_config_path,
+        debug=True
+    )
+
+def test_ard_workflow_ifg_smoketest_two_date_alos1_stack(pgp, pgmock, test_data_dir, alos1_test_zips, alos1_proc_config_path):
+    # Setup test workflow arguments
+    source_data = [str(i) for i in alos1_test_zips]
+    pols = ["HH"]
+
+    # Run standard ifg workflow validation test for this data
+    if False:
+        do_ard_workflow_validation(
+            pgp,
+            ARDWorkflow.Interferogram,
+            source_data,
+            pols,
+            alos1_proc_config_path
+        )
+
+
+def test_ard_workflow_ifg_smoketest_single_alos2_scene(pgp, pgmock, test_data_dir, alos2_test_zips, alos2_proc_config_path):
+    # Setup test workflow arguments, taking just a single RS2 acquisition
+    source_data = [str(alos2_test_zips[0])]
+    pols = ["HH"]
+
+    # Run standard ifg workflow validation test for this data
+    do_ard_workflow_validation(
+        pgp,
+        ARDWorkflow.Interferogram,
+        source_data,
+        pols,
+        alos2_proc_config_path
+    )
+
+def test_ard_workflow_ifg_smoketest_two_date_alos2_stack(pgp, pgmock, test_data_dir, alos2_test_zips, alos2_proc_config_path):
+    # Setup test workflow arguments
+    source_data = [str(i) for i in alos2_test_zips]
+    pols = ["HH"]
+
+    # Run standard ifg workflow validation test for this data
+    if False:
+        do_ard_workflow_validation(
+            pgp,
+            ARDWorkflow.Interferogram,
+            source_data,
+            pols,
+            alos2_proc_config_path
+        )
+
+
 #
 # Note: The tests below don't differ inside of the workflow between sensors,
 # as such to avoid duplicating tests for no reason we just have one version
@@ -594,3 +655,18 @@ def test_ard_workflow_with_empty_db(logging_ctx, test_data_dir, pgp, pgmock, s1_
         # The stack should not process / there's no scenes in our DB...
         expected_scenes=0
     )
+
+
+def test_ard_workflow_resume_crashed_job(pgp, pgmock, s1_proc, s1_test_data_zips):
+    pass
+
+
+def test_ard_workflow_resume_complete_job(pgp, pgmock, s1_proc, s1_test_data_zips):
+    pass
+
+
+def test_ard_workflow_resume_crashed_job(pgp, pgmock, s1_proc, s1_test_data_zips):
+    # TODO: We need a minimum of 3 dates to do this...
+    # - I think it's easier to duplicate and change the date of RS2?
+    pass
+

@@ -197,7 +197,7 @@ def acquire_source_data(source_path: str, dst_dir: Path, pols: Optional[List[str
 
             archive.extractall(dst_dir, filtered_list)
 
-        return dst_dir / os.path.commonpath(i.name for i in archive.getmembers())
+            return dst_dir / os.path.commonpath(i.name for i in archive.getmembers())
 
     else:
         raise RuntimeError(f"Unsupported source data path: {source_path}")

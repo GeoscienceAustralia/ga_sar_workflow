@@ -45,3 +45,5 @@ TASK_LOGGER = get_wrapped_logger("task", stack_info=True)
 STATUS_LOGGER = get_wrapped_logger("status")
 
 INTERFACE_LOGGER = logging.getLogger("luigi-interface")
+
+INSAR_LOG = get_wrapped_logger("insar")

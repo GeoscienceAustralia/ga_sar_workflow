@@ -55,7 +55,7 @@ def _check_frame_bursts(primary_df: gpd.GeoDataFrame, input_data: Dict,) -> Dict
             contained_bursts = []
 
             for idx, row in primary_swath_subset.iterrows():
-                for i, centroid in enumerate(swath_centroids):
+                for centroid in swath_centroids:
                     if row.geometry.contains(centroid):
                         contained_bursts.append(row.burst_num)
 

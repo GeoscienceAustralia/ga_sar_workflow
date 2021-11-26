@@ -188,7 +188,7 @@ def grep_stdout(std_output: List[str], match_start_string: str) -> str:
             return line
 
 
-def standardise_date(dt):
+def standardise_to_date(dt):
     if isinstance(dt, datetime.datetime):
         return dt.date()
     elif isinstance(dt, str):
@@ -215,7 +215,7 @@ def load_coreg_tree(proc_config: ProcConfig) -> List[List[Tuple[str,str]]]:
 
     while scene_file.exists():
         scenes = scene_file.read_text().strip().splitlines()
-        scenes = [standardise_date(i) for i in scenes]
+        scenes = [standardise_to_date(i) for i in scenes]
         result.append(scenes)
 
         idx += 1
@@ -326,7 +326,7 @@ def create_secondary_coreg_tree(primary_dt, date_list, thres_days=63):
     """
 
     # We do everything with datetime.date's (can't mix and match date vs. datetime)
-    primary_dt = standardise_date(primary_dt)
+    primary_dt = standardise_to_date(primary_dt)
 
     lists = []
 
@@ -361,10 +361,28 @@ def create_secondary_coreg_tree(primary_dt, date_list, thres_days=63):
 
 
 def append_secondary_coreg_tree(primary_dt, old_date_lists, new_date_list, thres_days=63):
+    """
+    This function continues the tree structure defined by create_secondary_coreg_tree, by adding
+    a new set of dates to an existing coregistration tree.
+
+    :param primary_dt:
+        The primary date, which should be the root of the tree that other dates branch out from
+    :param old_date_lists:
+        The original coregistration tree dates (not the original tree itself), one entry per stack append.
+
+        This is used to re-create the original coregistration tree that will be appended to.
+    :param new_date_list:
+        The list of new dates to be added to the coregistration tree.
+    :param thres_days:
+        A threshold (in days) of how close dates must be to the prior/parent coregistration tree level,
+        to be included in the subsequent coregistration tree level.
+    :returns:
+        An array of dates, each entry being one level in the coregistration tree.
+    """
     thresh_dt = datetime.timedelta(days=thres_days)
 
     # We do everything with datetime.date's (can't mix and match date vs. datetime)
-    primary_dt = standardise_date(primary_dt)
+    primary_dt = standardise_to_date(primary_dt)
 
     # Note: we are intentionally re-producing the full tree from the original + all the
     # new sets of dates.  This allows us to be a bit paranoid and double-check everything
@@ -379,15 +397,17 @@ def append_secondary_coreg_tree(primary_dt, old_date_lists, new_date_list, thres
 
     # For each set of new dates, add a new level to the tree
     for new_dates in new_date_lists:
-        new_dates = [standardise_date(i) for i in new_dates]
+        new_dates = [standardise_to_date(i) for i in new_dates]
 
         # Sanity check new dates, we require all new dates within thres_days of
         # each other AND at least one is within thres_days of the latest date
         # already in the stack (eg: there's a chain from latest to all these dates)
-        assert(any(abs(latest_stack_date - dt) <= thresh_dt for dt in new_dates))
+        if not any(abs(latest_stack_date - dt) <= thresh_dt for dt in new_dates):
+            raise ValueError("The provided dates do not contain any that are within thres_dt of the latest date in the coreg tree")
 
         for date in new_dates:
-            assert(any(abs(date - dt) <= thresh_dt for dt in new_dates if dt != date))
+            if not any(abs(date - dt) <= thresh_dt for dt in new_dates if dt != date):
+                raise ValueError("The provided dates do not have at least one date within thres_dt of each other")
 
         # Note: This design really works best when we only append new dates 'after' (or before) the whole set
         # of dates already in the stack... in theory it's possible to back-and-forward for any order of dates

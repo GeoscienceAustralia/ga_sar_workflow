@@ -18,7 +18,6 @@ from typing import List
 from pathlib import Path
 from os.path import dirname, exists, basename
 from insar.project import ARDWorkflow, ProcConfig
-from insar.constant import SCENE_DATE_FMT
 
 # Note that {email} is absent from PBS_RESOURCES
 PBS_RESOURCES = """#!/bin/bash
@@ -154,7 +153,7 @@ def _gen_pbs(
             src.writelines(pbs)
             src.write("\n")
 
-        print('Appending stack:', out_fname.parent)
+        click.echo(f"Appending stack: {out_fname.parent}")
         return append_fname
     elif resume or reprocess_failed:
         # Create resumption job
@@ -164,7 +163,7 @@ def _gen_pbs(
             src.writelines(pbs)
             src.write("\n")
 
-        print('Resuming existing job:', out_fname.parent)
+        click.echo(f"Resuming existing job: {out_fname.parent}")
         return resume_fname
 
     # Otherwise, create the new fresh job script
@@ -180,10 +179,10 @@ def _submit_pbs(job_path, test):
     """
     Submits a pbs job or mocks if set to test
     """
-    print(job_path)
+    click.echo(job_path)
     if test:
         time.sleep(1)
-        print("qsub", job_path)
+        click.echo("qsub", job_path)
     else:
         time.sleep(1)
         os.chdir(dirname(job_path))
@@ -193,7 +192,7 @@ def _submit_pbs(job_path, test):
             if ret == 0:
                 break
 
-            print(f"qsub failed, retrying ({retry+1}/10) in 10 seconds...")
+            click.echo(f"qsub failed, retrying ({retry+1}/10) in 10 seconds...")
             time.sleep(10)
 
 

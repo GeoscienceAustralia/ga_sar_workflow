@@ -3,21 +3,16 @@ import itertools
 import json
 from pathlib import Path
 import re
-from click.core import Option
 import pandas as pd
-from pandas._libs import missing
 import geopandas as gpd
-from shapely.geometry import box
 
 from typing import Optional, List, Tuple, Union
 
 from insar.project import ProcConfig
 from insar.constant import SCENE_DATE_FMT
-from insar.sensors import identify_data_source, get_data_swath_info, S1_ID, RSAT2_ID, PALSAR_ID
+from insar.sensors import identify_data_source, get_data_swath_info
 from insar.generate_slc_inputs import query_slc_inputs, slc_inputs
 from insar.logs import STATUS_LOGGER
-
-from insar.workflow.luigi.utils import simplify_dates, one_day
 
 def load_stack_config(stack_proc_path: Union[str, Path]) -> ProcConfig:
     """
@@ -85,13 +80,13 @@ def load_stack_scenes(proc_config: ProcConfig) -> List[Tuple[datetime.date, List
         metadata_files = list(scene_dir.glob("metadata_*.json"))
         metadata = json.loads(metadata_files[0].read_text())
 
-        date_source_files = []
+        source_files_for_date = []
 
         for values in metadata.values():
             if "src_url" in values:
-                date_source_files.append(Path(values["src_url"]))
+                source_files_for_date.append(Path(values["src_url"]))
 
-        result.append((date, date_source_files))
+        result.append((date, source_files_for_date))
 
     return result
 

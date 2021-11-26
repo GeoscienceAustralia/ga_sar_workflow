@@ -116,7 +116,8 @@ class AppendDatesToStack(luigi.Task):
             # this includes dataframe indices (should be unchanged / append only).  This shouldn't be possible, as we only
             # append code now (previously code did merge dataframes) - but still better to be safe than sorry for future changes.
             for index, row in original_slc_inputs_df.iterrows():
-                assert slc_inputs_df.loc[index].equals(row), "Data corruption prevented, an existing stack scene entry does not match appended results"
+                if not slc_inputs_df.loc[index].equals(row):
+                    raise RuntimeError("Data corruption prevented, an existing stack scene entry does not match appended results")
 
             # Finally, if everything seems above board - save the new SLC inputs
             slc_inputs_df.to_csv(burst_data_csv)
@@ -196,7 +197,8 @@ class AppendDatesToStack(luigi.Task):
             # - that the existing part of the tree remains unchanged, and all new
             # - dates are added into lower levels of the tree.
             for i, old_tree_level in enumerate(old_coreg_tree):
-                assert old_tree_level == new_coreg_tree[i], "Validation failure while appending new scenes to coregistration tree"
+                if old_tree_level != new_coreg_tree[i]:
+                    raise RuntimeError("Validation failure while appending new scenes to coregistration tree")
 
             # Save the new tree levels
             first_new_coreg_level = len(old_coreg_tree)

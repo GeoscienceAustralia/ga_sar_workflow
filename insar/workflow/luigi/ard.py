@@ -213,11 +213,13 @@ class ARD(luigi.WrapperTask):
                 raise RuntimeError("Provided dates do not match existing stack's dates with no --append specified")
 
             log.info(
-                "Appending existing stack",
+                "Updating existing stack",
                 new_query=new_scenes_query,
                 new_source_data=self.source_data,
                 adding_scenes=added_scenes,
-                removing_scenes=removed_scenes
+                removing_scenes=removed_scenes,
+                append=bool(append),
+                resume=bool(self.resume)
             )
 
         # If proc_file already exists (eg: because this is an append or resume),

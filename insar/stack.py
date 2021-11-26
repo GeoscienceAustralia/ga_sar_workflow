@@ -67,6 +67,30 @@ def load_stack_scene_dates(proc_config: ProcConfig) -> List[List[str]]:
     return result
 
 
+def load_stack_ifg_pairs(proc_config: ProcConfig) -> List[List[Tuple[str,str]]]:
+    list_dir = proc_config.output_path / proc_config.list_dir
+    result = []
+
+    append_idx = 0
+
+    # First ifgs.list doesn't need to exist (may have just had 1 scene)
+    ifgs_file = Path(list_dir / "ifgs.list")
+    if ifgs_file.exists():
+        result.append(i.split(",") for i in ifgs_file.read_text().strip().splitlines())
+
+    append_idx += 1
+    ifgs_file = Path(list_dir / f"ifgs{append_idx}.list")
+
+    # The others do... (can't make an appended stack w/ less than 2 scenes, so the rest must exist)
+    while ifgs_file.exists():
+        result.append(i.split(",") for i in ifgs_file.read_text().strip().splitlines())
+
+        append_idx += 1
+        ifgs_file = Path(list_dir / f"ifgs{append_idx}.list")
+
+    return result
+
+
 def load_stack_scenes(proc_config: ProcConfig) -> List[Tuple[datetime.date, List[Path]]]:
     scene_dates = load_stack_scene_dates(proc_config)
     slc_dir = Path(proc_config.output_path) / proc_config.slc_dir

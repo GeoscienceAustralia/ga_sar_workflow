@@ -101,6 +101,8 @@ def load_stack_scenes(proc_config: ProcConfig) -> List[Tuple[datetime.date, List
         if not scene_dir.exists():
             continue
 
+        date = datetime.datetime.strptime(date, SCENE_DATE_FMT).date()
+
         metadata_files = list(scene_dir.glob("metadata_*.json"))
         metadata = json.loads(metadata_files[0].read_text())
 

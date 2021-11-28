@@ -5,6 +5,7 @@ import tempfile
 from dataclasses import dataclass
 from luigi.date_interval import Custom as LuigiDate
 import itertools
+from shutil import rmtree
 
 from tests.fixtures import *
 from unittest import mock
@@ -805,6 +806,81 @@ def test_ard_workflow_resume_failed_processing(pgp, pgmock, rs2_test_data, rs2_p
     # - but we explicitly check the above tif condition is now true!  Just for consistency
     ifg_tifs = list(out_dir.glob("INT/*/*.tif"))
     assert(len(ifg_tifs) > 0)
+
+
+def test_ard_workflow_resume_lost_slcs(pgp, pgmock, rs2_test_data, rs2_proc):
+    orig_side_effect = pgmock.phase_sim_orb.side_effect
+
+    # Run a normal workflow
+    out_dir, job_dir, temp_dir = do_ard_workflow_validation(
+        pgp,
+        ARDWorkflow.Interferogram,
+        rs2_test_data,
+        rs2_pols,
+        rs2_proc
+    )
+
+    # Delete half the SLCs
+    slc_dir = out_dir / "SLC"
+    slcs = list(slc_dir.iterdir())
+    slcs = slcs[:(len(slcs)+1) // 2]
+
+    orig_time = slcs[0].stat().st_mtime
+
+    for slc in slcs:
+        rmtree(slc)
+
+    # Delete the IFGs too (--resume doesn't re-create SLCs unless they're needed for an IFG just yet)
+    rmtree(out_dir / "INT")
+
+    # Re-run the same workflow with resume
+    out_dir, job_dir, temp_dir = do_ard_workflow_validation(
+        pgp,
+        ARDWorkflow.Interferogram,
+        rs2_test_data,
+        rs2_pols,
+        rs2_proc,
+        temp_dir=temp_dir,
+        resume=True
+    )
+
+    # Assert the SLCs were re-created
+    for slc in slcs:
+        assert(slc.exists())
+        assert(slc.stat().st_mtime > orig_time)
+
+
+def test_ard_workflow_resume_lost_ifgs(pgp, pgmock, rs2_test_data, rs2_proc):
+    orig_side_effect = pgmock.phase_sim_orb.side_effect
+
+    # Run a normal workflow
+    out_dir, job_dir, temp_dir = do_ard_workflow_validation(
+        pgp,
+        ARDWorkflow.Interferogram,
+        rs2_test_data,
+        rs2_pols,
+        rs2_proc
+    )
+
+    # Delete the interferogram dir entirely!
+    rmtree(out_dir / "INT")
+
+    # Re-run the same workflow with resume
+    out_dir, job_dir, temp_dir = do_ard_workflow_validation(
+        pgp,
+        ARDWorkflow.Interferogram,
+        rs2_test_data,
+        rs2_pols,
+        rs2_proc,
+        temp_dir=temp_dir,
+        resume=True
+    )
+
+    # Assert the IFGs were re-created
+    assert((out_dir / "INT").exists())
+    # the 2pi.png quicklook images are the final product made, so if these
+    # exist all the other products should as well (validated via do_ard_workflow_validation)
+    assert(len(list(out_dir.glob("INT/*/*2pi.png"))) >= 1)
 
 
 def test_ard_workflow_resume_complete_job(pgp, pgmock, rs2_test_data, rs2_proc):

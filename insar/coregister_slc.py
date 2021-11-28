@@ -142,8 +142,6 @@ class CoregisterSlc:
         if not self.secondary_mli_par.exists():
             self.log.error("Secondary MLI par file not found", pathname=str(self.secondary_mli_par))
 
-        self.primary_sample = self.primary_sample_size()
-
         self.range_step = None
         self.azimuth_step = None
         self.r_secondary_slc = None
@@ -251,6 +249,8 @@ class CoregisterSlc:
         azimuth_offset_max: Optional[int] = 32,
     ):
         """Reduce offset estimation to max offset values."""
+        self.primary_sample = self.primary_sample_size()
+
         self.range_step = int(
             (self.primary_sample.slc_width_end - self.primary_sample.slc_width_start) / 64
         )

@@ -782,8 +782,17 @@ def safe_get_cwd():
     """
     try:
         return os.getcwd()
+
+    # If the old dir doesn't exist (eg: something is trying to chdir back to a temp dir we've lost context of)
+    # we attempt to get the PWD env var instead (this assumes pytest is run from a shell)
     except FileNotFoundError:
-        return os.environ['PWD']
+        try:
+            return os.environ['PWD']
+
+        # But even this might fail (can technically run pytest process w/o a shell, eg: from an IDE or docker)
+        # - in this case, return the root dir of the repo (as if the user ran pytest in a shell from there)
+        except KeyError:
+            return Path(__file__).parent
 
     raise FileNotFoundError("Cannot determine working dir")
 

@@ -384,7 +384,8 @@ def append_secondary_coreg_tree(primary_dt, old_date_lists, new_date_list, thres
     # We do everything with datetime.date's (can't mix and match date vs. datetime)
     primary_dt = standardise_to_date(primary_dt)
 
-    # Find the original tree dates
+    # Find the original stack dates, as there would be no tree if only 1 date
+    # was in the stack at first (very niche corner case - common in our unit tests though).
     first_tree_dates = []
     first_trees_count = 0
     for list in old_date_lists:
@@ -394,8 +395,7 @@ def append_secondary_coreg_tree(primary_dt, old_date_lists, new_date_list, thres
         if len(first_tree_dates) >= 2:
             break
 
-    # If there was no tree originally, create our first tree!
-    # - this happens if the first stack had just 2 date, very niche corner case.
+    # If there was no tree originally, create our first tree w/ the original products + appended
     if len(first_tree_dates) < 2:
         first_tree_dates += new_date_list
         return create_secondary_coreg_tree(primary_dt, first_tree_dates, thres_days=thres_days)

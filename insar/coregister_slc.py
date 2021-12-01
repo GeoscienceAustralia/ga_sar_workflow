@@ -151,6 +151,7 @@ class CoregisterSlc:
         self.secondary_slc_tab = None
         self.r_secondary_mli = None
         self.r_secondary_mli_par = None
+        self.primary_sample = None
 
         primary_secondary_prefix = f"{self.primary_date}-{self.secondary_date}"
         self.r_primary_secondary_name = f"{primary_secondary_prefix}_{self.secondary_pol}_{self.rlks}rlks"

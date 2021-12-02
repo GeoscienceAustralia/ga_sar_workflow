@@ -203,6 +203,12 @@ class ARD(luigi.WrapperTask):
             if append:
                 append = added_urls
 
+                # If we were supposed to be appending data, but there's in fact no new
+                # data to append (eg: the stack already had it all) - early exit... no-op
+                if not append:
+                    log.info("No new data to append to stack, processing already completed.")
+                    return
+
                 if not hasattr(self, 'append_idx'):
                     # existing_scenes = original scenes.list + all the appended scenesN.list
                     # where N is 1 base for all appends, eg: scenes1.list is the first append

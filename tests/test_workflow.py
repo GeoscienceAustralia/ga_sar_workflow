@@ -661,7 +661,8 @@ def test_ard_workflow_no_append_new_dates_raises_error(pgp, pgmock, rs2_test_dat
 
     # Assert there's only one date
     first_products = list(out_dir.glob("SLC/*/*gamma0.tif"))
-    assert(len(first_products) == 1)
+    assert len(first_products) == 1
+    first_mtime = first_products[0].stat().st_mtime
 
     # Then try and run another without append, should raise error
     with pytest.raises(RuntimeError):
@@ -676,9 +677,10 @@ def test_ard_workflow_no_append_new_dates_raises_error(pgp, pgmock, rs2_test_dat
 
     # Assert nothing changed (still just one date, not modified)
     second_products = sorted(list(out_dir.glob("SLC/*/*gamma0.tif")))
-    assert(len(second_products) == 1)
+    assert len(second_products) == 1
+    second_mtime = second_products[0].stat().st_mtime
 
-    assert(first_products[0].stat().st_mtime == second_products[0].stat().st_mtime)
+    assert first_mtime == second_mtime
 
 
 def test_ard_workflow_append_new_dates(pgp, pgmock, rs2_test_data, rs2_proc):
@@ -692,8 +694,9 @@ def test_ard_workflow_append_new_dates(pgp, pgmock, rs2_test_data, rs2_proc):
     )
 
     # Assert there's only one date
-    first_products = list(out_dir.glob("SLC/*/*gamma0.tif"))
-    assert(len(first_products) == 1)
+    products = list(out_dir.glob("SLC/*/*gamma0.tif"))
+    assert len(products) == 1
+    first_mtime = products[0].stat().st_mtime
 
     # Then try and run another WITH append, should succeed w/o issue
     out_dir, job_dir, temp_dir = do_ard_workflow_validation(
@@ -708,10 +711,11 @@ def test_ard_workflow_append_new_dates(pgp, pgmock, rs2_test_data, rs2_proc):
 
     # Assert there are now two dates, and the first was unchanged (eg: only new one was made)
     second_products = sorted(list(out_dir.glob("SLC/*/*gamma0.tif")))
-    assert(len(second_products) == 2)
+    assert products[0] == second_products[0]
+    assert len(second_products) == 2
 
-    assert(first_products[0].stat().st_mtime == second_products[0].stat().st_mtime)
-    assert(second_products[1].stat().st_mtime > second_products[0].stat().st_mtime)
+    assert first_mtime == second_products[0].stat().st_mtime
+    assert second_products[1].stat().st_mtime > second_products[0].stat().st_mtime
 
 
 def test_ard_workflow_remove_dates_fails(pgp, pgmock, rs2_test_data, rs2_proc):
@@ -765,7 +769,8 @@ def test_ard_workflow_append_no_dates_is_no_op(pgp, pgmock, rs2_test_data, rs2_p
         rs2_proc
     )
 
-    first_products = list(out_dir.glob("SLC/*/*gamma0.tif"))
+    products = list(out_dir.glob("SLC/*/*gamma0.tif"))
+    first_mtimes = [i.stat().st_mtime for i in products]
 
     # Re-run it with append (note: data already processed above)
     out_dir, job_dir, temp_dir = do_ard_workflow_validation(
@@ -781,11 +786,10 @@ def test_ard_workflow_append_no_dates_is_no_op(pgp, pgmock, rs2_test_data, rs2_p
     )
 
     # Sanity check outputs to ensure nothing changed!
-    second_products = sorted(list(out_dir.glob("SLC/*/*gamma0.tif")))
-    assert(len(first_products) == len(second_products))
+    assert sorted(list(out_dir.glob("SLC/*/*gamma0.tif"))) == sorted(products)
 
-    for first_prod, second_prod in zip(first_products, second_products):
-        assert(first_prod.stat().st_mtime == second_prod.stat().st_mtime)
+    for first_mtime, prod_url in zip(first_mtimes, products):
+        assert first_mtime == prod_url.stat().st_mtime
 
 
 def test_ard_workflow_resume_failed_processing(pgp, pgmock, rs2_test_data, rs2_proc):

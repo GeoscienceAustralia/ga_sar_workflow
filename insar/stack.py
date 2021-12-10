@@ -32,6 +32,14 @@ def load_stack_config(stack_proc_path: Union[str, Path]) -> ProcConfig:
         raise ValueError("Specified path does not exist!")
 
     if stack_proc_path.is_dir():
+        # This is kind of a "hack", but still legitimate & slightly faster...
+        # We check for a config.proc straight up in case this is the dir we're looking
+        # for - this avoid indirection via the metadata.json, but mostly it's for
+        # to make our SLC unit testing lives easier (w/o having to setup a stack)
+        config = stack_proc_path / "config.proc"
+        if config.exists():
+            return load_stack_config(config)
+
         metadata = stack_proc_path / "metadata.json"
         if not metadata.exists():
             raise ValueError("Expected stack dir - metadata.json missing from specified directory!")
@@ -381,3 +389,35 @@ def resolve_stack_scene_query(
     # Note: returning both simplified and pandas data, both are useful in
     # different contexts / not sure it justifies two functions though
     return resolved_source_files, slc_inputs_df
+
+
+class CoregistrationTree(object):
+    config: ProcConfig
+
+    def __init__(self, stack_config: Union[Path, ProcConfig]):
+        if isinstance(stack_config, ProcConfig):
+            self.config = stack_config
+        elif isinstance(stack_config, Path):
+            self.config = load_stack_config(stack_config)
+        else:
+            raise ValueError("stack_config must be either a Path or ProcConfig")
+
+        # Attempt to load the coreg tree (if one exists)
+
+    # TODO: add dates
+
+
+class StackInterferograms(object):
+    config: ProcConfig
+
+    def __init__(self, stack_config: Union[Path, ProcConfig]):
+        if isinstance(stack_config, ProcConfig):
+            self.config = stack_config
+        elif isinstance(stack_config, Path):
+            self.config = load_stack_config(stack_config)
+        else:
+            raise ValueError("stack_config must be either a Path or ProcConfig")
+
+        # Attempt to load the IFG pairs (if any exist)
+
+    # TODO: add dates

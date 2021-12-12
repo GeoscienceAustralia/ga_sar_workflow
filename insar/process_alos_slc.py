@@ -99,7 +99,7 @@ def level0_lslc(
         # eg: `cat_raw $raw_file_list $sensor_par $msp_par $raw 1 0 -`
         # where raw_file_list = line separated list of "$raw $sensor_par $msp_par" for each input
 
-        # TBD: should probably abstract this in py_gamma_ga.py for easier testing/mocking
+        # TODO: should probably abstract this in py_gamma_ga.py for easier testing/mocking
         MSP_HOME = os.environ.get("MSP_HOME")
         # Correction for antenna pattern
         sensor_antpat = f"{MSP_HOME}/sensors/palsar_ant_20061024.dat"

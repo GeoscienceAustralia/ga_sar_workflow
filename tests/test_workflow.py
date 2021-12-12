@@ -335,8 +335,7 @@ def test_ard_workflow_ifg_smoketest_single_alos1_scene(pgp, pgmock, test_data_di
         ARDWorkflow.Interferogram,
         source_data,
         pols,
-        alos1_proc_config_path,
-        debug=True
+        alos1_proc_config_path
     )
 
 

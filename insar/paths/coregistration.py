@@ -7,9 +7,22 @@ from insar.stack import load_stack_config
 from insar.paths.slc import SlcPaths
 
 class CoregisteredSlcPaths:
+    """
+    This class produces pathnames for files relevant to coregistering SLC products.
+
+    All code should use this class when referring to pathnames relating to coregistered
+    SLC data to avoid duplicating/repeating pathnames to avoid refactoring/renaming
+    related errors.
+    """
+
     slc_primary: SlcPaths
     slc_secondary: SlcPaths
 
+    # Note for PR: These fields are intentionally not commented yet...
+    # the plan is to: once the code refactoring is complete, finish the file structure
+    # documentation for the stack for each product, and then correlate those to fields
+    # in this class directly - and simultaniously document these fields correlating
+    # them back to the stack definition/documentation as well.
     secondary_mli: Path
 
     r_dem_primary_mli: Path
@@ -34,6 +47,22 @@ class CoregisteredSlcPaths:
         polarisation: str,
         rlks: int
     ):
+        """
+        Produces coregistered SLC paths for a specified date pair and polarisation, in the
+        context of a specific stack.
+
+        :param stack_config:
+            The stack's configuration (or locator path), for which paths are to be for.
+        :param primary_date:
+            The primary date being coregistered to.
+        :param secondary_date:
+            The secondary date that most of the paths in this class refer to.
+        :param polarisation:
+            The polarisation for the path's products.
+        :param rlks:
+            The range looks computed for this stack.
+        """
+
         if not isinstance(stack_config, ProcConfig):
             stack_config = load_stack_config(stack_config)
 

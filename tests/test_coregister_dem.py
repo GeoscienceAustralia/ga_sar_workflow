@@ -264,18 +264,10 @@ def test_gen_dem_rdc(monkeypatch):
 
         assert Path(coreg.dem_pix_gam).exists()
 
-        # change this if ext_image_flt is enabled in coregister_dem.py
-        # assert not Path(coreg.ext_image_flt).exists()
-        assert coreg.ext_image_flt is None
-
-        assert not Path(coreg.ext_image_init_sar).exists()
-
         # FIXME: This branch seems to not be implemented fully/correctly (nothing ever sets ext_image)
         # coreg.gen_dem_rdc(True)
 
         # assert(Path(coreg.dem_pix_gam).exists())
-        # assert(Path(coreg.ext_image_flt).exists())
-        # assert(Path(coreg.ext_image_init_sar).exists())
 
 
 def test_create_diff_par(monkeypatch):
@@ -367,14 +359,6 @@ def test_geocode(monkeypatch):
         assert Path(coreg.dem_primary_sigma0_geo_tif).exists()
 
         assert Path(coreg.dem_primary_gamma0_geo_bmp.with_suffix(".kml")).exists()
-
-        # fix this if ext_image_flt is enabled in coregister_dem.py
-        # And with external image
-        # Path(coreg.ext_image_flt).touch()
-        #
-        # coreg.geocode(True)
-        #
-        # assert Path(coreg.ext_image_sar).exists()
 
 
 def test_look_vector(monkeypatch):

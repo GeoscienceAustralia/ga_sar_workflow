@@ -3,13 +3,13 @@ import pathlib
 import functools
 from unittest import mock
 from tempfile import TemporaryDirectory
-from PIL import Image
-import numpy as np
 
 import insar.constant as const
 from insar import process_ifg, py_gamma_ga
 from insar.process_ifg import ProcessIfgException, TempFileConfig
-from insar.project import ProcConfig, IfgFileNames, DEMFileNames
+from insar.project import ProcConfig
+from insar.paths.interferogram import InterferogramPaths
+from insar.paths.dem import DEMPaths
 
 import structlog
 import pytest
@@ -50,7 +50,7 @@ def pc_mock():
     with open(pathlib.Path(__file__).parent.absolute() / 'data' / '20151127' / 'gamma.proc', 'r') as fileobj:
         proc_config = ProcConfig.from_file(fileobj)
 
-    pc = mock.NonCallableMock(spec=ProcConfig, wraps=proc_config)
+    pc = mock.MagicMock(spec=ProcConfig, wraps=proc_config)
     pc.multi_look = 2  # always 2 for Sentinel 1
     pc.ifg_coherence_threshold = 2.5  # fake value
 
@@ -62,8 +62,8 @@ def pc_mock():
 
 @pytest.fixture
 def ic_mock():
-    """Returns basic mock to simulate an IfgFileNames object."""
-    ic = mock.NonCallableMock(spec=IfgFileNames)
+    """Returns basic mock to simulate an InterferogramPaths object."""
+    ic = mock.MagicMock(spec=InterferogramPaths)
 
     mock_path = functools.partial(mock.MagicMock, spec=pathlib.Path)
 
@@ -108,7 +108,7 @@ def ic_mock():
 @pytest.fixture
 def tc_mock():
     """Returns basic mock to simulate a TempFileConfig object."""
-    tc = mock.NonCallableMock(spec=TempFileConfig)
+    tc = mock.MagicMock(spec=TempFileConfig)
     return tc
 
 
@@ -281,7 +281,7 @@ def test_error_handling_decorator(monkeypatch, logging_ctx):
 @pytest.fixture
 def pg_flat_mock():
     """Create basic mock of the py_gamma module for the FLAT processing step."""
-    pg_mock = mock.NonCallableMock()
+    pg_mock = mock.MagicMock()
     pg_mock.base_orbit.return_value = PG_RETURN_VALUE
     pg_mock.phase_sim_orb.return_value = PG_RETURN_VALUE
     pg_mock.SLC_diff_intf.return_value = PG_RETURN_VALUE
@@ -304,9 +304,9 @@ def pg_flat_mock():
 
 
 @pytest.fixture
-def dc_mock():
-    """Default mock for DEMFileNames config."""
-    dcm = mock.NonCallableMock(spec=DEMFileNames)
+def dc_mock(pc_mock):
+    """Default mock for DEMPaths config."""
+    dcm = mock.MagicMock(spec=DEMPaths(pc_mock))
     return dcm
 
 

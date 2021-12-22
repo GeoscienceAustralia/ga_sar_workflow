@@ -1,9 +1,6 @@
 from pathlib import Path
 import itertools
 
-import numpy as np
-from osgeo import gdal
-
 from tests.fixtures import *
 
 from tests.test_workflow import do_ard_workflow_validation
@@ -18,22 +15,6 @@ from insar.stack import load_stack_config, load_stack_scene_dates
 from insar.workflow.luigi.utils import read_rlks_alks
 from insar.coreg_utils import rm_file
 from insar.logs import logging_directory
-
-
-def make_coreg_processor(data, out_dir):
-    data["proc"].output_path = out_dir
-
-    return CoregisterSlc(
-        data["proc"],
-        data["list_idx"],
-        data["slc_primary"],
-        data["slc_secondary"],  # if secondary/primary are the same... everything should still run i assume? just useless outputs?
-        data["secondary_mli"],
-        data["range_looks"],
-        data["azimuth_looks"],
-        data["r_dem_primary_mli"],
-        out_dir
-    )
 
 
 @pytest.fixture

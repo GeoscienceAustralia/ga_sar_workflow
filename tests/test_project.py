@@ -64,6 +64,7 @@ def mproc():
     mock_proc.dem_dir = "dem-dir"
     mock_proc.results_dir = "results-dir"
     mock_proc.track = "track"
+    mock_proc.stack_id = "test_stack"
 
     return mock_proc
 
@@ -72,7 +73,7 @@ def test_default_dem_file_names(mproc):
     cfg = DEMPaths(mproc)
 
     assert cfg.dem.as_posix() == "{}/{}/{}.dem".format(
-        mproc.output_path, mproc.gamma_dem_dir, mproc.dem_name
+        mproc.output_path, mproc.gamma_dem_dir, mproc.stack_id
     )
     assert cfg.dem_par.as_posix() == "{}.par".format(cfg.dem)
     assert cfg.dem_primary_name.as_posix() == "{}/{}/{}_{}_{}rlks".format(

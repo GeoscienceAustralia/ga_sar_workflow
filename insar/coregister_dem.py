@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+from gamma_insar.insar.project import ProcConfig
 import os
 import tempfile
 from typing import Optional, Tuple, Union, Dict
@@ -14,6 +15,9 @@ from insar.py_gamma_ga import GammaInterface, auto_logging_decorator, subprocess
 from insar.subprocess_utils import working_directory
 from insar.coreg_utils import latlon_to_px, create_diff_par
 from insar import constant as const
+from insar.paths.dem import DEMPaths
+from insar.paths.coregistration import CoregisteredPrimaryPaths
+from insar.stack import load_stack_config
 
 _LOG = structlog.get_logger("insar")
 
@@ -64,8 +68,6 @@ class CoregisterDem:
         dem_ovr: int = 1,
         multi_look: int = None,
         land_center: Optional[Tuple[float, float]] = None,
-        dem_outdir: Optional[Union[Path, str]] = None,
-        slc_outdir: Optional[Union[Path, str]] = None,
         ext_image_flt: Optional[Union[Path, str]] = None,
     ) -> None:
         """
@@ -102,17 +104,15 @@ class CoregisterDem:
             DEM oversampling factor. Default is 1.
         :param multi_look:
             TODO: docs
-        :param dem_outdir:
-            An Optional full path to store dem files.
-        :param slc_outdir:
-            An Optional full path to store SLC files.
         :param ext_image_flt:
             DISABLED: Optional full path to an external image filter to use for
             co-registration in very flat scenes with no features (rarely used).
         :param land_center:
             A user defined scene center of (latitude, longitude) to use for initial offset.
         """
-        # TODO: refactor all the paths/use ProcConfig, DemConfig ??
+        # TODO: refactor out these last few paths when we do the OOP->functional refactor
+        # - they're kept for now as they're taken as parameters / changing it now would be
+        # - starting the OOP->functional refactor...
         self.alks = alks
         self.rlks = rlks
         self.land_center = land_center
@@ -120,13 +120,6 @@ class CoregisterDem:
         self.slc = slc
         self.dem_par = Path(dem_par)
         self.slc_par = Path(slc_par)
-        self.dem_outdir = dem_outdir
-        self.slc_outdir = slc_outdir
-
-        if self.dem_outdir is None:
-            self.dem_outdir = Path(os.getcwd())
-        if self.slc_outdir is None:
-            self.slc_outdir = Path(self.slc).parent
 
         self.dem_patch_window = dem_patch_window
         self.dem_rpos = dem_rpos
@@ -146,72 +139,33 @@ class CoregisterDem:
         self.multi_look = multi_look
         self.adjust_dem_parameters()
 
-        self.dem_primary_slc = self.slc
-        self.dem_primary_slc_par = self.slc_par
-
         self.dem_width = None
         self.dem_height = None
 
         self.r_dem_primary_mli_width = None
         self.r_dem_primary_mli_length = None
-        self.dem_primary_gamma0 = None
-        self.dem_primary_gamma0_geo = None
-        self.dem_primary_gamma0_bmp = None
-        self.dem_primary_gamma0_geo_bmp = None
-        self.dem_primary_gamma0_geo_tif = None
-        self.dem_primary_sigma0 = None
-        self.dem_primary_sigma0_geo = None
-        self.dem_primary_sigma0_geo_tif = None
 
-        self.dem_files = self.dem_filenames(
-            dem_prefix=f"{self.slc.stem}_{self.rlks}rlks", outdir=self.dem_outdir
-        )
-        self.dem_primarys = self.dem_primary_names(
-            slc_prefix=f"{self.slc.stem}_{self.rlks}rlks",
-            r_slc_prefix=f"r{self.slc.stem}",
-            outdir=self.slc_outdir,
-        )
+        slc_outdir = Path(self.slc).parent
 
-        # TODO: review these var names sometime due to complexity leading to
-        #  possible duplication and bugs
-        self.geo_dem = None
-        self.geo_dem_geo = None
-        self.geo_dem_par = None
+        # FIXME: .parent.parent is hacky... will be fixed during the OOP -> functional refactor
+        stack_outdir = slc_outdir.parent.parent
+        self.proc_config = load_stack_config(stack_outdir)
 
-        self.dem_diff = None
-        self.dem_lsmap = None
-        self.dem_offs = None
-        self.dem_offsets = None
-        self.dem_coffs = None
-        self.dem_coffsets = None
-        self.dem_ccp = None
-        self.dem_lt_fine = None
-        self.dem_lt_rough = None
-        self.dem_geo_sim_sar = None
-        self.dem_loc_inc = None
-        self.dem_pix_gam = None
-        self.dem_rdc_inc = None
-        self.dem_rdc_sim_sar = None
+        # FIXME: get this from one of the *Paths classes...
+        slc_prefix = f"{self.slc.stem}_{self.rlks}rlks"
 
-        self.r_dem_primary_mli = None
-        self.r_dem_primary_mli_par = None
-        self.r_dem_primary_slc = None
-        self.r_dem_primary_slc_par = None
-        self.r_dem_primary_mli_bmp = None
+        self.dem_paths = DEMPaths(self.proc_config)
+        self.coreg_paths = CoregisteredPrimaryPaths(self.proc_config)
 
-        self.dem_lv_phi = None
-        self.dem_lv_phi_geo = None
-        self.dem_lv_theta = None
-        self.dem_lv_theta_geo = None
+        self.dem_primary_sigma0 = slc_outdir / f"{slc_prefix}.sigma0"
+        self.dem_primary_sigma0_geo = slc_outdir / f"{slc_prefix}_geo.sigma0"
+        self.dem_primary_sigma0_geo_tif = append_suffix(self.dem_primary_sigma0_geo, ".tif")
 
-        self.ellip_pix_sigma0 = None
-        self.seamask = None
-        self.rdc_dem = None
-
-        # TODO: magic dynamic var setting here!
-        # set more class attributes needed for DEM-SLC co-registration
-        for _key, val in {**self.dem_files, **self.dem_primarys}.items():
-            setattr(self, _key, val)
+        self.dem_primary_gamma0 = slc_outdir / f"{slc_prefix}.gamma0"
+        self.dem_primary_gamma0_bmp = append_suffix(self.dem_primary_gamma0, ".bmp")
+        self.dem_primary_gamma0_geo = slc_outdir / f"{slc_prefix}_geo.gamma0"
+        self.dem_primary_gamma0_geo_bmp = append_suffix(self.dem_primary_gamma0_geo, ".bmp")
+        self.dem_primary_gamma0_geo_tif = append_suffix(self.dem_primary_gamma0_geo, ".tif")
 
         if ext_image_flt is not None:
             # From Matt Garth in MS Teams on 17/8/2021: This feature was
@@ -225,102 +179,18 @@ class CoregisterDem:
             msg = "Feature is rarely used & disabled until required"
             raise NotImplementedError(msg)
 
-    @staticmethod
-    def dem_primary_names(
-        slc_prefix: str, r_slc_prefix: str, outdir: Union[Path, str],
-    ) -> Dict:
-        """
-        Collate DEM primary file names used need in CoregisterDem class.
-        :param slc_prefix:
-            A pre_fix of SLC image file.
-        :param r_slc_prefix:
-            A prefix of radar coded SLC image file.
-        :param outdir:
-            A full path to store DEM co-registered SLC files.
-        :returns:
-            Dict with SLC file names and paths needed in CoregisterDem class.
-        """
-
-        attrs = dict()
-        attrs["dem_primary_mli"] = outdir.joinpath(f"{slc_prefix}.mli")
-        attrs["dem_primary_mli_par"] = attrs["dem_primary_mli"].with_suffix(
-            attrs["dem_primary_mli"].suffix + ".par"
-        )
-        attrs["dem_primary_sigma0"] = outdir.joinpath(f"{slc_prefix}.sigma0")
-        attrs["dem_primary_sigma0_geo"] = outdir.joinpath(f"{slc_prefix}_geo.sigma0")
-        attrs["dem_primary_sigma0_geo_tif"] = append_suffix(attrs["dem_primary_sigma0_geo"], ".tif")
-        attrs["dem_primary_gamma0"] = outdir.joinpath(f"{slc_prefix}.gamma0")
-        attrs["dem_primary_gamma0_bmp"] = append_suffix(attrs["dem_primary_gamma0"], ".bmp")
-        attrs["dem_primary_gamma0_geo"] = outdir.joinpath(f"{slc_prefix}_geo.gamma0")
-        attrs["dem_primary_gamma0_geo_bmp"] = append_suffix(attrs["dem_primary_gamma0_geo"], ".bmp")
-        attrs["dem_primary_gamma0_geo_tif"] = append_suffix(attrs["dem_primary_gamma0_geo_bmp"], ".tif")
-
-        attrs["r_dem_primary_slc"] = outdir.joinpath(f"{r_slc_prefix}.slc")
-        attrs["r_dem_primary_slc_par"] = outdir.joinpath(f"{r_slc_prefix}.slc.par")
-        attrs["r_dem_primary_mli"] = outdir.joinpath("r{}.mli".format(slc_prefix))
-        attrs["r_dem_primary_mli_par"] = attrs["r_dem_primary_mli"].with_suffix(
-            attrs["r_dem_primary_mli"].suffix + ".par"
-        )
-        attrs["r_dem_primary_mli_bmp"] = append_suffix(attrs["r_dem_primary_mli"], ".bmp")
-        return attrs
-
-    @staticmethod
-    def dem_filenames(dem_prefix: str, outdir: Path,) -> Dict:
-        """
-        Collate DEM file names used need in CoregisterDem class.
-        :param dem_prefix:
-            A pre_fix of dem file name.
-        :param outdir:
-            A full path to store DEM files generated during dem coregistration.
-        :returns:
-            Dict with DEM file names and paths needed in CoregisterDem class.
-        """
-
-        attrs = dict()
-        attrs["dem_diff"] = outdir.joinpath(f"diff_{dem_prefix}.par")
-        attrs["rdc_dem"] = outdir.joinpath(f"{dem_prefix}_rdc.dem")
-        attrs["geo_dem"] = outdir.joinpath(f"{dem_prefix}_geo.dem")
-        attrs["geo_dem_par"] = attrs["geo_dem"].with_suffix(
-            attrs["geo_dem"].suffix + ".par"
-        )
-        attrs["geo_dem_geo"] = append_suffix(attrs["geo_dem"], ".tif")
-        attrs["dem_lt_rough"] = outdir.joinpath(f"{dem_prefix}_rough_geo_to_rdc.lt")
-        attrs["dem_geo_sim_sar"] = outdir.joinpath(f"{dem_prefix}_geo.sim")
-        attrs["dem_loc_inc"] = outdir.joinpath(f"{dem_prefix}_geo.linc")
-        attrs["dem_lsmap"] = outdir.joinpath(f"{dem_prefix}_geo.lsmap")
-        attrs["seamask"] = outdir.joinpath(f"{dem_prefix}_geo_seamask.tif")
-        attrs["dem_lt_fine"] = outdir.joinpath(f"{dem_prefix}_geo_to_rdc.lt")
-        attrs["dem_geo_sim_sar"] = outdir.joinpath(f"{dem_prefix}_geo.sim")
-        attrs["dem_rdc_sim_sar"] = outdir.joinpath(f"{dem_prefix}_rdc.sim")
-        attrs["dem_rdc_inc"] = outdir.joinpath(f"{dem_prefix}_rdc.linc")
-        attrs["ellip_pix_sigma0"] = outdir.joinpath(f"{dem_prefix}_ellip_pix_sigma0")
-        attrs["dem_pix_gam"] = outdir.joinpath(f"{dem_prefix}_rdc_pix_gamma0")
-        attrs["dem_pix_gam_bmp"] = attrs["dem_pix_gam"].with_suffix(".bmp")
-        attrs["dem_off"] = outdir.joinpath(f"{dem_prefix}.off")
-        attrs["dem_offs"] = outdir.joinpath(f"{dem_prefix}.offs")
-        attrs["dem_ccp"] = outdir.joinpath(f"{dem_prefix}.ccp")
-        attrs["dem_offsets"] = outdir.joinpath(f"{dem_prefix}.offsets")
-        attrs["dem_coffs"] = outdir.joinpath(f"{dem_prefix}.coffs")
-        attrs["dem_coffsets"] = outdir.joinpath(f"{dem_prefix}.coffsets")
-        attrs["dem_lv_theta"] = outdir.joinpath(f"{dem_prefix}_geo.lv_theta")
-        attrs["dem_lv_phi"] = outdir.joinpath(f"{dem_prefix}_geo.lv_phi")
-        attrs["dem_lv_theta_geo"] = append_suffix(attrs["dem_lv_theta"], ".tif")
-        attrs["dem_lv_phi_geo"] = append_suffix(attrs["dem_lv_phi"], ".tif")
-
-        return attrs
-
     def _set_attrs(self) -> None:
         """
         Internal class dem primary attributes setter.
         """
 
         if self.r_dem_primary_mli_width is None:
-            mli_par = pg.ParFile(str(self.r_dem_primary_mli_par))
+            mli_par = pg.ParFile(str(self.coreg_paths.r_dem_primary_mli_par))
             self.r_dem_primary_mli_width = mli_par.get_value("range_samples", dtype=int, index=0)
             self.r_dem_primary_mli_length = mli_par.get_value("azimuth_lines", dtype=int, index=0)
 
         if self.dem_width is None:
-            geo_dem_par = pg.ParFile(str(self.geo_dem_par))
+            geo_dem_par = pg.ParFile(str(self.dem_paths.geo_dem_par))
             self.dem_width = geo_dem_par.get_value("width", dtype=int, index=0)
             self.dem_height = geo_dem_par.get_value("nlines", dtype=int, index=0)
 
@@ -376,21 +246,29 @@ class CoregisterDem:
         if self.dem_azpos is not None:
             self.dem_azpos = int(self.dem_azpos / self.multi_look)
 
-    def copy_slc(self, raster_out: Optional[bool] = True,) -> None:
+    def copy_slc(self) -> None:
         """
         Copy SLC with options for data format conversion.
         :param raster_out:
             An Optional flag to output raster files.
         """
 
+        coreg_paths = self.coreg_paths
+
+        if not coreg_paths.dem_primary_slc.exists():
+            raise CoregisterDemException("Primary scene SLC is missing")
+
+        if not coreg_paths.dem_primary_slc_par.exists():
+            raise CoregisterDemException("Primary scene SLC .par is missing")
+
         # copy SLC image file to new file r_dem_primary_slc.
         # TODO: this step seems redundant if we can directly use SLC image file
         #       to multi-look. (Confirm with InSAR geodesy Team)
 
-        slc_in_pathname = str(self.dem_primary_slc)
-        slc_par_in_pathname = str(self.dem_primary_slc_par)
-        slc_out_pathname = str(self.r_dem_primary_slc)
-        slc_par_out_pathname = str(self.r_dem_primary_slc_par)
+        slc_in_pathname = str(coreg_paths.dem_primary_slc)
+        slc_par_in_pathname = str(coreg_paths.dem_primary_slc_par)
+        slc_out_pathname = str(coreg_paths.r_dem_primary_slc)
+        slc_par_out_pathname = str(coreg_paths.r_dem_primary_slc_par)
         fcase = 1  # FCOMPLEX
         sc = const.NOT_PROVIDED  # scale factor
 
@@ -404,10 +282,10 @@ class CoregisterDem:
         )
 
         # multi-look SLC image file
-        slc_pathname = str(self.r_dem_primary_slc)
-        slc_par_pathname = str(self.r_dem_primary_slc_par)
-        mli_pathname = str(self.r_dem_primary_mli)
-        mli_par_pathname = str(self.r_dem_primary_mli_par)
+        slc_pathname = str(coreg_paths.r_dem_primary_slc)
+        slc_par_pathname = str(coreg_paths.r_dem_primary_slc_par)
+        mli_pathname = str(coreg_paths.r_dem_primary_mli)
+        mli_par_pathname = str(coreg_paths.r_dem_primary_mli_par)
         rlks = self.rlks
         azlks = self.alks
         loff = 0  # offset to starting line
@@ -422,34 +300,6 @@ class CoregisterDem:
             loff,
         )
 
-        # output raster image of multi-looked SLC image file if needed
-        # TODO only useful for visual debugging phase.
-        # This is redundant in production phase (Consult InSAR team and remove)
-        if raster_out:
-            pwr_pathname = str(self.r_dem_primary_mli)
-            mli_par = pg.ParFile(str(self.r_dem_primary_mli_par))
-            width = mli_par.get_value("range_samples", dtype=int, index=0)
-            start = 1
-            nlines = 0  # default (to end of file)
-            pixavr = 20
-            pixavaz = 20
-            scale = 1.0
-            exp = 0.35
-            lr = 1  # left/right mirror image flag
-            rasf_pathname = str(self.r_dem_primary_mli_bmp)
-
-            pg.raspwr(
-                pwr_pathname,
-                width,
-                start,
-                nlines,
-                pixavr,
-                pixavaz,
-                scale,
-                exp,
-                lr,
-                rasf_pathname,
-            )
 
     def gen_dem_rdc(self, use_external_image: Optional[bool] = False,) -> None:
         """
@@ -458,24 +308,26 @@ class CoregisterDem:
             An Optional parameter to set use of external image for co-registration.
         """
 
-        # generate initial geocoding look-up-table and simulated SAR image
+        dem_paths = self.dem_paths
+        coreg_paths = self.coreg_paths
 
-        mli_par_pathname = str(self.r_dem_primary_mli_par)
+        # generate initial geocoding look-up-table and simulated SAR image
+        mli_par_pathname = str(coreg_paths.r_dem_primary_mli_par)
         off_par_pathname = const.NOT_PROVIDED
-        dem_par_pathname = str(self.dem_par)
+        dem_par_pathname = str(dem_paths.dem_par)
         dem_pathname = str(self.dem)
-        dem_seg_par_pathname = str(self.geo_dem_par)
-        dem_seg_pathname = str(self.geo_dem)
-        lookup_table_pathname = str(self.dem_lt_rough)
+        dem_seg_par_pathname = str(dem_paths.geo_dem_par)
+        dem_seg_pathname = str(dem_paths.geo_dem)
+        lookup_table_pathname = str(dem_paths.dem_lt_rough)
         lat_ovr = self.dem_ovr
         lon_ovr = self.dem_ovr
-        sim_sar_pathname = str(self.dem_geo_sim_sar)
+        sim_sar_pathname = str(dem_paths.dem_geo_sim_sar)
         u_zenith_angle = const.NOT_PROVIDED
         v_orientation_angle = const.NOT_PROVIDED
-        inc_angle_pathname = str(self.dem_loc_inc)
+        inc_angle_pathname = str(dem_paths.dem_loc_inc)
         psi_projection_angle = const.NOT_PROVIDED
         pix = const.NOT_PROVIDED  # pixel area normalization factor
-        ls_map_pathname = str(self.dem_lsmap)
+        ls_map_pathname = str(dem_paths.dem_lsmap)
         frame = 8
         ls_mode = 2
 
@@ -531,19 +383,19 @@ class CoregisterDem:
                 const.NOT_PROVIDED,
                 frame,
                 const.NOT_PROVIDED,
-                str(self.dem_diff),
+                str(dem_paths.dem_diff),
                 const.NOT_PROVIDED  # reference image flag (simulated SAR is the default)
             )
 
         # generate initial gamma0 pixel normalisation area image in radar geometry
-        mli_par_pathname = str(self.r_dem_primary_mli_par)
-        dem_par_pathname = str(self.geo_dem_par)
-        dem_pathname = str(self.geo_dem)
-        lookup_table_pathname = str(self.dem_lt_rough)
-        ls_map_pathname = str(self.dem_lsmap)
-        inc_map_pathname = str(self.dem_loc_inc)
+        mli_par_pathname = str(coreg_paths.r_dem_primary_mli_par)
+        dem_par_pathname = str(dem_paths.geo_dem_par)
+        dem_pathname = str(dem_paths.geo_dem)
+        lookup_table_pathname = str(dem_paths.dem_lt_rough)
+        ls_map_pathname = str(dem_paths.dem_lsmap)
+        inc_map_pathname = str(dem_paths.dem_loc_inc)
         pix_sigma0_pathname = const.NOT_PROVIDED  # no output
-        pix_gamma0_pathname = str(self.dem_pix_gam)
+        pix_gamma0_pathname = str(dem_paths.dem_pix_gam)
 
         pg.pixel_area(
             mli_par_pathname,
@@ -574,10 +426,13 @@ class CoregisterDem:
     def create_diff_par(self) -> None:
         """Fine coregistration of primary MLI and simulated SAR image."""
 
+        dem_paths = self.dem_paths
+        coreg_paths = self.coreg_paths
+
         create_diff_par(
-            self.r_dem_primary_mli_par,
+            coreg_paths.r_dem_primary_mli_par,
             None,
-            self.dem_diff,
+            dem_paths.dem_diff,
             self.dem_offset,
             self.dem_offset_measure,
             self.dem_window,
@@ -594,6 +449,10 @@ class CoregisterDem:
         :param use_external_image:
             An Optional parameter to set use of external image for co-registration.
         """
+
+        dem_paths = self.dem_paths
+        coreg_paths = self.coreg_paths
+
         # set parameters
         if any(
             item is None
@@ -607,11 +466,11 @@ class CoregisterDem:
 
         # Get land center from user provided value if possible
         if self.land_center is not None:
-            rpos, azpos = latlon_to_px(pg, self.r_dem_primary_mli_par, *self.land_center)
+            rpos, azpos = latlon_to_px(pg, coreg_paths.r_dem_primary_mli_par, *self.land_center)
 
             _LOG.info(
                 "Land center for DEM coregistration",
-                mli=self.r_dem_primary_mli,
+                mli=coreg_paths.r_dem_primary_mli,
                 land_center=self.land_center,
                 land_center_px=(rpos, azpos)
             )
@@ -623,9 +482,9 @@ class CoregisterDem:
 
         # MCG: Urs Wegmuller recommended using pixel_area_gamma0 rather than
         # simulated SAR image in offset calculation
-        mli_1_pathname = str(self.dem_pix_gam)
-        mli_2_pathname = str(self.r_dem_primary_mli)
-        diff_par_pathname = str(self.dem_diff)
+        mli_1_pathname = str(dem_paths.dem_pix_gam)
+        mli_2_pathname = str(coreg_paths.r_dem_primary_mli)
+        diff_par_pathname = str(dem_paths.dem_diff)
         rlks = 1
         azlks = 1
         rpos = self.dem_rpos or rpos
@@ -645,7 +504,7 @@ class CoregisterDem:
         ])
 
         # Note: These start at land center, and progressively move further out
-        grid_attempts = [[0,0], *(grid * 0.25), *(grid * 0.5), *(grid * 0.75), *grid]
+        grid_attempts = [[0, 0], *(grid * 0.25), *(grid * 0.5), *(grid * 0.75), *grid]
 
         # Attempt w/ land center pixel, and spiral out if we fail to find a match
         succeeded_land_center = None
@@ -674,7 +533,7 @@ class CoregisterDem:
 
                 succeeded_land_center = (attempt_rpos, attempt_azpos)
                 _LOG.info(
-                    f"DEM coregistration succeeded for land center",
+                    "DEM coregistration succeeded for land center",
                     range_px_coord=attempt_rpos,
                     azimuth_px_coord=attempt_azpos
                 )
@@ -683,7 +542,7 @@ class CoregisterDem:
 
             except CoregisterDemException:
                 _LOG.info(
-                    f"DEM coregistration failed for land center",
+                    "DEM coregistration failed for land center",
                     range_px_coord=attempt_rpos,
                     azimuth_px_coord=attempt_azpos
                 )
@@ -696,14 +555,14 @@ class CoregisterDem:
         if succeeded_land_center is None:
             raise CoregisterDemException("Failed to coregister primary scene to DEM!")
 
-        mli_1_pathname = str(self.dem_pix_gam)
-        mli_2_pathname = str(self.r_dem_primary_mli)
-        diff_par_pathname = str(self.dem_diff)
-        offs_pathname = str(self.dem_offs)
-        ccp_pathname = str(self.dem_ccp)
+        mli_1_pathname = str(dem_paths.dem_pix_gam)
+        mli_2_pathname = str(coreg_paths.r_dem_primary_mli)
+        diff_par_pathname = str(dem_paths.dem_diff)
+        offs_pathname = str(dem_paths.dem_offs)
+        ccp_pathname = str(dem_paths.dem_ccp)
         rwin = const.NOT_PROVIDED  # range patch size
         azwin = const.NOT_PROVIDED  # azimuth patch size
-        offsets_pathname = str(self.dem_offsets)
+        offsets_pathname = str(dem_paths.dem_offsets)
         n_ovr = 2
         nr = const.NOT_PROVIDED  # number of offset estimates in range direction
         naz = const.NOT_PROVIDED  # number of offset estimates in azimuth direction
@@ -724,11 +583,11 @@ class CoregisterDem:
             thres,
         )
 
-        offs_pathname = str(self.dem_offs)
-        ccp_pathname = str(self.dem_ccp)
-        diff_par_pathname = str(self.dem_diff)
-        coffs_pathname = str(self.dem_coffs)
-        coffsets_pathname = str(self.dem_coffsets)
+        offs_pathname = str(dem_paths.dem_offs)
+        ccp_pathname = str(dem_paths.dem_ccp)
+        diff_par_pathname = str(dem_paths.dem_diff)
+        coffs_pathname = str(dem_paths.dem_coffs)
+        coffsets_pathname = str(dem_paths.dem_coffsets)
         thres = const.NOT_PROVIDED
 
         pg.offset_fitm(
@@ -746,10 +605,10 @@ class CoregisterDem:
         if use_external_image:
             ref_flg = 0
 
-        gc_in_pathname = str(self.dem_lt_rough)
+        gc_in_pathname = str(dem_paths.dem_lt_rough)
         width = self.dem_width
-        diff_par_pathname = str(self.dem_diff)
-        gc_out_pathname = str(self.dem_lt_fine)
+        diff_par_pathname = str(dem_paths.dem_diff)
+        gc_out_pathname = str(dem_paths.dem_lt_fine)
 
         pg.gc_map_fine(
             gc_in_pathname,  # geocoding lookup table
@@ -763,12 +622,12 @@ class CoregisterDem:
         with tempfile.TemporaryDirectory() as temp_dir:
             pix = Path(temp_dir).joinpath("pix")
 
-            mli_par_pathname = str(self.r_dem_primary_mli_par)
-            dem_par_pathname = str(self.geo_dem_par)
-            dem_pathname = str(self.geo_dem)
-            lookup_table_pathname = str(self.dem_lt_fine)
-            ls_map_pathname = str(self.dem_lsmap)
-            inc_map_pathname = str(self.dem_loc_inc)
+            mli_par_pathname = str(coreg_paths.r_dem_primary_mli_par)
+            dem_par_pathname = str(dem_paths.geo_dem_par)
+            dem_pathname = str(dem_paths.geo_dem)
+            lookup_table_pathname = str(dem_paths.dem_lt_fine)
+            ls_map_pathname = str(dem_paths.dem_lsmap)
+            inc_map_pathname = str(dem_paths.dem_loc_inc)
             pix_sigma0 = const.NOT_PROVIDED
             pix_gamma0 = str(pix)
 
@@ -785,7 +644,7 @@ class CoregisterDem:
 
             # interpolate holes
             data_in_pathname = str(pix)
-            data_out_pathname = str(self.dem_pix_gam)
+            data_out_pathname = str(dem_paths.dem_pix_gam)
             width = self.r_dem_primary_mli_width
             r_max = const.NOT_PROVIDED  # maximum interpolation window radius
             np_min = const.NOT_PROVIDED  # minimum number of points used for the interpolation
@@ -809,8 +668,8 @@ class CoregisterDem:
             # obtain ellipsoid-based ground range sigma0 pixel reference area
             sigma0 = Path(temp_dir).joinpath("sigma0")
 
-            mli_pathname = str(self.r_dem_primary_mli)
-            mli_par_pathname = str(self.r_dem_primary_mli_par)
+            mli_pathname = str(coreg_paths.r_dem_primary_mli)
+            mli_par_pathname = str(coreg_paths.r_dem_primary_mli_par)
             off_par = const.NOT_PROVIDED  # ISP offset/interferogram parameter file
             cmli = str(sigma0)  # radiometrically calibrated output MLI
             antenna = const.NOT_PROVIDED  # 1-way antenna gain pattern file
@@ -819,7 +678,7 @@ class CoregisterDem:
             refarea_flag = 1  # reference pixel area correction
             sc_db = const.NOT_PROVIDED  # scale factor in dB
             k_db = const.NOT_PROVIDED  # calibration factor in dB
-            pix_area_pathname = str(self.ellip_pix_sigma0)
+            pix_area_pathname = str(dem_paths.ellip_pix_sigma0)
 
             pg.radcal_MLI(
                 mli_pathname,
@@ -839,8 +698,8 @@ class CoregisterDem:
             # in Section 10.6 of Gamma Geocoding and Image Registration Users Guide
             temp1 = Path(temp_dir).joinpath("temp1")
 
-            d1_pathname = str(self.r_dem_primary_mli)
-            d2_pathname = str(self.ellip_pix_sigma0)
+            d1_pathname = str(coreg_paths.r_dem_primary_mli)
+            d2_pathname = str(dem_paths.ellip_pix_sigma0)
             d_out_pathname = str(temp1)
             width = self.r_dem_primary_mli_width
             mode = 2  # multiplication
@@ -850,7 +709,7 @@ class CoregisterDem:
             )
 
             d1_pathname = str(temp1)
-            d2_pathname = str(self.dem_pix_gam)
+            d2_pathname = str(dem_paths.dem_pix_gam)
             d_out_pathname = str(self.dem_primary_gamma0)
             width = self.r_dem_primary_mli_width
             mode = 3  # division
@@ -887,7 +746,7 @@ class CoregisterDem:
             # make sea-mask based on DEM zero values
             temp = Path(temp_dir).joinpath("temp")
 
-            f_in_pathname = str(self.geo_dem)
+            f_in_pathname = str(dem_paths.geo_dem)
             value = 0.0001
             new_value = 0
             f_out_pathname = str(temp)
@@ -919,7 +778,7 @@ class CoregisterDem:
             scale = const.NOT_PROVIDED  # display scale factor
             exp = const.NOT_PROVIDED  # display exponent
             lr = const.NOT_PROVIDED  # left/right mirror image flag
-            rasf_pathname = str(self.seamask)
+            rasf_pathname = str(dem_paths.seamask)
 
             pg.rashgt(
                 hgt_pathname,
@@ -946,6 +805,9 @@ class CoregisterDem:
             An Optional external image is to be used for co-registration.
         """
 
+        dem_paths = self.dem_paths
+        coreg_paths = self.coreg_paths
+
         # set parameters
         if any(
             item is None
@@ -958,10 +820,10 @@ class CoregisterDem:
             self._set_attrs()
 
         # geocode map geometry DEM to radar geometry
-        lookup_table_pathname = str(self.dem_lt_fine)
-        data_in_pathname = str(self.geo_dem)
+        lookup_table_pathname = str(dem_paths.dem_lt_fine)
+        data_in_pathname = str(dem_paths.geo_dem)
         width_in = self.dem_width
-        data_out_pathname = str(self.rdc_dem)
+        data_out_pathname = str(dem_paths.rdc_dem)
         width_out = self.r_dem_primary_mli_width
         nlines_out = self.r_dem_primary_mli_length
         interp_mode = 1
@@ -991,8 +853,8 @@ class CoregisterDem:
         with tempfile.TemporaryDirectory() as temp_dir:
             rdc_dem_bmp = Path(temp_dir).joinpath("rdc_dem.bmp")
 
-            hgt_pathname = str(self.rdc_dem)
-            pwr_pathname = str(self.r_dem_primary_mli)
+            hgt_pathname = str(dem_paths.rdc_dem)
+            pwr_pathname = str(coreg_paths.r_dem_primary_mli)
             width = self.r_dem_primary_mli_width
             start_hgt = 1
             start_pwr = 1
@@ -1022,14 +884,14 @@ class CoregisterDem:
             )
 
             Image.open(rdc_dem_bmp).save(
-                self.dem_outdir.joinpath(self.rdc_dem.stem).with_suffix(".png")
+                dem_paths.rdc_dem.with_suffix(".png")
             )
 
         # Geocode simulated SAR intensity image to radar geometry
-        lookup_table_pathname = str(self.dem_lt_fine)
-        data_in_pathname = str(self.dem_geo_sim_sar)
+        lookup_table_pathname = str(dem_paths.dem_lt_fine)
+        data_in_pathname = str(dem_paths.dem_geo_sim_sar)
         width_in = self.dem_width
-        data_out_pathname = str(self.dem_rdc_sim_sar)
+        data_out_pathname = str(dem_paths.dem_rdc_sim_sar)
         width_out = self.r_dem_primary_mli_width
         nlines_out = self.r_dem_primary_mli_length
         interp_mode = 0  # resampling interpolation; 1/dist
@@ -1057,10 +919,10 @@ class CoregisterDem:
         )
 
         # Geocode local incidence angle image to radar geometry
-        lookup_table_pathname = str(self.dem_lt_fine)
-        data_in_pathname = str(self.dem_loc_inc)
+        lookup_table_pathname = str(dem_paths.dem_lt_fine)
+        data_in_pathname = str(dem_paths.dem_loc_inc)
         width_in = self.dem_width
-        data_out_pathname = str(self.dem_rdc_inc)
+        data_out_pathname = str(dem_paths.dem_rdc_inc)
         width_out = self.r_dem_primary_mli_width
         nlines_out = self.r_dem_primary_mli_length
         interp_mode = 0  # resampling interpolation; 1/dist
@@ -1093,10 +955,10 @@ class CoregisterDem:
             raise NotImplementedError(msg)
 
         # Convert lsmap to geotiff
-        ls_map_tif = str(append_suffix(self.dem_lsmap, ".tif"))
+        ls_map_tif = str(append_suffix(dem_paths.dem_lsmap, ".tif"))
         pg.data2geotiff(
-            str(self.geo_dem_par),
-            str(self.dem_lsmap),
+            str(dem_paths.geo_dem_par),
+            str(dem_paths.dem_lsmap),
             5,  # data type (BYTE)
             ls_map_tif,  # output oath
             0.0,  # No data
@@ -1114,7 +976,7 @@ class CoregisterDem:
         ls_map_img[ls_map_img != 1] = 0
 
         # Save this back out as a geotiff w/ identical projection as the lsmap
-        ls_map_mask_tif = append_suffix(self.dem_lsmap, "_mask.tif")
+        ls_map_mask_tif = append_suffix(dem_paths.dem_lsmap, "_mask.tif")
         ls_mask_file = gdal.GetDriverByName("GTiff").Create(
             ls_map_mask_tif.as_posix(),
             ls_map_img.shape[1], ls_map_img.shape[0], 1,
@@ -1132,7 +994,7 @@ class CoregisterDem:
         # Back-geocode Gamma0 backscatter product to map geometry using B-spline interpolation on sqrt of data
         data_in_pathname = str(self.dem_primary_gamma0)
         width_in = self.r_dem_primary_mli_width
-        lookup_table_pathname = str(self.dem_lt_fine)
+        lookup_table_pathname = str(dem_paths.dem_lt_fine)
         data_out_pathname = str(self.dem_primary_gamma0_geo)
         width_out = self.dem_width
         nlines_out = const.NOT_PROVIDED
@@ -1190,7 +1052,7 @@ class CoregisterDem:
         )
 
         # geotiff gamma0 file
-        dem_par_pathname = str(self.geo_dem_par)
+        dem_par_pathname = str(dem_paths.geo_dem_par)
         data_pathname = str(self.dem_primary_gamma0_geo)
         dtype = const.DTYPE_GEOTIFF_FLOAT
         geotiff_pathname = self.dem_primary_gamma0_geo_tif
@@ -1201,11 +1063,11 @@ class CoregisterDem:
         )
 
         # geocode sigma0 mli
-        shutil.copyfile(self.r_dem_primary_mli, self.dem_primary_sigma0)
+        shutil.copyfile(coreg_paths.r_dem_primary_mli, self.dem_primary_sigma0)
 
         data_in_pathname = str(self.dem_primary_sigma0)
         width_in = self.r_dem_primary_mli_width
-        lookup_table_pathname = str(self.dem_lt_fine)
+        lookup_table_pathname = str(dem_paths.dem_lt_fine)
         data_out_pathname = str(self.dem_primary_sigma0_geo)
         width_out = self.dem_width
         nlines_out = const.NOT_PROVIDED
@@ -1228,7 +1090,7 @@ class CoregisterDem:
         )
 
         # geotiff sigma0 file
-        dem_par_pathname = str(self.geo_dem_par)
+        dem_par_pathname = str(dem_paths.geo_dem_par)
         data_pathname = str(self.dem_primary_sigma0_geo)
         dtype = const.DTYPE_GEOTIFF_FLOAT
         geotiff_pathname = str(self.dem_primary_sigma0_geo_tif)
@@ -1239,10 +1101,10 @@ class CoregisterDem:
         )
 
         # geotiff DEM
-        dem_par_pathname = str(self.geo_dem_par)
-        data_pathname = str(self.geo_dem)
+        dem_par_pathname = str(dem_paths.geo_dem_par)
+        data_pathname = str(dem_paths.geo_dem)
         dtype = const.DTYPE_GEOTIFF_FLOAT
-        geotiff_pathname = str(self.geo_dem_geo)
+        geotiff_pathname = append_suffix(dem_paths.geo_dem, ".tif")
         nodata = 0.0
 
         pg.data2geotiff(
@@ -1251,7 +1113,7 @@ class CoregisterDem:
 
         # create kml
         image_pathname = str(self.dem_primary_gamma0_geo_bmp.with_suffix(".png"))
-        dem_par_pathname = str(self.geo_dem_par)
+        dem_par_pathname = str(dem_paths.geo_dem_par)
         kml_pathname = str(self.dem_primary_gamma0_geo_bmp.with_suffix(".kml"))
 
         pg.kml_map(
@@ -1260,11 +1122,11 @@ class CoregisterDem:
 
         # clean up now intermittent redundant files.
         for item in [
-            self.dem_offs,
-            self.dem_offsets,
-            self.dem_coffs,
-            self.dem_coffsets,
-            self.dem_lt_rough,
+            dem_paths.dem_offs,
+            dem_paths.dem_offsets,
+            dem_paths.dem_coffs,
+            dem_paths.dem_coffsets,
+            dem_paths.dem_lt_rough,
             self.dem_primary_gamma0_geo_bmp,
         ]:
             # TODO uncomment remove comment in production phase.
@@ -1275,13 +1137,16 @@ class CoregisterDem:
     def look_vector(self):
         """Create look vector files."""
 
+        dem_paths = self.dem_paths
+        coreg_paths = self.coreg_paths
+
         # create angles look vector image
-        slc_par_pathname = str(self.r_dem_primary_slc_par)
+        slc_par_pathname = str(coreg_paths.r_dem_primary_slc_par)
         off_par_pathname = const.NOT_PROVIDED
-        dem_par_pathname = str(self.geo_dem_par)
-        dem_pathname = str(self.geo_dem)
-        lv_theta_pathname = str(self.dem_lv_theta)
-        lv_phi_pathname = str(self.dem_lv_phi)
+        dem_par_pathname = str(dem_paths.geo_dem_par)
+        dem_pathname = str(dem_paths.geo_dem)
+        lv_theta_pathname = str(dem_paths.dem_lv_theta)
+        lv_phi_pathname = str(dem_paths.dem_lv_phi)
 
         pg.look_vector(
             slc_par_pathname,
@@ -1293,20 +1158,20 @@ class CoregisterDem:
         )
 
         # convert look vector files to geotiff file
-        dem_par_pathname = str(self.geo_dem_par)
-        data_pathname = str(self.dem_lv_theta)
+        dem_par_pathname = str(dem_paths.geo_dem_par)
+        data_pathname = str(dem_paths.dem_lv_theta)
         dtype = const.DTYPE_GEOTIFF_FLOAT
-        geotiff_pathname = str(self.dem_lv_theta_geo)
+        geotiff_pathname = append_suffix(dem_paths.dem_lv_theta, ".tif")
         nodata = 0.0
 
         pg.data2geotiff(
             dem_par_pathname, data_pathname, dtype, geotiff_pathname, nodata,
         )
 
-        dem_par_pathname = str(self.geo_dem_par)
-        data_pathname = str(self.dem_lv_phi)
+        dem_par_pathname = str(dem_paths.geo_dem_par)
+        data_pathname = str(dem_paths.dem_lv_phi)
         dtype = const.DTYPE_GEOTIFF_FLOAT
-        geotiff_pathname = str(self.dem_lv_phi_geo)
+        geotiff_pathname = append_suffix(dem_paths.dem_lv_phi, ".tif")
         nodata = 0.0
 
         pg.data2geotiff(
@@ -1316,8 +1181,7 @@ class CoregisterDem:
     def main(self):
         """Main method to execute SLC-DEM coregistration task in sequence."""
 
-        self.dem_outdir.mkdir(exist_ok=True)
-        with working_directory(self.dem_outdir):
+        with working_directory(self.dem_paths.dem_primary_name.parent):
             self.copy_slc()
             self.create_diff_par()
             self.gen_dem_rdc()

@@ -29,6 +29,7 @@ class DEMPaths:
     seamask: Path
     dem_lt_rough: Path
     dem_lt_fine: Path
+    # Note for future cleanup / next PR: the _sim_sar and _inc files are private / can be dropped
     dem_geo_sim_sar: Path
     dem_rdc_sim_sar: Path
     dem_loc_inc: Path
@@ -65,7 +66,7 @@ class DEMPaths:
         if isinstance(proc, Path):
             proc = load_stack_config(proc)
 
-        self.dem = (proc.output_path / proc.gamma_dem_dir / proc.dem_name).with_suffix(".dem")
+        self.dem = (proc.output_path / proc.gamma_dem_dir / proc.stack_id).with_suffix(".dem")
         self.dem_par = self.dem.with_suffix(".dem.par")
         self.dem_primary_name = "{}_{}_{}rlks".format(
             proc.ref_primary_scene, proc.polarisation, proc.range_looks
@@ -97,4 +98,3 @@ class DEMPaths:
         self.dem_coffsets = dmn.with_suffix(".coffsets")
         self.dem_lv_theta = dmn.parent / (dmn.name + "_geo.lv_theta")
         self.dem_lv_phi = dmn.parent / (dmn.name + "_geo.lv_phi")
-

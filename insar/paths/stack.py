@@ -174,6 +174,9 @@ class StackPaths:
 
         This takes a `ProcConfig` as this is always the first step in every part of
         the gamma_insar code, even before a stack exists we need/make a .config file.
+
+        :param stack_config:
+            The stack's configuration (or locator path), for which paths are to be for.
         """
 
         # Sanity check stack config for key variables, sometimes these could be blank

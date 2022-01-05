@@ -6,6 +6,55 @@ from insar.stack import load_stack_config
 
 from insar.paths.slc import SlcPaths
 
+class CoregisteredPrimaryPaths:
+    """
+    """
+
+    dem_primary_slc_name: Path
+    dem_primary_slc: Path
+    dem_primary_slc_par: Path
+    dem_primary_mli_name: Path
+    dem_primary_mli: Path
+    dem_primary_mli_par: Path
+    r_dem_primary_slc_name: Path
+    r_dem_primary_slc: Path
+    r_dem_primary_slc_par: Path
+    r_dem_primary_mli_name: Path
+    r_dem_primary_mli: Path
+    r_dem_primary_mli_par: Path
+
+    def __init__(self, proc: ProcConfig):
+        out_dir = proc.output_path
+
+        dem_primary_dir = out_dir / proc.slc_dir / proc.ref_primary_scene
+
+        suffix = proc.ref_primary_scene + "_" + proc.polarisation
+        self.dem_primary_slc_name = dem_primary_dir / suffix
+
+        self.dem_primary_slc = dem_primary_dir / (suffix + ".slc")
+        self.dem_primary_slc_par = dem_primary_dir / (suffix + ".slc.par")
+
+        suffix_lks = f"{proc.ref_primary_scene}_{proc.polarisation}_{proc.range_looks}rlks"
+        self.dem_primary_mli_name = dem_primary_dir / suffix_lks
+
+        self.dem_primary_mli = dem_primary_dir / (suffix_lks + ".mli")
+        self.dem_primary_mli_par = dem_primary_dir / (suffix_lks + ".mli.par")
+
+        suffix_slc = "r{}_{}".format(proc.ref_primary_scene, proc.polarisation)
+        self.r_dem_primary_slc_name = dem_primary_dir / suffix_slc
+
+        self.r_dem_primary_slc = dem_primary_dir / (suffix_slc + ".slc")
+        self.r_dem_primary_slc_par = dem_primary_dir / (suffix_slc + ".slc.par")
+
+        suffix_mli = "r{}_{}_{}rlks".format(
+            proc.ref_primary_scene, proc.polarisation, proc.range_looks
+        )
+        self.r_dem_primary_mli_name = dem_primary_dir / suffix_mli
+
+        self.r_dem_primary_mli = dem_primary_dir / (suffix_mli + ".mli")
+        self.r_dem_primary_mli_par = dem_primary_dir / (suffix_mli + ".mli.par")
+
+
 class CoregisteredSlcPaths:
     """
     This class produces pathnames for files relevant to coregistering SLC products.
@@ -88,19 +137,16 @@ class CoregisteredSlcPaths:
         primary_slc_rlks_prefix = f"{primary_slc_prefix}_{rlks}rlks"
 
         dem_dir = Path(stack_config.output_path) / stack_config.dem_dir
-        self.dem_filenames = CoregisterDem.dem_filenames(
-            dem_prefix=primary_slc_rlks_prefix,
-            outdir=dem_dir
-        )
 
-        self.primary_dem = CoregisterDem.dem_primary_names(
-            slc_prefix=primary_slc_rlks_prefix,
-            r_slc_prefix=f"r{primary_slc_prefix}",
-            outdir=self.primary.dir,
-        )
+        self.primary_dem = CoregisteredPrimaryPaths(stack_config)
+        #self.primary_dem = CoregisterDem.dem_primary_names(
+        #    slc_prefix=primary_slc_rlks_prefix,
+        #    r_slc_prefix=f"r{primary_slc_prefix}",
+        #    outdir=self.primary.dir,
+        #)
 
         # FIXME: self.primary_dem = CoregisteredDemPaths(...)?
-        self.r_dem_primary_mli = self.primary_dem["r_dem_primary_mli"]
+        self.r_dem_primary_mli = self.primary_dem.r_dem_primary_mli
         self.r_dem_primary_mli_par = self.r_dem_primary_mli.with_suffix(".mli.par")
         # FIXME: self.primary_dem.r_dem_slc_par?
         self.r_dem_primary_slc_par = self.primary.slc_par

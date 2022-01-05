@@ -14,6 +14,8 @@ from insar.coregister_secondary import coregister_secondary, apply_coregistratio
 from insar.project import ProcConfig
 from insar.paths.slc import SlcPaths
 from insar.paths.stack import StackPaths
+from insar.paths.dem import DEMPaths
+from insar.paths.coregistration import CoregisteredPrimaryPaths
 
 from insar.logs import STATUS_LOGGER
 
@@ -21,11 +23,6 @@ from insar.workflow.luigi.utils import read_primary_date, tdir, load_settings, r
 from insar.workflow.luigi.utils import PathParameter
 from insar.workflow.luigi.dem import CreateGammaDem
 from insar.workflow.luigi.baseline import CalcInitialBaseline
-
-# TBD: This doesn't have a .proc setting for some reason
-__DEM_GAMMA__ = "GAMMA_DEM"
-
-_LOG = structlog.get_logger("insar")
 
 
 def get_coreg_date_pairs(outdir: Path, proc_config: ProcConfig):
@@ -76,24 +73,8 @@ def get_coreg_kwargs(proc_file: Path, scene_date=None, scene_pol=None):
     primary_pol = str(proc_config.polarisation).upper()
 
     primary_paths = SlcPaths(proc_config, primary_scene, primary_pol, rlks)
-
-    primary_slc_prefix = (f"{primary_scene}_{primary_pol}")
-    primary_slc_rlks_prefix = f"{primary_slc_prefix}_{rlks}rlks"
-    r_dem_primary_slc_prefix = f"r{primary_slc_prefix}"
-
-    # FIXME: DemPaths...
-    dem_dir = outdir / proc_config.dem_dir
-    dem_filenames = CoregisterDem.dem_filenames(
-        dem_prefix=primary_slc_rlks_prefix,
-        outdir=dem_dir
-    )
-
-    slc_primary_dir = outdir / proc_config.slc_dir / primary_scene
-    dem_primary_names = CoregisterDem.dem_primary_names(
-        slc_prefix=primary_slc_rlks_prefix,
-        r_slc_prefix=r_dem_primary_slc_prefix,
-        outdir=slc_primary_dir,
-    )
+    dem_paths = DEMPaths(proc_config)
+    coreg_paths = CoregisteredPrimaryPaths(proc_config)
 
     kwargs = {
         "proc_file": proc_file,
@@ -101,12 +82,12 @@ def get_coreg_kwargs(proc_file: Path, scene_date=None, scene_pol=None):
         "slc_primary": primary_paths.slc,
         "range_looks": rlks,
         "azimuth_looks": alks,
-        "ellip_pix_sigma0": dem_filenames["ellip_pix_sigma0"],
-        "dem_pix_gamma0": dem_filenames["dem_pix_gam"],
-        "r_dem_primary_mli": dem_primary_names["r_dem_primary_mli"],
-        "rdc_dem": dem_filenames["rdc_dem"],
-        "geo_dem_par": dem_filenames["geo_dem_par"],
-        "dem_lt_fine": dem_filenames["dem_lt_fine"],
+        "ellip_pix_sigma0": dem_paths.ellip_pix_sigma0,
+        "dem_pix_gamma0": dem_paths.dem_pix_gam,
+        "r_dem_primary_mli": coreg_paths.r_dem_primary_mli,
+        "rdc_dem": dem_paths.rdc_dem,
+        "geo_dem_par": dem_paths.geo_dem_par,
+        "dem_lt_fine": dem_paths.dem_lt_fine,
         "outdir": outdir,
         "workdir": workdir,
     }
@@ -165,10 +146,7 @@ class CoregisterDemPrimary(luigi.Task):
             rlks, alks = read_rlks_alks(tdir(self.workdir) / ml_file)
 
             slc_paths = SlcPaths(proc_config, primary_scene, primary_pol, rlks)
-
-            # TODO: DemPaths..?
-            dem = outdir / __DEM_GAMMA__ / f"{self.stack_id}.dem"
-            dem_par = dem.with_suffix(dem.suffix + ".par")
+            dem_paths = DEMPaths(proc_config)
 
             dem_outdir = outdir / proc_config.dem_dir
             mk_clean_dir(dem_outdir)
@@ -185,11 +163,10 @@ class CoregisterDemPrimary(luigi.Task):
             coreg = CoregisterDem(
                 rlks=rlks,
                 alks=alks,
-                dem=dem,
+                dem=dem_paths.dem,
                 slc=slc_paths.slc,
-                dem_par=dem_par,
+                dem_par=dem_paths.dem_par,
                 slc_par=slc_paths.slc_par,
-                dem_outdir=dem_outdir,
                 multi_look=self.multi_look,
                 land_center=land_center
             )

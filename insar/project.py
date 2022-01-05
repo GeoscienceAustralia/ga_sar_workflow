@@ -166,7 +166,7 @@ class ProcConfig:
         # ^- there's quite a few .proc settings we can remove! A good linter will pick up on
         # these longer term when CI comes up..?
         self.proj_dir = pathlib.Path(self.nci_path) / self.project / self.sensor / "GAMMA"
-        self.gamma_dem_dir = "gamma_dem"
+        self.gamma_dem_dir = "GAMMA_DEM"
         self.results_dir = "results"
 
         self.dem_noff1, self.dem_noff2 = self.dem_offset.split(" ")

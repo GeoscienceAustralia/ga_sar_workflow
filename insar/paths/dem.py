@@ -19,16 +19,55 @@ class DEMPaths:
     # for reasons similar to the coreg paths - but also:
     #    During a future OOP->functional refactor I'm confident some of these
     #    will turn out to be private/internal paths that don't need to be exposed
+
     dem: Path
+    """
+    The path to the extracted region of interest from the master DEM that covers the
+    stack extent, converted into GAMMA format for use by the processing workflow.
+    """
+
     dem_par: Path
+    """The accompanying GAMMA .par file for `self.dem`"""
+
     dem_primary_name: Path
+    """The common path prefix shared by most DEM pathnames"""
+
     dem_diff: Path
+    """
+    The GAMMA .par file for the `DIFF` model.
+
+    In non-GAMMA terms, this holds the offset model used by coregistration.
+    """
+
     rdc_dem: Path
+    """The file path for the DEM data in RDC (radar coordinates)."""
+
     geo_dem: Path
+    """The file path for the DEM data in geographic coords."""
+
     geo_dem_par: Path
+    """The accompanying GAMMA .par file for `self.geo_dem`"""
+
     seamask: Path
+    """The path to a GAMMA file that holds the sea mask"""
+
     dem_lt_rough: Path
+    """
+    The path to a rough estimate of the geocoding LUT produced midway through the
+    coregistration workflow.
+
+    This "is" one crude output of coregistration / can be used to coregister data.
+    """
+
     dem_lt_fine: Path
+    """
+    The path to the refined geocoding LUT produced at the end of the coregistration
+    workflow.
+
+    This is considered the main output of the coregistration, and is used to resample
+    all our SLC data with the stack's primary scene / "to coregister the products".
+    """
+
     # Note for future cleanup / next PR: the _sim_sar and _inc files are private / can be dropped
     dem_geo_sim_sar: Path
     dem_rdc_sim_sar: Path

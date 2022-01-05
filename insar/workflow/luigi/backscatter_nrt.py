@@ -16,9 +16,6 @@ from insar.workflow.luigi.utils import PathParameter, tdir, load_settings, get_s
 from insar.workflow.luigi.dem import CreateGammaDem
 from insar.workflow.luigi.multilook import CreateMultilook
 
-# TBD: This doesn't have a .proc setting for some reason
-__DEM_GAMMA__ = "GAMMA_DEM"
-
 class ProcessNRTBackscatter(luigi.Task):
     """
     Produces a quick radar backscatter product for an SLC.
@@ -61,7 +58,7 @@ class ProcessNRTBackscatter(luigi.Task):
             stack_id = metadata["stack_id"]
 
             failed = False
-            dem = outdir / __DEM_GAMMA__ / f"{stack_id}.dem"
+            dem = outdir / proc_config.gamma_dem_dir / f"{stack_id}.dem"
             log.info("Beginning SLC backscatter (NRT)", dem=dem)
 
             generate_nrt_backscatter(

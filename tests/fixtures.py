@@ -1,4 +1,3 @@
-from gamma_insar.insar.subprocess_utils import working_directory
 import pytest
 import tempfile
 import shutil

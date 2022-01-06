@@ -1,7 +1,4 @@
 #!/usr/bin/env python
-
-from gamma_insar.insar.project import ProcConfig
-import os
 import tempfile
 from typing import Optional, Tuple, Union, Dict
 import shutil

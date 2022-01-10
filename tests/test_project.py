@@ -21,19 +21,9 @@ def test_read_proc_file():
     assert file_obj.closed is False
 
     pv = project.ProcConfig.from_file(file_obj)
-    assert pv.nci_path.as_posix() == "/some/test/data"
     assert pv.slc_dir.as_posix() == "SLC"
     assert pv.ifg_list == "ifgs.list"
     assert pathlib.Path(pv.primary_dem_image).name == "GAMMA_DEM_SRTM_1as_mosaic.img"
-
-    # check secondary variables derived from the proc file
-    assert pv.proj_dir.as_posix() == "{}/{}/{}/GAMMA".format(
-        pv.nci_path, pv.project, pv.sensor
-    )
-    assert pv.dem_noff1 == "0"
-    assert pv.dem_noff2 == "0"
-    assert pv.ifg_rpos == pv.dem_rpos
-    assert pv.ifg_azpos == pv.dem_azpos
 
 
 def test_read_incomplete_proc_file_fails():
@@ -71,10 +61,9 @@ def mproc():
     mock_proc.polarisation = "polarisation"
     mock_proc.range_looks = "range-looks"
     mock_proc.gamma_dem_dir = "gamma-dem-dir"
-    mock_proc.dem_name = "dem-name"
     mock_proc.dem_dir = "dem-dir"
-    mock_proc.results_dir = "results-dir"
     mock_proc.track = "track"
+    mock_proc.stack_id = "test_stack"
 
     return mock_proc
 
@@ -148,7 +137,7 @@ def test_default_dem_file_names(mproc):
     outdir = pathlib.Path("tmp/") / mproc.track
 
     assert cfg.dem.as_posix() == "tmp/{}/{}/{}.dem".format(
-        mproc.track, mproc.gamma_dem_dir, mproc.dem_name
+        mproc.track, mproc.gamma_dem_dir, mproc.stack_id
     )
     assert cfg.dem_par.as_posix() == "{}.par".format(cfg.dem)
     assert cfg.dem_primary_name.as_posix() == "tmp/{}/{}/{}_{}_{}rlks".format(
@@ -199,9 +188,6 @@ def test_default_dem_file_names(mproc):
     assert cfg.ext_image_flt == tail(dem_primary_name, "_ext_img_sar.flt")
     assert cfg.ext_image_init_sar == tail(dem_primary_name, "_ext_img_init.sar")
     assert cfg.ext_image_sar == tail(dem_primary_name, "_ext_img.sar")
-
-    assert cfg.dem_check_file == outdir / "results-dir/track_DEM_coreg_results"
-    assert cfg.lat_lon_pix == outdir / "dem-dir/track_range-looksrlks_sar_latlon.txt"
 
 
 def test_default_ifg_file_names(mproc):

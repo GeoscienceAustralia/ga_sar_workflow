@@ -950,17 +950,16 @@ class CoregisterDem:
             raise NotImplementedError(msg)
 
         # Convert lsmap to geotiff
-        ls_map_tif = str(append_suffix(dem_paths.dem_lsmap, ".tif"))
         pg.data2geotiff(
-            str(dem_paths.geo_dem_par),
-            str(dem_paths.dem_lsmap),
+            dem_paths.geo_dem_par,
+            dem_paths.dem_lsmap,
             5,  # data type (BYTE)
-            ls_map_tif,  # output oath
+            dem_paths.dem_lsmap_tif,  # output oath
             0.0,  # No data
         )
 
         # Create CARD4L mask (1 = good pixel, 0 = bad)
-        ls_map_file = gdal.Open(ls_map_tif)
+        ls_map_file = gdal.Open(str(dem_paths.dem_lsmap_tif))
         ls_map_img = ls_map_file.ReadAsArray()
 
         # Sanity check
@@ -971,9 +970,8 @@ class CoregisterDem:
         ls_map_img[ls_map_img != 1] = 0
 
         # Save this back out as a geotiff w/ identical projection as the lsmap
-        ls_map_mask_tif = append_suffix(dem_paths.dem_lsmap, "_mask.tif")
         ls_mask_file = gdal.GetDriverByName("GTiff").Create(
-            ls_map_mask_tif.as_posix(),
+            dem_paths.dem_lsmap_mask_tif.as_posix(),
             ls_map_img.shape[1], ls_map_img.shape[0], 1,
             gdal.GDT_Byte,
             options=["COMPRESS=PACKBITS"]

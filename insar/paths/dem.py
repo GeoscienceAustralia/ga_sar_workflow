@@ -73,7 +73,25 @@ class DEMPaths:
     dem_rdc_sim_sar: Path
     dem_loc_inc: Path
     dem_rdc_inc: Path
+
     dem_lsmap: Path
+    """
+    The layover/shadow mask of the primary scene according to the DEM.
+
+    This is basically a quality mask showing what pixels in the scene are impacted by
+    artifacts from that point in the image not being visible for the whole duration of
+    the scan (layover and shadowing).
+    """
+
+    dem_lsmap_tif: Path
+    """The path to the .tif conversion of `self.dem_lsmap`"""
+
+    dem_lsmap_mask_tif: Path
+    """
+    A CARD4L compliant version of `self.dem_lsmap` in .tif format which can be used as
+    a simpler bit mask (0 = bad quality pixels or no data, 1 = good quality data).
+    """
+
     ellip_pix_sigma0: Path
     dem_pix_gam: Path
     dem_pix_gam_bmp: Path
@@ -126,6 +144,8 @@ class DEMPaths:
         self.dem_loc_inc = dmn.parent / (dmn.name + "_geo.linc")
         self.dem_rdc_inc = dmn.parent / (dmn.name + "_rdc.linc")
         self.dem_lsmap = dmn.parent / (dmn.name + "_geo.lsmap")
+        self.dem_lsmap_tif = dmn.parent / (dmn.name + "_geo_lsmap.tif")
+        self.dem_lsmap_mask_tif = dmn.parent / (dmn.name + "_geo_lsmap_mask.tif")
         self.ellip_pix_sigma0 = dmn.parent / (dmn.name + "_ellip_pix_sigma0")
         self.dem_pix_gam = dmn.parent / (dmn.name + "_rdc_pix_gamma0")
         self.dem_pix_gam_bmp = self.dem_pix_gam.with_suffix(".bmp")

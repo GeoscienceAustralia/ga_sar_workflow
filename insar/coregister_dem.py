@@ -246,8 +246,6 @@ class CoregisterDem:
     def copy_slc(self) -> None:
         """
         Copy SLC with options for data format conversion.
-        :param raster_out:
-            An Optional flag to output raster files.
         """
 
         coreg_paths = self.coreg_paths

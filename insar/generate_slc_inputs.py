@@ -104,7 +104,7 @@ def _check_slc_input_data(
     :param exclude_incomplete:
         A flag which if true will exclude returning any scenes which are missing bursts.
     :param exclude_imprecise_orbit:
-        A flag which if true will exclude returning any scehes which don't have a precise orbit (POEORB) file.
+        A flag which if true will exclude returning any scenes which don't have a precise orbit (POEORB) file.
 
     :returns:
         A dict with information of slc scenes to form full SLC.
@@ -268,7 +268,7 @@ def query_slc_inputs(
     :param exclude_incomplete:
         A flag which if true will exclude returning any scenes which are missing bursts.
     :param exclude_imprecise_orbit:
-        A flag which if true will exclude returning any scehes which don't have a precise orbit (POEORB) file.
+        A flag which if true will exclude returning any scenes which don't have a precise orbit (POEORB) file.
 
     :return:
         Returns slc input field values for all unique date queried

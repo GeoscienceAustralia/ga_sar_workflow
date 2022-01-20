@@ -54,7 +54,7 @@ def pc_mock():
     pc.multi_look = 2  # always 2 for Sentinel 1
     pc.ifg_coherence_threshold = 2.5  # fake value
 
-    mock_path = functools.partial(mock.MagicMock, spec=pathlib.Path)
+    mock_path = functools.partial(mock.NonCallableMagicMock, spec=pathlib.Path)
     pc.proj_dir = mock_path()
 
     return pc
@@ -63,9 +63,9 @@ def pc_mock():
 @pytest.fixture
 def ic_mock():
     """Returns basic mock to simulate an InterferogramPaths object."""
-    ic = mock.MagicMock(spec=InterferogramPaths)
+    ic = mock.NonCallableMagicMock(spec=InterferogramPaths)
 
-    mock_path = functools.partial(mock.MagicMock, spec=pathlib.Path)
+    mock_path = functools.partial(mock.NonCallableMagicMock, spec=pathlib.Path)
 
     # Explicitly set a bunch of path objecst (as the mocked Path objects don't
     # implement / or + correctly).   Note: the unit tests are all mocked, the
@@ -108,7 +108,7 @@ def ic_mock():
 @pytest.fixture
 def tc_mock():
     """Returns basic mock to simulate a TempFileConfig object."""
-    tc = mock.MagicMock(spec=TempFileConfig)
+    tc = mock.NonCallableMagicMock(spec=TempFileConfig)
     return tc
 
 
@@ -281,7 +281,7 @@ def test_error_handling_decorator(monkeypatch, logging_ctx):
 @pytest.fixture
 def pg_flat_mock():
     """Create basic mock of the py_gamma module for the FLAT processing step."""
-    pg_mock = mock.MagicMock()
+    pg_mock = mock.NonCallableMagicMock()
     pg_mock.base_orbit.return_value = PG_RETURN_VALUE
     pg_mock.phase_sim_orb.return_value = PG_RETURN_VALUE
     pg_mock.SLC_diff_intf.return_value = PG_RETURN_VALUE
@@ -306,7 +306,7 @@ def pg_flat_mock():
 @pytest.fixture
 def dc_mock(pc_mock):
     """Default mock for DEMPaths config."""
-    dcm = mock.MagicMock(spec=DEMPaths(pc_mock))
+    dcm = mock.NonCallableMagicMock(spec=DEMPaths(pc_mock))
     return dcm
 
 
@@ -424,7 +424,7 @@ def _get_mock_file_and_path(fake_content):
     m_file.readlines.return_value = fake_content
 
     # TRICKY: mock chain of open() calls, context manager etc to return custom file mock
-    m_path = mock.MagicMock(spec=pathlib.Path)
+    m_path = mock.NonCallableMagicMock(spec=pathlib.Path)
     m_path.open.return_value.__enter__.return_value = m_file
     return m_file, m_path
 

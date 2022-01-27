@@ -46,7 +46,7 @@ def get_slc_safe_files(raw_data_dir: Path, scene_date: str) -> List[Path]:
         if item.name.endswith(".SAFE")
     ]
 
-def swath_tab_names(paths: SlcPaths, swath: int, pre_fix: Optional[str] = None) -> namedtuple:
+def swath_tab_names(paths: SlcPaths, swath: int, pre_fix: Optional[str] = None) -> Tuple[str, str, str]:
     """Formats slc swath tab file names using swath and pre_fix."""
 
     # Note: swath - 1 is to convert base-1 indices into base 0 for array indexing

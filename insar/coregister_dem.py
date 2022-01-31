@@ -227,12 +227,12 @@ def offset_calc(
     succeeded_land_center = None
 
     for attempt_offset in grid_attempts:
-        try:
-            # Note: We rely on GAMMA to error-out if these are out-of-bounds
-            # - just like it errors out if the center doesn't find a good enough correlation.
-            attempt_rpos = int(rpos + attempt_offset[0])
-            attempt_azpos = int(azpos + attempt_offset[1])
+        # Note: We rely on GAMMA to error-out if these are out-of-bounds
+        # - just like it errors out if the center doesn't find a good enough correlation.
+        attempt_rpos = int(rpos + attempt_offset[0])
+        attempt_azpos = int(azpos + attempt_offset[1])
 
+        try:
             pg.init_offsetm(
                 mli_1_pathname,
                 mli_2_pathname,

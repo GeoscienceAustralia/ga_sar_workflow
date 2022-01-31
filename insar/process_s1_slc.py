@@ -2,8 +2,7 @@
 
 import os
 import re
-from collections import namedtuple
-from typing import Optional, Union, Dict, List
+from typing import Optional, Union, Dict, List, Tuple
 import tempfile
 from pathlib import Path
 import shutil
@@ -422,7 +421,7 @@ def concatenate(
         # end-else
     # end-with
 
-def phase_shift(paths: SlcPaths, swath: Optional[int] = 1,) -> None:
+def phase_shift(paths: SlcPaths, swath: int = 1) -> None:
     """Perform phase shift correction.
 
     Phase shift-correction is needed for Sentinel-1 IW1 swath data collected

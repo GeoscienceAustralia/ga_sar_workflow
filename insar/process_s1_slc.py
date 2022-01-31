@@ -2,8 +2,7 @@
 
 import os
 import re
-from collections import namedtuple
-from typing import Optional, Union, Dict, List
+from typing import Optional, Union, Dict, List, Tuple
 import tempfile
 from pathlib import Path
 import shutil
@@ -46,7 +45,7 @@ def get_slc_safe_files(raw_data_dir: Path, scene_date: str) -> List[Path]:
         if item.name.endswith(".SAFE")
     ]
 
-def swath_tab_names(paths: SlcPaths, swath: int, pre_fix: Optional[str] = None) -> namedtuple:
+def swath_tab_names(paths: SlcPaths, swath: int, pre_fix: Optional[str] = None) -> Tuple[str, str, str]:
     """Formats slc swath tab file names using swath and pre_fix."""
 
     # Note: swath - 1 is to convert base-1 indices into base 0 for array indexing
@@ -422,7 +421,7 @@ def concatenate(
         # end-else
     # end-with
 
-def phase_shift(paths: SlcPaths, swath: Optional[int] = 1,) -> None:
+def phase_shift(paths: SlcPaths, swath: int = 1) -> None:
     """Perform phase shift correction.
 
     Phase shift-correction is needed for Sentinel-1 IW1 swath data collected

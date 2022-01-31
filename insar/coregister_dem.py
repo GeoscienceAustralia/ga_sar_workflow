@@ -164,12 +164,12 @@ def offset_calc(
     dem_width: int,
     r_dem_primary_mli_width: int,
     r_dem_primary_mli_length: int,
-    dem_patch_window: Optional[int] = 1024,
+    dem_patch_window: int = 1024,
     dem_rpos: Optional[int] = None,
     dem_azpos: Optional[int] = None,
-    dem_snr: Optional[float] = 0.15,
-    npoly: Optional[int] = 1,
-    use_external_image: Optional[bool] = False,
+    dem_snr: float = 0.15,
+    npoly: int = 1,
+    use_external_image: bool = False,
 ) -> None:
     """Offset computation. (Need more information from InSAR team).
     :param npoly:
@@ -227,12 +227,12 @@ def offset_calc(
     succeeded_land_center = None
 
     for attempt_offset in grid_attempts:
-        try:
-            # Note: We rely on GAMMA to error-out if these are out-of-bounds
-            # - just like it errors out if the center doesn't find a good enough correlation.
-            attempt_rpos = int(rpos + attempt_offset[0])
-            attempt_azpos = int(azpos + attempt_offset[1])
+        # Note: We rely on GAMMA to error-out if these are out-of-bounds
+        # - just like it errors out if the center doesn't find a good enough correlation.
+        attempt_rpos = int(rpos + attempt_offset[0])
+        attempt_azpos = int(azpos + attempt_offset[1])
 
+        try:
             pg.init_offsetm(
                 mli_1_pathname,
                 mli_2_pathname,
@@ -520,8 +520,8 @@ def geocode(
     dem_height: int,
     r_dem_primary_mli_width: int,
     r_dem_primary_mli_length: int,
-    dem_rad_max: Optional[int] = 4,
-    use_external_image: Optional[bool] = False,
+    dem_rad_max: int = 4,
+    use_external_image: bool = False,
 ):
     """
     Method to geocode image files to radar geometry.
@@ -892,14 +892,14 @@ def coregister_primary(
     rlks: int,
     alks: int,
     multi_look: int,
-    dem_patch_window: Optional[int] = 1024,
+    dem_patch_window: int = 1024,
     dem_rpos: Optional[int] = None,
     dem_azpos: Optional[int] = None,
-    dem_offset: Optional[Tuple[int, int]] = (0, 0),
-    dem_offset_measure: Optional[Tuple[int, int]] = (32, 32),
-    dem_window: Optional[Tuple[int, int]] = (256, 256),
-    dem_snr: Optional[float] = 0.15,
-    dem_rad_max: Optional[int] = 4,
+    dem_offset: Tuple[int, int] = (0, 0),
+    dem_offset_measure: Tuple[int, int] = (32, 32),
+    dem_window: Tuple[int, int] = (256, 256),
+    dem_snr: float = 0.15,
+    dem_rad_max: int = 4,
     dem_ovr: int = 1,
     land_center: Optional[Tuple[float, float]] = None,
     ext_image_flt: Optional[Union[Path, str]] = None,

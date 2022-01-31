@@ -150,10 +150,10 @@ def coarse_registration(
     paths: CoregisteredSlcPaths,
     rlks: int,
     alks: int,
-    max_iteration: Optional[int] = 5,
-    max_azimuth_threshold: Optional[float] = 0.01,
-    range_step_min: Optional[int] = 64,
-    azimuth_step_min: Optional[int] = 32,
+    max_iteration: int = 5,
+    max_azimuth_threshold: float = 0.01,
+    range_step_min: int = 64,
+    azimuth_step_min: int = 32,
 ):
     """
     Performs a coarse co-registration.
@@ -409,9 +409,9 @@ def fine_coregistration(
     rlks: int,
     alks: int,
     list_idx: Union[str, int],
-    max_iteration: Optional[int] = 5,
-    max_azimuth_threshold: Optional[float] = 0.01,
-    azimuth_px_offset_target: Optional[float] = 0.0001,
+    max_iteration: int = 5,
+    max_azimuth_threshold: float = 0.01,
+    azimuth_px_offset_target: float = 0.0001,
 ):
     """Performs a fine co-registration"""
 

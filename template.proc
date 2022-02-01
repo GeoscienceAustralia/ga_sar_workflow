@@ -139,29 +139,68 @@ ERS_SENSOR=
 
 -----MULTI-LOOK VALUES----------------------------------------------------------------------------------
 
-    # For full resolution (with square pixels), set to 1
+#
+# The multi-look (downsampling) factor to apply to the DEM products during processing.
+# This setting is applied to both range and azimuth.
+#
+# For full resolution (with square pixels), set to 1
+#
 MULTI_LOOK=2
-    # Leave as 'auto' if not pre-selecting, it will then be auto calculated and updated
+
+#
+# The multi-look (downsampling) factor to apply to the SLC products during processing.
+#
+# Leave as 'auto' if not pre-selecting, it will then be auto calculated and updated
+#
 RANGE_LOOKS=8
 AZIMUTH_LOOKS=2
 
 
 -----INTERFEROGRAM PROCESSING METHOD--------------------------------------------------------------------
 
-    # Options: chain (use daisy-chain), sbas (use reference master) or single (use single master)
+#
+# The baseline method to use when processing interferograms.
+#
+# Options:
+#  - sbas (use reference master)
+#
 PROCESS_METHOD=sbas
-    # Leave as 'auto' if not pre-selecting a scene, it will then be calculated and updated
+
+#
+# The primary reference scene to use in stack coregistration and temporal baseline calculations.
+#
+# This is the scene that will be coregistered with the DEM, and then all other secondary scenes
+# will then coregister to this primary scene.
+#
+# Leave as 'auto' if not pre-selecting a scene, the median will then be chosen.
+#
 REF_PRIMARY_SCENE=auto
-    # thresholds for minimum and maximum number of SBAS connections
+
+#
+# The minimum/maximum number of baseline connections to aim for when possible.
+# (a.k.a. how many interferograms should attempt to use each scene)
+#
+# It's recommended to use up to 7 for S1, and 10 for other sensors (e.g. RSAT2)
+#
 MIN_CONNECT=4
-    # default is 7 for S1, 10 for other sensors (e.g. RSAT2)
 MAX_CONNECT=7
-# How many of the latest dates in a stack to include in the SBAS network of appended stacks
-# (eg: how many existing dates to link with the new dates being appended)
+
+#
+# How many of the latest dates in a stack to include in the baseline of appended stacks
+# (eg: how many existing dates to link with, when new dates are being appended)
+#
 NUM_LINKED_APPEND_DATES=5
 
 -----PROCESSING STEPS-----------------------------------------------------------------------------------
 
+#
+# The stack processing workflow to be run (a.k.a. what products to produce)
+#
+# Supported options:
+# - Backscatter (Produce all products up to (and including) SLC backscatter)
+# - Interferogram (Product all products up to (and including) interferograms)
+# - BackscatterNRT (Produce SLC and their backscatter, without coregistration)
+#
 WORKFLOW=INTERFEROGRAM
 
 #
@@ -170,6 +209,13 @@ WORKFLOW=INTERFEROGRAM
 #
 CLEANUP=yes
 
+#
+# The scene whose extent should be used as the reference for geospatial extent, in the case the satellite has inconsistent
+# geospatial data coverage over it's scenes (scenes with smaller coverage will be expanded with no-data around the edges
+# and larger scenes will have extra data outside the extent cropped out).
+#
+# If this field is set to 'auto' (the default if none is specified) then the primary reference scene will be used.
+#
 S1_RESIZE_REF_SLC=auto
 
 

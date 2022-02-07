@@ -1,4 +1,4 @@
-== Introduction ==
+## Introduction ##
 
 This document provides an overview of what a "stack" is in the `gamma_insar` project.
 
@@ -10,7 +10,7 @@ as well as consistent interferogram pairing properties across the temporal exten
 
 A major property of scenes processed in `gamma_insar` stacks is the fact they're coregistered, meaning every pixel in every scene is as closely aligned to the same geocoded coordinate as possible (and thus all scenes should be directly comparable at the pixel level).  This is critically important as interferometry is sensitive to differences much smaller than the area of a pixel (which is typically meters), and poorly aligned pixel data will result in poor interferometric coherence.
 
-== Stack Properties ==
+## Stack Properties ##
 
 The stack has a set of high-level properties which define how the it was produced, and ultimately could be used to re-produce the same stack.
 
@@ -30,7 +30,7 @@ All timestamps are in UTC.
 | Primary polarisation | The polarisation which is considered authoritative within the stack (other polarised products may defer to primary pol data in some circumstances like coregistration).  Interferograms are only produced for the primary polarisation. |
 | Processing settings | A processing configuration file with a set of properties which define 'how' the gamma_insar project processes the stack's scenes. |
 
-== Stack Scenes ==
+## Stack Scenes ##
 
 Scenes are defined as a continuous (eg: no holes within the geometry, and no separated geometry) geospatial region which has full sensor data coverage that are acquired on the same date.  All scenes in a stack share the same geospatial region (thus it's considered a stack property), and all scenes are assigned a specific date... however if a sequence of acquisitions into a scene span two dates (eg: around midnight UTC) then the date the data acquisition 'ends' is considered the scene date of those acquisitions.
 
@@ -41,7 +41,7 @@ Scenes have provenance for all the source data that makes up the pixels in it's 
 A stack is made up of many of these scenes stacked temporally, thus for the whole temporal region of the stack in which scenes exist - there exists
 sensor data for that scene's whole region, for every polarisation, traceable back to it's provenance.
 
-== Stack Structure ==
+## Stack Structure ##
 
 A stack is ultimately a data product, which means it is physically stored on a medium somewhere.  The structure and contents of the stack's files are defined below.
 
@@ -59,7 +59,7 @@ The `lists` dir contains all of the lists which describe 'how' the scenes are li
 Additionally the top level directory itself houses a few files, the most important of which are `metadata.json` which holds the metadata of the whole stack (such as the `Stack Properties` defined in the previous section) and `config.proc` which is the `Processing settings` stack property used for producing all the products in the stack.
 
 
-== Stack `lists` file details ==
+## Stack `lists` file details ##
 
 The `lists` dir contains many files which describe how the scenes in the stack are used together to produce the final products, each file is described below.
 
@@ -74,11 +74,11 @@ The interferogram date-pairs are also stored in this dir as the `ifgs.list` (wit
 Lastly, for every append made to a stack there exists an `appendN.manifest` file which describes 'what' the append added to the the stack which isn't explicitly defined in one of the `scenesN.list` or `ifgsN.list` for the append - which currently is simply what range of coregistration tree levels were added as a result of this append.
 
 
-== Key stack product files ==
+## Key stack product files ##
 
 This section describes the products of the stack that would be considered the main outputs of interest - as well as where they reside in the stack file structure.
 
-=== SLC mosaics ===
+### SLC mosaics ###
 
 One of the first products the workflow produces is a mosaic of all the data that makes up the scene for that date, for some satellites with small enough stack extents this may not be much different to the input SLC, but for others (like Sentinel-1) this is a mosaic of multiple data acquisitions in spatially neighbouring regions stitched together to cover the stack's geospatial extents.
 
@@ -88,7 +88,7 @@ The SLC mosaic product paths for the date `<scene_date>` and polarisation `<pol>
  * `<scene_date>_<pol>.slc` - The mosaiced SLC data itself.
  * `<scene_date>_<pol>.slc.par` - The GAMMA .par file for the mosaiced SLC.
 
-=== Coregistered SLC ===
+### Coregistered SLC ###
 
 The SLC mosaics above are then coregistered with the primary reference scene of the stack (s.t. each pixel in all of the scenes are as closely alinged as possible), these coregistered SLC mosaics are then also multi-looked (downsampled) into smaller products.
 
@@ -102,7 +102,7 @@ The coregistered SLC mosaic product paths for the date `<scene_date>`, the range
 
 The `r` prefix is intended to represent the fact they've been re-sampled (with the coregistration LUTs that align the pixels).
 
-=== Normalised radar backscatter (NRB) ===
+### Normalised radar backscatter (NRB) ###
 
 From the coregistered and downsampled SLC data, we produce NRB (normalised radar backscatter) data as one of the final output products for each scene in the stack.
 
@@ -112,7 +112,7 @@ The coregistered SLC mosaic product paths for the date `<scene_date>`, the range
  * `<scene_date>_<pol>_<N>rlks_geo_sigma0.tif` - The sigma0 NRB product for the scene.
  * `<scene_date>_<pol>_<N>rlks_geo_gamma0.tif` - The gamma0 NRB product for the scene.
 
-=== Interferograms ===
+### Interferograms ###
 
 Lastly the main output product of `gamma_insar` is the interferometry itself, which is produced for the baseline determined by the stack - most scenes will take part in multiple baseline (this can be controlled by the `MIN_CONNECT` and `MAX_CONNECT` .proc settings).
 Note: Interferometry is ONLY produced for the primary stack polarisation.
@@ -126,7 +126,7 @@ The interferogram product paths for the baseline `<primary_date>-<secondary_date
  * `<primary_date>-<secondary_date>_<pol>_<N>rlks_filt_geo_coh.tif` - The interferometric coherence of the filtered interferogram, geocoded.
  * `<primary_date>-<secondary_date>_<pol>_<N>rlks_geo_unw.tif` - The unwrapped interferogram product, geocoded.
 
-== Developer Notes ==
+## Developer Notes ##
 
 For `gamma_insar` developers, the paths specified in this document are defined in the `insar.paths` modules - and must match the specifications in this document.  If either changes, the other should be updated to reflect the changes where appropriate.
 

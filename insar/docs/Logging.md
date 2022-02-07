@@ -9,7 +9,7 @@ The log files are split into various levels of verbosity described below:
  * `luigi-interface.log` - The standard Luigi output log, it has info about all the tasks that were run, how they were scheduled, and if they succeeded/failed.
  * `task-log.jsonl` - Contains a comprehensive sequence of every single task that succeeded and/or failed, this is a strictly JSONL structured equivilent of what `luigi-interface.log` is more or less...
 
-== JSON-L logged event properties ==
+## JSON-L logged event properties ##
 
 We only formally attempt to specify `insar-log.jsonl` and `status-log.jsonl` (and even then, only partially) - so far as to have a well-defined means for parsing the entries and identifying the status (good entries vs. warnings vs. errors) and what scene/product they belong to.  From this it's possible to determine what products have succeeded, if any had issues (and how severe they were) - to get further information the user must read event-specific properties which are not defined in the documentation formally (but are simple enough to identify/understand without documentation).
 

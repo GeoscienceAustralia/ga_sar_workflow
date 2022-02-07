@@ -1139,7 +1139,7 @@ def coregister_s1_secondary(
         structlog.threadlocal.clear_threadlocal()
         structlog.threadlocal.bind_threadlocal(
             task="SLC coregistration and multi-looking",
-            slc_dir=out_dir,
+            scene_dir=out_dir,
             primary_date=paths.primary.date,
             secondary_date=paths.secondary.date
         )
@@ -1204,7 +1204,7 @@ def apply_s1_coregistration(
         structlog.threadlocal.clear_threadlocal()
         structlog.threadlocal.bind_threadlocal(
             task="SLC coregistration and resampling",
-            slc_dir=slc_dir,
+            scene_dir=slc_dir,
             primary_date=paths.primary.date,
             secondary_date=paths.secondary.date
         )

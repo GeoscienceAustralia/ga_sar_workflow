@@ -1,7 +1,7 @@
 `gamma_insar` maintains various log files while processing a stack, these files are held within the stack's `job directory`.
 This document briefly covers "part" of the *common* logging structure of a stack, however does *not* cover event-specific logging properties (specific logged events have a lot of special case properties that don't apply to any other event).
 
-== Logging file structure ==
+## Logging file structure ##
 
 The log files are split into various levels of verbosity described below:
  * `insar-log.jsonl` - This is the most comprehensive log file `gamma_insar` produces, it has a complete squence of every single GAMMA command run while processing, as well as a few additional messages about how parts of the code are being processed / where settings are sourced / etc - all formatted in JSONL so it's machine readable.

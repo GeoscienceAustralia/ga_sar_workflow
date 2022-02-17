@@ -4,16 +4,20 @@ from tests.fixtures import *
 from insar.sensors import identify_data_source, get_data_swath_info, acquire_source_data
 from insar.sensors.s1 import METADATA as S1_METADATA
 from insar.sensors.rsat2 import METADATA as RS2_METADATA
+from insar.sensors.tsx import METADATA as TSX_METADATA
 
 import insar.sensors.s1 as s1
 import insar.sensors.rsat2 as rs2
+import insar.sensors.tsx as tsx
 
 
 S1_DATA_PATH_EXAMPLE = "tests/data/S1A_IW_SLC__1SDV_20190918T200909_20190918T200936_029080_034CEE_C1F9.zip"
 RS2_DATA_PATH_EXAMPLE = "tests/data/RS2_OK127568_PK1123201_DK1078370_F0W2_20170430_084253_HH_SLC.zip"
+TSX_DATA_PATH_EXAMPLE = "tests/data/TSX/20170411_TSX_T041D.tar.gz"
 
 S1_DATA_PATH_BAD_EXAMPLE = "tests/data/S3Z_IW_SLC__1SDV_20190918T200909_20190918T200936_029080_034CEE_C1F9.zip"
 RS2_DATA_PATH_BAD_EXAMPLE = "tests/data/RS2_OK127568_PK1123201_DK1078370_F0W2_20170430_084253_OK_SLC.zip"
+TSX_DATA_PATH_BAD_EXAMPLE = "tests/data/TSX/20170411_TSX_T041D_broken.tar.gz"
 
 
 def test_s1_source_data_identification():
@@ -30,6 +34,14 @@ def test_rs2_source_data_identification():
     assert(constellation == RS2_METADATA.constellation_name)
     assert(sensor == "RS2")
     assert(scene_date == "20170430")
+
+
+def test_tsx_source_data_identification():
+    constellation, sensor, scene_date = identify_data_source(TSX_DATA_PATH_EXAMPLE)
+
+    assert (constellation == TSX_METADATA.constellation_name)
+    assert (sensor == "TSX")
+    assert (scene_date == "20170411")
 
 
 def test_invalid_source_data_identification():
@@ -161,6 +173,35 @@ def test_rs2_swath_data_fails_for_invalid_input(temp_out_dir, pgp, pgmock, loggi
 
     # Then invalidate it by deleting an important manifest file
     (safe_copy / "product.xml").unlink()
+
+    # Assert we fail to get swath info from invalid data products
+    with pytest.raises(Exception):
+        get_data_swath_info(safe_copy)
+
+
+def test_tsx_swath_data_for_known_input(tsx_test_tar_gzips):
+    info = get_data_swath_info(tsx_test_tar_gzips[0])
+
+    # TODO: does valid TSX data have only 1 swath/no subswaths?
+    assert len(info) == 1
+
+    validate_subswath_info(info[0],
+                           expected_source=tsx_test_tar_gzips[0],
+                           expected_sensor="TDX-1",  # manually copied from XML <mission> tag
+                           expected_date=TSX_TEST_DATA_DATES[0],
+                           expected_pols=["HH"])  # TODO: verify
+
+
+def test_tsx_swath_data_fails_for_missing_input():
+    with pytest.raises(Exception):
+        tsx.get_data_swath_info("tsx_does/not/exist")
+
+
+def test_tsx_swath_data_fails_for_invalid_input(temp_out_dir, tsx_test_tar_gzips):
+    # Duplicate PRE-broken test data (easier than modifying tar.gz files on the fly)
+    safe_name = tsx_test_tar_gzips[0].name
+    safe_copy = temp_out_dir / safe_name
+    shutil.copy(TEST_DATA_BASE / "TSX/20170411_TSX_T041D_broken.tar.gz", safe_copy)
 
     # Assert we fail to get swath info from invalid data products
     with pytest.raises(Exception):

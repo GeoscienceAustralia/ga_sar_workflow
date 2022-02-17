@@ -70,6 +70,15 @@ ALOS2_TEST_DATA_IDS = [
     "20160614_PALSAR2_T124A_F6660"
 ]
 
+TSX_TEST_DATA_IDS = [
+    "20170411_TSX_T041D"
+]
+
+TSX_TEST_DATA_DATES = [
+    "20170411"
+]
+
+
 def copy_test_proc_into_dir(proc_path, out_dir):
     out_dir.mkdir(parents=True, exist_ok=True)
 
@@ -213,6 +222,24 @@ def alos2_test_data(test_data_dir):
             archive.extractall(test_data_dir)
 
     return [test_data_dir / i[:8] for i in ALOS2_TEST_DATA_IDS]
+
+
+@pytest.fixture
+def tsx_test_tar_gzips():
+    return [TEST_DATA_BASE / "TSX" / f"{_id}.tar.gz" for _id in TSX_TEST_DATA_IDS]
+
+
+@pytest.fixture(scope="session")
+def tsx_test_data(test_data_dir):
+    # Extract test data from files in the repo
+    for _id in TSX_TEST_DATA_IDS:
+        path = TEST_DATA_BASE / "TSX" / f"{_id}.tar.gz"
+        assert path.exists()
+
+        with tarfile.open(path, 'r') as archive:
+            archive.extractall(test_data_dir)
+
+    return [test_data_dir / i for i in TSX_TEST_DATA_DATES]
 
 
 def generate_testable_s1_proc(test_data_dir, touch_poeorb):

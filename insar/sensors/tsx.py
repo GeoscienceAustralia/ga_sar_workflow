@@ -1,3 +1,4 @@
+import os
 import re
 from typing import List, Optional
 import tarfile
@@ -17,7 +18,7 @@ ANY_DATA_PATTERN = (
 )
 
 SOURCE_DATA_PATTERN = ANY_DATA_PATTERN
-POLARISATIONS = ["HH"]  # TODO: anything else?
+POLARISATIONS = ["HH", "VV", "HV", "VH"]  # TODO: anything else?
 SUPPORTS_GEOSPATIAL_DB = False  # TODO: verify
 
 
@@ -173,4 +174,29 @@ def get_data_swath_info(
 
 
 def acquire_source_data(source_path: str, dst_dir: Path, pols: Optional[List[str]] = None, **kwargs):
-    raise NotImplementedError
+    # We only support local paths currently
+    if pols is not None:
+        raise NotImplementedError("acquiring source data for different polarisations is not implemented")
+
+    source_path = Path(source_path)
+    if not source_path.exists():
+        raise FileNotFoundError("The source data path does not exist!")
+
+    if source_path.is_dir():
+        # TODO: is this functionality required for TSX?
+        raise NotImplementedError("Currently only .tar.gz files are handled")
+
+    # This extracts the contents of the archive directly into dst_dir, TSX/TDX products contain a
+    # scene_date top level dir, and we should have a dst_dir/{scene_date} dir of the tar archive contents.
+    elif source_path.name.endswith(".tar.gz"):
+        with tarfile.open(source_path) as archive:
+            archive.extractall(dst_dir)
+            members = archive.getmembers()
+
+            if len(members) < 1:
+                raise IOError("No files found in TSX tar archive")
+
+            return dst_dir / os.path.commonpath(i.name for i in members)
+
+    else:
+        raise RuntimeError(f"Unsupported source data path: {source_path}")

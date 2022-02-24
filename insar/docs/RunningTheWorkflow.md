@@ -72,10 +72,10 @@ gamma_insar ARD \
     --stack-id tutorial_stack \
     --sensor S1 \
     --polarization VV --polarization VH \
-    --src-file /path/to/our_s1_data/S1A_IW_SLC__1SDV_20191222T193141_20191222T193207_030465_037CDD_4306.zip \
-    --src-file /path/to/our_s1_data/S1A_IW_SLC__1SDV_20191222T193116_20191222T193143_030465_037CDD_8F90.zip \
-    --src-file /path/to/our_s1_data/S1A_IW_SLC__1SDV_20200103T193115_20200103T193142_030640_0382E6_2B5C.zip \
-    --src-file /path/to/our_s1_data/S1A_IW_SLC__1SDV_20200103T193140_20200103T193207_030640_0382E6_09FB.zip \
+    --source-data '["/path/to/our_s1_data/S1A_IW_SLC__1SDV_20191222T193141_20191222T193207_030465_037CDD_4306.zip", \
+                    "/path/to/our_s1_data/S1A_IW_SLC__1SDV_20191222T193116_20191222T193143_030465_037CDD_8F90.zip", \
+                    "/path/to/our_s1_data/S1A_IW_SLC__1SDV_20200103T193115_20200103T193142_030640_0382E6_2B5C.zip", \
+                    "/path/to/our_s1_data/S1A_IW_SLC__1SDV_20200103T193140_20200103T193207_030640_0382E6_09FB.zip"]' \
     --shape-file /path/to/our/shapefile.shp \
     --proc-file our_stack_settings.proc \
     --workdir /path/to/workdir \
@@ -83,7 +83,7 @@ gamma_insar ARD \
     --local-scheduler
 ```
 
-Note: In the above example we don't need to provide a `--include-dates` - it's inferred by the data we provide.
+Note: In the above example we don't need to provide a `--include-dates` - it's inferred by the data we provide, and if using `pbs-insar` we would use `--src-file` instead of `--source-data`.
 
 Using the geospatial/temporal database, the command will look like:
 ```

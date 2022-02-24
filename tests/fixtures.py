@@ -74,6 +74,11 @@ TSX_TEST_DATA_IDS = [
     "20170411_TSX_T041D"
 ]
 
+TSX_TEST_DATA_SUBDIRS = [
+    # the big ugly dir path the data is stored in
+    "TDX1_SAR__SSC______SM_S_SRA_20170411T192821_20170411T192829"
+]
+
 TSX_TEST_DATA_DATES = [
     "20170411"
 ]
@@ -236,10 +241,12 @@ def tsx_test_data(test_data_dir):
         path = TEST_DATA_BASE / "TSX" / f"{_id}.tar.gz"
         assert path.exists()
 
-        with tarfile.open(path, 'r') as archive:
-            archive.extractall(test_data_dir)
+        tsx_src_data = test_data_dir / "tsx_src_data"
 
-    return [test_data_dir / i for i in TSX_TEST_DATA_DATES]
+        with tarfile.open(path, 'r') as archive:
+            archive.extractall(tsx_src_data)
+
+    return [tsx_src_data / i for i in TSX_TEST_DATA_DATES]
 
 
 def generate_testable_s1_proc(test_data_dir, touch_poeorb):
@@ -379,6 +386,30 @@ def pgmock(monkeypatch, pgp):
         return result
 
     pgmock.par_RSAT2_SLC.side_effect = par_RSAT2_SLC_mock
+
+    def par_TX_SLC_mock(*args, **kwargs):
+        result = pgp.par_TX_SLC(*args, **kwargs)
+
+        xml_annotation, cosar, slc_par, slc = args[:4]
+
+        # Substitute well-known .par files for well-known data
+        # so unit tests have real data to work with
+        test_slc_par = TEST_DATA_BASE / "TSX" / "output_20170411.slc.par"
+        shutil.copyfile(test_slc_par, slc_par)
+        return result
+
+    pgmock.par_TX_SLC.side_effect = par_TX_SLC_mock
+
+    def radcal_SLC_mock(*args, **kwargs):
+        result = pgp.radcal_SLC(*args, **kwargs)
+        _, _, _, sigma0_slc_par = args[:4]  # ignore other trailing settings
+
+        # copy param file for use in unit tests / simulate its creation
+        test_sigma0_par = TEST_DATA_BASE / "TSX" / "sigma0_20170411.slc.par"
+        shutil.copyfile(test_sigma0_par, sigma0_slc_par)
+        return result
+
+    pgmock.radcal_SLC.side_effect = radcal_SLC_mock
 
     def par_S1_SLC_mock(*args, **kwargs):
         result = pgp.par_S1_SLC(*args, **kwargs)

@@ -205,7 +205,7 @@ WORKFLOW=INTERFEROGRAM
 
 #
 # A flag indicating if the stack output directory should be cleaned up to remove all intermediate products.
-# If enabled this just leaves manifests&metadata, NRB, DEM/coregistration, and interferogram products intact.
+# If enabled this just leaves manifests, metadata, NRB, DEM/coregistration, and interferogram products intact.
 #
 CLEANUP=yes
 
@@ -244,7 +244,7 @@ DEM_AZPOS=-
 # - for full DEM only, auto calculated for mli
 #
 # There aren't many use cases this should be anything but the default (0, 0) - as stack processing
-# extracts the region of interest for the primary scene 'out of' the primary DEM image, thus the subset
+# crops the region of interest for the primary scene from the primary DEM image, thus the subset
 # of the DEM being processed by the stack is already largely overlapping the primary scene.
 #
 # I think this was primarily for use in coregisteration to an external image (not the primary scene)

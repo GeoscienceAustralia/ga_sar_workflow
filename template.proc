@@ -98,7 +98,7 @@ LAND_CENTER=
 TRACK=__track__
 
 #
-# The orbital direction that scenes must be heading in to be conisdered for inclusion into the stack.
+# The orbital direction that scenes must be heading in to be considered for inclusion into the stack.
 #
 ORBIT = Descending
 

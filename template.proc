@@ -65,7 +65,7 @@ SLC_DIR=SLC
 DEM_DIR=DEM
 
 #
-# The directory name to house interferogram data prouducts.
+# The directory name to house interferogram data products.
 #
 INT_DIR=INT
 

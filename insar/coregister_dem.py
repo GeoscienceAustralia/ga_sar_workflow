@@ -17,6 +17,7 @@ from insar.paths.coregistration import CoregisteredPrimaryPaths
 from insar.paths.backscatter import BackscatterPaths
 from insar.paths.slc import SlcPaths
 from insar.project import ProcConfig
+from insar.process_utils import convert
 
 
 class CoregisterDemException(Exception):
@@ -671,7 +672,7 @@ def geocode(
         dem_paths.geo_dem_par,
         dem_paths.dem_lsmap,
         5,  # data type (BYTE)
-        dem_paths.dem_lsmap_tif,  # output oath
+        dem_paths.dem_lsmap_tif,  # output path
         0.0,  # No data
     )
 
@@ -754,11 +755,9 @@ def geocode(
     )
 
     # Convert the bitmap to a PNG w/ black pixels made transparent
-    img = Image.open(rasf_pathname)
-    img = np.array(img.convert("RGBA"))
-    img[(img[:, :, :3] == (0, 0, 0)).all(axis=-1)] = (0, 0, 0, 0)
-    Image.fromarray(img).save(
-        nrb_paths.gamma0_geo_tif.with_suffix(".png").as_posix()
+    convert(
+        rasf_pathname,
+        nrb_paths.gamma0_geo_tif.with_suffix(".png")
     )
 
     # geotiff gamma0 file

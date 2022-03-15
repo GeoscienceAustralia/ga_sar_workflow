@@ -8,17 +8,21 @@ This guide explains how to generate and maintain such a database.
 
 The first step in creating the database is to extract the appropriate metadata from acquisitions into a standardised format, this must be done for all acquisitions you wish to add to the database.
 
-This example extracts the SLC acquisition details into YAML files for a single month.  It takes 1-2 hours for ~5 years of Sentinel-1 acquisitions.
+The archiving script currently only archives a single month at a time, specified via the `--year` and `--month` arguments.
+
+This example extracts the SLC acquisition details for Jan 2020 into YAML files (`--save-yaml`) for a single month from a dir specivied via `--slc-dir`.
 
 ```BASH
 slc-archive slc-ingestion \
     --save-yaml \
-    --yaml-dir <dir-to-save-generated-yamls> \
-    --year <year-to-process> \
-    --month <month-to-process> \
+    --yaml-dir /path/do/output/yaml_dir \
+    --year 2020 \
+    --month 01 \
     --slc-dir /g/data/fj7/Copernicus/Sentinel-1/C-SAR/SLC \  # change if required
-    --log-pathname <filename-to-save-log-to>
+    --log-pathname /path/do/output/yaml_dir/archive_202001.log
 ```
+
+It takes 1-2 hours for ~5 years of Sentinel-1 acquisitions.
 
 #### Database Creation
 

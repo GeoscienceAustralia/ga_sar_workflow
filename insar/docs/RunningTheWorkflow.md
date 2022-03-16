@@ -210,3 +210,40 @@ Finally, if something obscure happens it's possible to investigate the log files
 Specifically at a high level the `status-log.jsonl` log has per-product overviews of how things went, and `insar-log.jsonl` has lower level information about every single GAMMA command that was executed (including full command line outputs) plus ancillary logged events.
 
 An existing document already exists that is best placed to help users understand these logs: `Logging.md`
+
+## Recovering from an incomplete job/stack ##
+
+Sometimes a job will be interrupted before it can finish processing for some reason such as a system/power related failure.  In this scenario the processed data already computed is not wasted or lost, as a stack can be "resumed" at any time to continue processing any missing products in the stack.
+
+This process is as simple as running the **exact** same command as you did to process your original stack, with the **exact** same settings (any deviation will raise an error stating the stack is not the same) using the `--resume` flag.
+
+To copy the geospatial-DB example from the start of this guide, the equivilent resume command would be:
+```
+gamma_insar ARD \
+    --stack-id tutorial_stack \
+    --sensor S1 \
+    --polarization VV --polarization VH \
+    --include-dates '2019-12-20-2020-01-05' \
+    --shape-file /path/to/our/shapefile.shp \
+    --proc-file our_stack_settings.proc \
+    --workdir /path/to/workdir \
+    --outdir /path/to/outdir \
+    --local-scheduler \
+    --resume
+```
+
+The status log will have events indicating what products were detected as missing, and that they have been resumed for processing.
+
+## Recovering from products with errors ##
+
+In some circumstances errors will occur in products as a result of complexity issues in the scene that GAMMA can not handle, or environmental issues in the thirdparty libraries being used, or possibly a `gamma_insar` bug.  These errors can be identified using the reporting scripts already described in prior sections of this guide.
+
+Alternatively if there is **any* other reason at all the user needs to re-process a specific product it can be deleted and re-processed with this method.
+
+Once scenes have been identified, simply deleting their respective product date directories in the stack and `--resume` 'ing them with the the recovery of an incomplete stack described above can be applied (as deleting the products essentially makes the stack incomplete and ready for resuming).
+
+## Appending new data to a stack ##
+
+If users have a need to extend the temporal period of their stack, `gamma_insar` does support adding dates **after** the current end date of a stack (a.k.a. extending the end date of a stack).  Like much of the post-initial-stack processing, this is largely supported by simply adding a single extra flag to a standard stack processing command - namely `--append`.
+
+Unlike `--resume` which requires that the stack properties for the command match the existing stack **exactly**, `--append` allows that the end-date of the stack to change as well as for extra source files to be provided past the original end date.

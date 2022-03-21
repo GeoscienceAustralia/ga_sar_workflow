@@ -97,8 +97,11 @@ As work is done on the project it's ideal if we can identify and move any magic/
 
 Most of the processing done by `gamma_insar` is done by thidparty software called GAMMA, which is primarily a suite of command line tools intended to be used directly by humans in a console.
 
-We use these programs programatically through a simple command line wrapper `insar/py_gamma_ga.py` which identifies the GAMMA executables available at runtime which:
+We use these programs programatically through a simple command line wrapper called `GammaInterface` in `insar/py_gamma_ga.py` which identifies the GAMMA executables available at runtime which:
 * exposes them as attribute functions which automatically forward the function's parameters as command line arguments
 * automatically converts appropriate argument types (eg: `None` and `Path` types)
 * automatically logs the GAMMA call (success or fail) to the appopriate log
 * automatically detects failures and converts that into a runtime exception.
+
+This interface is often given the `pg` variable name in processing modules, instantiated at the module level as `pg = GammaInterface(...)` thus all `pg.abc()` calls are calls into GAMMA.
+

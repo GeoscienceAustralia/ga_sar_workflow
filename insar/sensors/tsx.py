@@ -12,7 +12,7 @@ from insar.sensors.types import SensorMetadata
 # Example: 20170320_TSX_T041D.tar.gz
 ANY_DATA_PATTERN = (
     r"^(?P<product_date>[0-9]{8})"
-    r"_(?P<sensor_id>TSX)"
+    r"_(?P<sensor_id>TSX)"  # TODO: is TDX ever required in gzip filename?
     r"_T(?P<track>[0-9]+D)"
     r"(?P<extension>.tar.gz)?$"
 )
@@ -37,9 +37,9 @@ SUPPORTS_GEOSPATIAL_DB = False  # TODO: verify
 # apogee_altitude_km = 516.9
 
 METADATA = SensorMetadata(
-    "TerraSAR-X",
-    "TDX-1",  # TODO: verify constellation_name
-    ["TSX-1", "TDX-1"],  # TODO: verify names
+    "TerraSAR-X",  # sensor name/also the mission name
+    "TSX",  # TODO: verify constellation_name, here TSX refers to TSX and TDX/TanDEM-X satellite pair
+    ["TSX1", "TDX1"],  # TODO: verify constellation member names
     514.8,  # average altitude source: https://eoportal.org/web/eoportal/satellite-missions/t/terrasar-x
     9.65,
     POLARISATIONS
@@ -52,7 +52,7 @@ METADATA = SensorMetadata(
 # Geocoded Ellipsoid Corrected (GEC)
 # Enhanced Ellipsoid Corrected (EEC)
 XML_METADATA_BASE = (
-    r"(?P<sensor>TDX1)_SAR_"
+    r"(?P<sensor>T[SD]X1)_SAR_"  # handle both satellite names just in case
     r"_(?P<product_variant>SSC|MGD|GEC|EEC)"
     r"_(?P<resolution_variant>[SRE_]{4})"
     r"_(?P<imaging_mode>SM|SC|SL|HS)"

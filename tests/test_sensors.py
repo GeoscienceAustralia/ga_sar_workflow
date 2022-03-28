@@ -187,7 +187,7 @@ def test_tsx_swath_data_for_known_input(tsx_test_tar_gzips):
 
     validate_subswath_info(info[0],
                            expected_source=tsx_test_tar_gzips[0],
-                           expected_sensor="TDX-1",  # manually copied from XML <mission> tag
+                           expected_sensor="TSX",
                            expected_date=TSX_TEST_DATA_DATES[0],
                            expected_pols=["HH"])  # TODO: verify
 

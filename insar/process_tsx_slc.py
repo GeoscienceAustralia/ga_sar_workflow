@@ -19,7 +19,7 @@ pg = GammaInterface(
 )
 
 
-# TODO: does there need to be any polarisation filtering?
+# TODO: does there need to be any polarisation filtering? Possibly - proc file specifies a polarisation to use...
 
 @dataclass
 class TSXPaths:
@@ -119,15 +119,12 @@ def process_tsx_slc(
                   tsx_paths.slc,  # output SLC data
     )
 
-    sigma0_slc = output_dir / "sigma0.slc"
-    sigma0_slc_par = output_dir / "sigma0.slc.par"
-
     # Apply stated calFactor from the xml file, scale according to sin(inc_angle) and
     # convert from scomplex to fcomplex. Output is sigma0
     pg.radcal_SLC(tsx_paths.slc,
                   tsx_paths.slc_par,
-                  sigma0_slc,  # SLC output file
-                  sigma0_slc_par,  # SLC PAR output file
+                  tsx_paths.sigma0_slc,  # SLC output file
+                  tsx_paths.sigma0_slc_par,  # SLC PAR output file
                   3,  # fcase: scomplex --> fcomplex
                   constant.NOT_PROVIDED,  # antenna gain file
                   0,  # rloss_flag
@@ -138,11 +135,11 @@ def process_tsx_slc(
     )
 
     # Make quick-look png image of SLC
-    par = pg.ParFile(sigma0_slc_par.as_posix())
+    par = pg.ParFile(tsx_paths.sigma0_slc_par.as_posix())
     width = par.get_value("range_samples", dtype=int, index=0)
     lines = par.get_value("azimuth_lines", dtype=int, index=0)
 
-    pg.rasSLC(sigma0_slc,
+    pg.rasSLC(tsx_paths.sigma0_slc,
               width,
               1,
               lines,

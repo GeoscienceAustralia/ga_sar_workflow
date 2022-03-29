@@ -175,8 +175,8 @@ def get_data_swath_info(
 
 def acquire_source_data(source_path: str, dst_dir: Path, pols: Optional[List[str]] = None, **kwargs):
     # We only support local paths currently
-    if pols is not None:
-        raise NotImplementedError("acquiring source data for different polarisations is not implemented")
+    # if pols is not None:
+    #     raise NotImplementedError("acquiring source data for different polarisations is not implemented")
 
     source_path = Path(source_path)
     if not source_path.exists():

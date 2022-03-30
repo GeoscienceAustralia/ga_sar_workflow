@@ -5,6 +5,7 @@ import tarfile
 from pathlib import Path
 from datetime import datetime
 
+import structlog
 import xml.etree.ElementTree as etree
 from insar.sensors.types import SensorMetadata
 
@@ -21,6 +22,8 @@ SOURCE_DATA_PATTERN = ANY_DATA_PATTERN
 POLARISATIONS = ["HH", "VV", "HV", "VH"]  # TODO: anything else?
 SUPPORTS_GEOSPATIAL_DB = False  # TODO: verify
 
+
+_LOG = structlog.get_logger("insar")
 
 # name: str
 # constellation_name: str
@@ -124,10 +127,13 @@ def get_data_swath_info(
     raw_data_path: Optional[Path]
 ):
     if raw_data_path:
+        # TODO: is this logic required? RSAT ignores raw_data_path
         msg = "raw_data_path is not yet implemented for TSX..."
-        raise NotImplementedError(msg)
+        _LOG.info(msg, raw_data_path=raw_data_path)
+        #raise NotImplementedError(msg)
 
     if data_path.is_dir():
+        # TODO: does already decompressed data need to be handled?
         raise NotImplementedError("TSX get_data_swath_info() with a dir in not yet implemented")
 
     # try matching the tar file patterns

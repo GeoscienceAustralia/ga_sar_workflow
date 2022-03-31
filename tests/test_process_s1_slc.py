@@ -121,7 +121,7 @@ def test_s1_slc_fails_with_incomplete_data(pgp, pgmock, temp_out_dir, s1_temp_jo
             xml.unlink()
 
     with pytest.raises(FileNotFoundError):
-        do_processing(
+        process_s1_slc(
             s1_mutable_test_data,
             temp_out_dir,
             s1_test_data_csv,

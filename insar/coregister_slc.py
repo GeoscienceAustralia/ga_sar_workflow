@@ -1203,7 +1203,7 @@ def apply_s1_coregistration(
     try:
         structlog.threadlocal.clear_threadlocal()
         structlog.threadlocal.bind_threadlocal(
-            task="SLC coregistration resampling",
+            task="SLC coregistration and resampling",
             scene_dir=slc_dir,
             primary_date=paths.primary.date,
             secondary_date=paths.secondary.date

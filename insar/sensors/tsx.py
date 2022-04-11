@@ -202,7 +202,9 @@ def acquire_source_data(source_path: str, dst_dir: Path, pols: Optional[List[str
             if len(members) < 1:
                 raise IOError("No files found in TSX tar archive")
 
-            return dst_dir / os.path.commonpath(i.name for i in members)
+            product_dir = dst_dir / os.path.commonpath(i.name for i in members)
+            _LOG.info("TSX debugging, acquire_source_data()", product_dir=product_dir, dst_dir=dst_dir)
+            return product_dir
 
     else:
         raise RuntimeError(f"Unsupported source data path: {source_path}")

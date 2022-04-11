@@ -37,7 +37,7 @@ class ProcessTSXSlc(luigi.Task):
     def run(self):
         log = STATUS_LOGGER.bind(
             scene_date=self.scene_date,
-            sensor=self.sensor,
+            # sensor=self.sensor,
             polarisation=self.polarization
         )
         log.info("Beginning SLC processing")
@@ -94,10 +94,10 @@ class CreateTSXSlcTasks(luigi.Task):
                     continue
 
                 # TODO: figure out what path is needed for TSX files or dirs
-                tsx_dirs = list((raw_dir / slc_scene).glob("T[DS]X_*"))  # TODO: assumes gzips extracted elsewhere
+                tsx_dirs = list((raw_dir / slc_scene).glob("T[DS]X*"))  # TODO: assumes gzips extracted elsewhere
 
                 if not tsx_dirs:
-                    log.error(f"Missing raw data for {slc_scene}!")
+                    log.error(f"Missing raw data for {slc_scene}!", outdir=outdir, slc_dir=slc_dir)
                     continue
 
                 # TODO: assumption: there is only 1 scene dir for each date

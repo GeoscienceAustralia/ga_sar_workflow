@@ -1,3 +1,5 @@
+import tempfile
+
 from insar import constant
 from insar.process_utils import convert
 
@@ -6,6 +8,7 @@ from pathlib import Path
 from dataclasses import dataclass
 
 from insar.py_gamma_ga import GammaInterface, auto_logging_decorator, subprocess_wrapper
+from insar.paths.slc import SlcPaths
 
 
 # Customise Gamma shim to automatically handle basic error checking and logging
@@ -86,7 +89,7 @@ def _verify_cosar_file(cos_files, image_dir):
 def process_tsx_slc(
     product_path: Path,
     output_dir: Path,
-    tsx_paths: TSXPaths = None,
+    slc_paths: SlcPaths = None,
 ):
     """
     Processes TSX/TDX data into GAMMA SLC data.
@@ -96,8 +99,8 @@ def process_tsx_slc(
          e.g. "TDX1_SAR__SSC______SM_S_SRA_20170411T192821_20170411T192829"
     :param output_dir:
         Dir path to write outputs to.
-    :param tsx_paths:
-        Optional TSXPaths if the default file locations need to be changed.
+    :param slc_paths:
+        Optional SlcPaths if the default file locations need to be changed.
     """
     # if not product_path.exists():
     #     raise RuntimeError(f"The provided product path does not exist! product_path={product_path}")
@@ -137,46 +140,54 @@ def process_tsx_slc(
     _verify_cosar_file(cos_files, image_dir)
     cosar = cos_files[0]
 
-    # Read TSX data and produce SLC and parameter files in GAMMA format
-    pg.par_TX_SLC(xml_meta,  # TSX product annotation file
-                  cosar,  # COSAR SSC stripmap
-                  tsx_paths.slc_par,  # output param file
-                  tsx_paths.slc,  # output SLC data
-    )
+    with tempfile.tempdir() as td:
+        base_name = slc_paths.slc.name
+        gamma_slc = Path(base_name + ".slc")
+        gamma_slc_par = Path(base_name + ".slc.par")
 
-    # Apply stated calFactor from the xml file, scale according to sin(inc_angle) and
-    # convert from scomplex to fcomplex. Output is sigma0
-    pg.radcal_SLC(tsx_paths.slc,
-                  tsx_paths.slc_par,
-                  tsx_paths.sigma0_slc,  # SLC output file
-                  tsx_paths.sigma0_slc_par,  # SLC PAR output file
-                  3,  # fcase: scomplex --> fcomplex
-                  constant.NOT_PROVIDED,  # antenna gain file
-                  0,  # rloss_flag
-                  0,  # ant_flag
-                  1,  # refarea_flag
-                  0,  # sc_dB
-                  constant.NOT_PROVIDED,  # K_dB
-    )
+        # Read TSX data and produce SLC and parameter files in GAMMA format
+        pg.par_TX_SLC(xml_meta,  # TSX product annotation file
+                      cosar,  # COSAR SSC stripmap
+                      gamma_slc_par,  # output param file
+                      gamma_slc,  # output SLC data
+        )
 
-    # Make quick-look png image of SLC
-    par = pg.ParFile(tsx_paths.sigma0_slc_par.as_posix())
-    width = par.get_value("range_samples", dtype=int, index=0)
-    lines = par.get_value("azimuth_lines", dtype=int, index=0)
+        # Apply stated calFactor from the xml file, scale according to sin(inc_angle) and
+        # convert from scomplex to fcomplex. Output is sigma0
+        # This does the file MOVE step inline compared to BASH version
+        pg.radcal_SLC(gamma_slc,
+                      gamma_slc_par,
+                      slc_paths.slc,  # SLC output file, the sigma0
+                      slc_paths.slc_par,  # SLC PAR output file, the sigma0 par
+                      3,  # fcase: scomplex --> fcomplex
+                      constant.NOT_PROVIDED,  # antenna gain file
+                      0,  # rloss_flag
+                      0,  # ant_flag
+                      1,  # refarea_flag
+                      0,  # sc_dB
+                      constant.NOT_PROVIDED,  # K_dB
+        )
 
-    pg.rasSLC(tsx_paths.sigma0_slc,
-              width,
-              1,
-              lines,
-              50,
-              20,
-              constant.NOT_PROVIDED,
-              constant.NOT_PROVIDED,
-              1,
-              0,
-              0,
-              tsx_paths.sigma0_slc_bmp,
-    )
+        # Make quick-look png image of SLC
+        par = pg.ParFile(slc_paths.slc_par.as_posix())
+        width = par.get_value("range_samples", dtype=int, index=0)
+        lines = par.get_value("azimuth_lines", dtype=int, index=0)
+        bmp_path = slc_paths.slc.with_suffix("bmp")
+        png_path = slc_paths.slc.with_suffix("png")
 
-    convert(tsx_paths.sigma0_slc_bmp, tsx_paths.sigma0_slc_png)
-    tsx_paths.sigma0_slc_bmp.unlink()
+        pg.rasSLC(slc_paths.slc,
+                  width,
+                  1,
+                  lines,
+                  50,
+                  20,
+                  constant.NOT_PROVIDED,
+                  constant.NOT_PROVIDED,
+                  1,
+                  0,
+                  0,
+                  bmp_path,
+        )
+
+        convert(bmp_path, png_path)
+        bmp_path.unlink()

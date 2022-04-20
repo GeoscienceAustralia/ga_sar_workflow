@@ -40,19 +40,22 @@ class ProcessTSXSlc(luigi.Task):
             # sensor=self.sensor,
             polarisation=self.polarization
         )
-        log.info("Beginning SLC processing")
 
         scene_out_dir = Path(self.slc_dir) / str(self.scene_date)
         scene_out_dir.mkdir(parents=True, exist_ok=True)
 
+        raw_path = Path(str(self.raw_path))
+
+        log.info("ProcessTSXSlc / Beginning SLC processing", raw_path=raw_path, scene_out_dir=scene_out_dir)
+
         paths = SlcPaths(self.workdir, self.scene_date, self.polarization)
 
         process_tsx_slc(
-            self.raw_path,  # NB: needs to be the extracted data dir
+            raw_path,  # NB: needs to be the extracted data dir
             paths.dir
         )
 
-        log.info("SLC processing complete")
+        log.info("ProcessTSXSlc / SLC processing complete")
 
         with self.output().open("w") as f:
             f.write("")

@@ -143,8 +143,8 @@ def process_tsx_slc(
     with tempfile.TemporaryDirectory() as td:
         tdir = Path(td)
         base_name = slc_paths.slc.name
-        gamma_slc = tdir / "gamma_" + base_name
-        gamma_slc_par = tdir / "gamma_" + base_name + ".par"
+        gamma_slc = tdir / f"gamma_{str(base_name)}"
+        gamma_slc_par = tdir / f"gamma_{str(base_name)}.par"
 
         # Read TSX data and produce SLC and parameter files in GAMMA format
         pg.par_TX_SLC(xml_meta,  # TSX product annotation file

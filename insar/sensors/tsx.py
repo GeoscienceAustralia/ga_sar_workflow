@@ -184,6 +184,8 @@ def acquire_source_data(source_path: str, dst_dir: Path, pols: Optional[List[str
     # if pols is not None:
     #     raise NotImplementedError("acquiring source data for different polarisations is not implemented")
 
+    _LOG.info("Debugging acquire_source_data()", source_path=source_path, dst_dir=dst_dir)
+
     source_path = Path(source_path)
     if not source_path.exists():
         raise FileNotFoundError("The source data path does not exist!")

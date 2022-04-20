@@ -19,7 +19,10 @@ pg = GammaInterface(
 )
 
 
-# TODO: does there need to be any polarisation filtering? Possibly - proc file specifies a polarisation to use...
+# TODO: does there need to be any polarisation filtering?
+#       Possibly - proc file specifies a polarisation to use...
+#
+# TODO: does this dataclass need to get paths from the main proc file for SLCs?
 
 @dataclass
 class TSXPaths:
@@ -44,12 +47,21 @@ class TSXPaths:
         return TSXPaths(slc, slc_par, s0_slc, s0_slc_par, bmp, png)
 
 
-def _verify_tsx_data_dirs(dirs, product_path):
+def _verify_date_dir(dirs, product_path):
     if len(dirs) == 0:
-        msg = f"No TSX data directory found in {product_path}"
+        msg = f"No scene date directory found in {product_path}"
         raise ProcessSlcException(msg)
     elif len(dirs) > 1:
-        msg = f"Multiple dirs found in {product_path}:\n{dirs}"
+        msg = f"Multiple scene date dirs found in {product_path}:\n{dirs}"
+        raise ProcessSlcException(msg)
+
+
+def _verify_tsx_data_dirs(dirs, parent_path):
+    if len(dirs) == 0:
+        msg = f"No TSX data directory found in {parent_path}"
+        raise ProcessSlcException(msg)
+    elif len(dirs) > 1:
+        msg = f"Multiple dirs found in {parent_path}:\n{dirs}"
         raise ProcessSlcException(msg)
 
 
@@ -87,19 +99,27 @@ def process_tsx_slc(
         Optional TSXPaths if the default file locations need to be changed.
     """
     if not product_path.exists():
-        raise RuntimeError("The provided product path does not exist!")
+        raise RuntimeError(f"The provided product path does not exist! product_path={product_path}")
 
     if not output_dir.exists():
-        raise RuntimeError("The provided output dir path does not exist!")
+        raise RuntimeError(f"The provided output dir path does not exist! output_dir={output_dir}")
+
+    _LOG.info(f"process_tsx_slc(): product_path={product_path}")
 
     scene_date = product_path.name
     tsx_paths = tsx_paths if tsx_paths else TSXPaths.create(scene_date, output_dir)
 
-    # find the long TSX dir under the "root" date dir
+    # find second scene date from root dir in the .tar.gz archive
+    scene_date_pattern = "[0-9]" * 8
+    date_dirs = list(product_path.glob(scene_date_pattern))
+    _verify_date_dir(date_dirs, product_path)
+    date_dir = date_dirs[0]  # is a Path
+
+    # find long TSX dir under the "root" date dir
     pattern = "T[SD]X[0-9]_SAR_*T[0-9][0-9][0-9][0-9][0-9][0-9]"
-    dirs = list(product_path.glob(pattern))
-    _verify_tsx_data_dirs(dirs, product_path)
-    tsx_dir = dirs[0]  # the big ugly dir below the "root" date dir
+    dirs = list(date_dir.glob(pattern))
+    _verify_tsx_data_dirs(dirs, date_dir)
+    tsx_dir = dirs[0]  # big ugly dir below the "root" date dir
 
     # find the annotation XML file (duplicates the big ugly name & adds .xml suffix
     xmls = list(tsx_dir.glob(pattern + ".xml"))

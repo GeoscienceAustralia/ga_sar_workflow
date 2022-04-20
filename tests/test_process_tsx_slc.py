@@ -44,7 +44,8 @@ def test_tsx_slc_fails_with_incomplete_data(pgp, pgmock, temp_out_dir, tsx_test_
     shutil.copytree(tsx_test_data[0], data_copy)
 
     # "Delete" important data from the set so it's incomplete
-    annotation_xml = (data_copy / TSX_TEST_DATA_SUBDIRS[0] / TSX_TEST_DATA_SUBDIRS[0]).with_suffix(".xml")
+    scene_date = tsx_test_data[0].name
+    annotation_xml = (data_copy / scene_date / TSX_TEST_DATA_SUBDIRS[0] / TSX_TEST_DATA_SUBDIRS[0]).with_suffix(".xml")
     shutil.move(annotation_xml, annotation_xml.with_suffix(".bak"))
 
     # Run the SLC processing in a temp dest dir
@@ -57,7 +58,7 @@ def test_tsx_slc_fails_with_incomplete_data(pgp, pgmock, temp_out_dir, tsx_test_
     assert paths == [data_copy]  # nothing produced, only the data dir should exist there
 
 
-def test_tsx_slc_fails_with_incomplete_data_missing_dir(pgp, pgmock, temp_out_dir):
+def test_tsx_slc_fails_with_incomplete_missing_dir(pgp, pgmock, temp_out_dir):
     # try instance where the big ugly dir name is missing
     data = temp_out_dir / "20001234"
     data.mkdir(exist_ok=False)  # error, root dir doesn't contain the ugly subdir

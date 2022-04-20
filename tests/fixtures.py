@@ -237,16 +237,17 @@ def tsx_test_tar_gzips():
 @pytest.fixture(scope="session")
 def tsx_test_data(test_data_dir):
     # Extract test data from files in the repo
-    for _id in TSX_TEST_DATA_IDS:
+    for _id, _date in zip(TSX_TEST_DATA_IDS, TSX_TEST_DATA_DATES):
+        assert _id.startswith(_date)
         path = TEST_DATA_BASE / "TSX" / f"{_id}.tar.gz"
         assert path.exists()
 
-        tsx_src_data = test_data_dir / "tsx_src_data"
+        tsx_src_data = test_data_dir / "tsx_src_data" / _date  # mimic DataDownload luigi task path
 
         with tarfile.open(path, 'r') as archive:
             archive.extractall(tsx_src_data)
 
-    return [tsx_src_data / i for i in TSX_TEST_DATA_DATES]
+    return [test_data_dir / "tsx_src_data" / i for i in TSX_TEST_DATA_DATES]
 
 
 def generate_testable_s1_proc(test_data_dir, touch_poeorb):

@@ -92,45 +92,47 @@ def process_tsx_slc(
     Processes TSX/TDX data into GAMMA SLC data.
 
     :param product_path:
-        Path to the TSX product directory. This is the dir with the 8 digit YYYYMMDD timestamp.
+        Path to the TSX product directory. This is the 2ND subdir with all the files:
+         e.g. "TDX1_SAR__SSC______SM_S_SRA_20170411T192821_20170411T192829"
     :param output_dir:
         Dir path to write outputs to.
     :param tsx_paths:
         Optional TSXPaths if the default file locations need to be changed.
     """
-    if not product_path.exists():
-        raise RuntimeError(f"The provided product path does not exist! product_path={product_path}")
-
-    if not output_dir.is_dir():
-        raise RuntimeError("output_dir is a file...")
-
-    if not output_dir.exists():
-        raise RuntimeError(f"The provided output dir path does not exist! output_dir={output_dir}")
+    # if not product_path.exists():
+    #     raise RuntimeError(f"The provided product path does not exist! product_path={product_path}")
+    #
+    # if not output_dir.is_dir():
+    #     raise RuntimeError("output_dir is a file...")
+    #
+    # if not output_dir.exists():
+    #     raise RuntimeError(f"The provided output dir path does not exist! output_dir={output_dir}")
 
     _LOG.info(f"process_tsx_slc(): product_path={product_path}")
 
-    scene_date = product_path.name
-    tsx_paths = tsx_paths if tsx_paths else TSXPaths.create(scene_date, output_dir)
-
-    # find second scene date from root dir in the .tar.gz archive
-    scene_date_pattern = "[0-9]" * 8
-    date_dirs = list(product_path.glob(scene_date_pattern))
-    _verify_date_dir(date_dirs, product_path)
-    date_dir = date_dirs[0]  # is a Path
-
-    # find long TSX dir under the "root" date dir
-    pattern = "T[SD]X[0-9]_SAR_*T[0-9][0-9][0-9][0-9][0-9][0-9]"
-    dirs = list(date_dir.glob(pattern))
-    _verify_tsx_data_dirs(dirs, date_dir)
-    tsx_dir = dirs[0]  # big ugly dir below the "root" date dir
+    # scene_date = product_path.name
+    # tsx_paths = tsx_paths if tsx_paths else TSXPaths.create(scene_date, output_dir)
+    #
+    # # find second scene date from root dir in the .tar.gz archive
+    # scene_date_pattern = "[0-9]" * 8
+    # date_dirs = list(product_path.glob(scene_date_pattern))
+    # _verify_date_dir(date_dirs, product_path)
+    # date_dir = date_dirs[0]  # is a Path
+    #
+    # # find long TSX dir under the "root" date dir
+    # pattern = "T[SD]X[0-9]_SAR_*T[0-9][0-9][0-9][0-9][0-9][0-9]"
+    # dirs = list(date_dir.glob(pattern))
+    # _verify_tsx_data_dirs(dirs, date_dir)
+    # tsx_dir = dirs[0]  # big ugly dir below the "root" date dir
 
     # find the annotation XML file (duplicates the big ugly name & adds .xml suffix
-    xmls = list(tsx_dir.glob(pattern + ".xml"))
-    _verify_tsx_annotation_file(xmls, tsx_dir)
+    pattern = "T[SD]X[0-9]_SAR_*T[0-9][0-9][0-9][0-9][0-9][0-9]"
+    xmls = list(product_path.glob(pattern + ".xml"))
+    _verify_tsx_annotation_file(xmls, product_path)
     xml_meta = xmls[0]
 
     # locate the image data file
-    image_dir = tsx_dir / "IMAGEDATA"
+    image_dir = product_path / "IMAGEDATA"
     cos_files = list(image_dir.glob("IMAGE_*.cos"))
     _verify_cosar_file(cos_files, image_dir)
     cosar = cos_files[0]

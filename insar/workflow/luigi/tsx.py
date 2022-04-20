@@ -94,10 +94,13 @@ class CreateTSXSlcTasks(luigi.Task):
                     continue
 
                 # TODO: figure out what path is needed for TSX files or dirs
-                tsx_dirs = list((raw_dir / slc_scene).glob("T[DS]X*"))  # TODO: assumes gzips extracted elsewhere
+                raw_data_dir = raw_dir / slc_scene / slc_scene  # NB: double scene date dir
+                log.info("CreateTSXSlcTasks.run() debugging", raw_data_dir=raw_data_dir)
+
+                tsx_dirs = list(raw_data_dir.glob("T[DS]X*"))
 
                 if not tsx_dirs:
-                    log.error(f"Missing raw data for {slc_scene}!", outdir=outdir, slc_dir=slc_dir)
+                    log.error(f"Missing raw data for {slc_scene}!", outdir=outdir, slc_dir=slc_dir, raw_dir=raw_dir, tsx_dirs=tsx_dirs)
                     continue
 
                 # TODO: assumption: there is only 1 scene dir for each date

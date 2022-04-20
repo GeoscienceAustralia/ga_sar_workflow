@@ -140,7 +140,7 @@ def process_tsx_slc(
     _verify_cosar_file(cos_files, image_dir)
     cosar = cos_files[0]
 
-    with tempfile.tempdir() as td:
+    with tempfile.TemporaryDirectory() as td:
         base_name = slc_paths.slc.name
         gamma_slc = Path(base_name + ".slc")
         gamma_slc_par = Path(base_name + ".slc.par")

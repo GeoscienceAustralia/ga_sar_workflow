@@ -142,8 +142,8 @@ def process_tsx_slc(
 
     with tempfile.TemporaryDirectory() as td:
         base_name = slc_paths.slc.name
-        gamma_slc = Path(base_name + ".slc")
-        gamma_slc_par = Path(base_name + ".slc.par")
+        gamma_slc = Path("gamma_" + base_name)
+        gamma_slc_par = Path("gamma_" + base_name + ".par")
 
         # Read TSX data and produce SLC and parameter files in GAMMA format
         pg.par_TX_SLC(xml_meta,  # TSX product annotation file
@@ -172,8 +172,8 @@ def process_tsx_slc(
         par = pg.ParFile(slc_paths.slc_par.as_posix())
         width = par.get_value("range_samples", dtype=int, index=0)
         lines = par.get_value("azimuth_lines", dtype=int, index=0)
-        bmp_path = slc_paths.slc.with_suffix("bmp")
-        png_path = slc_paths.slc.with_suffix("png")
+        bmp_path = slc_paths.slc.with_suffix(".bmp")
+        png_path = slc_paths.slc.with_suffix(".png")
 
         pg.rasSLC(slc_paths.slc,
                   width,

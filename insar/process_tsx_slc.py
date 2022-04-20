@@ -101,6 +101,9 @@ def process_tsx_slc(
     if not product_path.exists():
         raise RuntimeError(f"The provided product path does not exist! product_path={product_path}")
 
+    if not output_dir.is_dir():
+        raise RuntimeError("output_dir is a file...")
+
     if not output_dir.exists():
         raise RuntimeError(f"The provided output dir path does not exist! output_dir={output_dir}")
 

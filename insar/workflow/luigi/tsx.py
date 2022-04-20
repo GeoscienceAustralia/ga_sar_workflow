@@ -49,7 +49,7 @@ class ProcessTSXSlc(luigi.Task):
 
         process_tsx_slc(
             self.raw_path,  # NB: needs to be the extracted data dir
-            paths.slc
+            paths.dir
         )
 
         log.info("SLC processing complete")
@@ -83,6 +83,8 @@ class CreateTSXSlcTasks(luigi.Task):
         raw_dir = outdir / proc_config.raw_data_dir
         os.makedirs(slc_dir, exist_ok=True)
 
+        log.info("CreateTSXSlcTasks.run() debugging", raw_dir=raw_dir)
+
         slc_frames = get_scenes(paths.acquisition_csv)
         slc_tasks = []
 
@@ -100,8 +102,9 @@ class CreateTSXSlcTasks(luigi.Task):
                 tsx_dirs = list(raw_data_dir.glob("T[DS]X*"))
 
                 if not tsx_dirs:
-                    log.error(f"Missing raw data for {slc_scene}!", outdir=outdir, slc_dir=slc_dir, raw_dir=raw_dir, tsx_dirs=tsx_dirs)
-                    continue
+                    msg = f"Missing raw data for {slc_scene}!"
+                    log.error(msg, outdir=outdir, slc_dir=slc_dir, raw_dir=raw_dir, tsx_dirs=tsx_dirs)
+                    raise RuntimeError(msg)
 
                 # TODO: assumption: there is only 1 scene dir for each date
                 if len(tsx_dirs) > 1:

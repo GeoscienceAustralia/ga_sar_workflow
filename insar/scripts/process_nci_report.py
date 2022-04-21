@@ -1,5 +1,11 @@
 #!/usr/bin/env python
 
+"""
+Generates a simple summary report on the outputs/progress of a processing job.
+
+Refer to --help for details on parameters/usage and output options.
+"""
+
 import datetime
 from pathlib import Path
 import pandas as pd

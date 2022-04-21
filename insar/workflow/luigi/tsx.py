@@ -52,6 +52,7 @@ class ProcessTSXSlc(luigi.Task):
 
         process_tsx_slc(
             raw_path,  # NB: needs to be the extracted data dir
+            self.polarization,
             paths.dir,
             paths
         )

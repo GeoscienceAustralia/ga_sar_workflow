@@ -1,3 +1,4 @@
+import json
 import tempfile
 
 from insar import constant
@@ -88,6 +89,7 @@ def _verify_cosar_file(cos_files, image_dir):
 
 def process_tsx_slc(
     product_path: Path,
+    polarisation: str,
     output_dir: Path,
     slc_paths: SlcPaths = None,
 ):
@@ -97,6 +99,8 @@ def process_tsx_slc(
     :param product_path:
         Path to the TSX product directory. This is the 2ND subdir with all the files:
          e.g. "TDX1_SAR__SSC______SM_S_SRA_20170411T192821_20170411T192829"
+    :param polarisation:
+        TODO
     :param output_dir:
         Dir path to write outputs to.
     :param slc_paths:
@@ -110,6 +114,9 @@ def process_tsx_slc(
     #
     # if not output_dir.exists():
     #     raise RuntimeError(f"The provided output dir path does not exist! output_dir={output_dir}")
+
+    if slc_paths is None:
+        raise NotImplementedError("This code is dependent upon the SlcPaths dataclass")
 
     _LOG.info(f"process_tsx_slc(): product_path={product_path}")
 
@@ -192,3 +199,25 @@ def process_tsx_slc(
 
         convert(bmp_path, png_path)
         bmp_path.unlink()
+
+    # TODO: write metadata to avoid stack.py crapping itself
+    # Identify source data URL
+    src_url = product_path / "src_url"
+    # - if this is raw_data we've extracted from a source archive, a src_url file will exist
+    if src_url.exists():
+        src_url = src_url.read_text()
+    # - otherwise it's a source data directory that's been provided by the user
+    else:
+        src_url = product_path.as_posix()
+
+    # Write metadata used to produce this SLC
+    metadata_path = slc_paths.slc.parent / f"metadata_{polarisation}.json"
+
+    metadata = {
+        product_path.name: {
+            "src_url": src_url
+        }
+    }
+
+    with metadata_path.open("w") as file:
+        json.dump(metadata, file, indent=2)

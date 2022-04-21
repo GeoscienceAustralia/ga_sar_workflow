@@ -20,6 +20,7 @@ from insar.workflow.luigi.backscatter_nrt import CreateNRTBackscatter
 from insar.workflow.luigi.append import AppendDatesToStack
 from insar.workflow.luigi.utils import DateListParameter, PathParameter, simplify_dates, one_day
 
+
 class ARD(luigi.WrapperTask):
     """
     Runs the InSAR ARD pipeline using GAMMA software.
@@ -197,6 +198,9 @@ class ARD(luigi.WrapperTask):
             urls_differ = bool(added_urls or removed_urls)
 
             if removed_urls:
+                log.debug("URLs being removed", new_urls=new_urls, existing_urls=existing_urls,
+                          removed_urls=removed_urls, urls_differ=urls_differ)
+
                 # This is not currently a use case we require (thus do not support)
                 # - supporting it gets complicated (makes the whole stack mutable)
                 # - our current approach is append-only and much simpler as a result.

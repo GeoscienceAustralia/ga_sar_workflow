@@ -204,9 +204,28 @@ def acquire_source_data(source_path: str, dst_dir: Path, pols: Optional[List[str
             if len(members) < 1:
                 raise IOError("No files found in TSX tar archive")
 
-            product_dir = dst_dir / os.path.commonpath(i.name for i in members)
+            found = False
+            for m in members:
+                if m.name.endswith("IMAGEDATA"):
+                    found = True
+                    break
+
+            if not found:
+                msg = "Data archive is invalid, could not find IMAGEDATA dir"
+                raise RuntimeError(msg)
+
+            img_path = Path(m)
+
+            # TODO: product_dir needs to be:   dst_dir / date (2nd one) / TSX dir
+            # FIXME: quick: find the IMAGEDATA dir + return parent (the ugly TDX dir)
+            # BUSTED product_dir = dst_dir / os.path.commonpath(i.name for i in members)  # BROKEN
+            if not img_path.parent.name.startswith("TSX") or img_path.parent.name.startswith("TDX"):
+                msg = "parent path is not T[SD]X dir"
+                raise RuntimeError(msg)
+
+            product_dir = dst_dir / img_path.parent  # need to return the big ugly TSX dir
             _LOG.info("TSX debugging, acquire_source_data()", product_dir=product_dir, dst_dir=dst_dir)
-            return product_dir
+            return product_dir  # pushes out to DataDownload task, raw_data/date/date/TSX...
 
     else:
         raise RuntimeError(f"Unsupported source data path: {source_path}")

@@ -219,8 +219,8 @@ def acquire_source_data(source_path: str, dst_dir: Path, pols: Optional[List[str
             # TODO: product_dir needs to be:   dst_dir / date (2nd one) / TSX dir
             # FIXME: quick: find the IMAGEDATA dir + return parent (the ugly TDX dir)
             # BUSTED product_dir = dst_dir / os.path.commonpath(i.name for i in members)  # BROKEN
-            if not img_path.parent.name.startswith("TSX") or img_path.parent.name.startswith("TDX"):
-                msg = "parent path is not T[SD]X dir"
+            if "TDX" not in img_path.parent.name or "TSX" not in img_path.parent.name:
+                msg = f"parent path may not be a T[SD]X dir, img_path={img_path}"
                 raise RuntimeError(msg)
 
             product_dir = dst_dir / img_path.parent  # need to return the big ugly TSX dir

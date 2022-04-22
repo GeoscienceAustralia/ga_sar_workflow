@@ -214,7 +214,7 @@ def acquire_source_data(source_path: str, dst_dir: Path, pols: Optional[List[str
                 msg = "Data archive is invalid, could not find IMAGEDATA dir"
                 raise RuntimeError(msg)
 
-            img_path = Path(m)
+            img_path = Path(m.name)
 
             # TODO: product_dir needs to be:   dst_dir / date (2nd one) / TSX dir
             # FIXME: quick: find the IMAGEDATA dir + return parent (the ugly TDX dir)

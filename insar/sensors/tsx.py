@@ -224,7 +224,7 @@ def acquire_source_data(source_path: str, dst_dir: Path, pols: Optional[List[str
                 msg = f"parent path may not be a T[SD]X dir, img_path={img_parent}"
                 raise RuntimeError(msg)
 
-            product_dir = dst_dir / img_parent  # need to return the big ugly TSX dir
+            product_dir = dst_dir / img_path.parent  # need to return the big ugly TSX dir
             _LOG.info("TSX debugging, acquire_source_data()", product_dir=product_dir, dst_dir=dst_dir)
             return product_dir  # pushes out to DataDownload task, raw_data/date/date/TSX...
 

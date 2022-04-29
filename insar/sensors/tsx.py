@@ -13,7 +13,7 @@ from insar.sensors.types import SensorMetadata
 # Example: 20170320_TSX_T041D.tar.gz
 ANY_DATA_PATTERN = (
     r"^(?P<product_date>[0-9]{8})"
-    r"_(?P<sensor_id>TSX)"  # TODO: is TDX ever required in gzip filename?
+    r"_(?P<sensor_id>T[SD]X)"
     r"_T(?P<track>[0-9]+D)"
     r"(?P<extension>.tar.gz)?$"
 )
@@ -36,14 +36,13 @@ _LOG = structlog.get_logger("insar")
 # https://www.geoimage.com.au/satellites-sensors/terrasar-x-and-tandem-x/
 
 # From https://www.n2yo.com/satellite/?s=31698 (referenced by https://en.wikipedia.org/wiki/TerraSAR-X)
-# perigee_altitude_km = 514.2
-# apogee_altitude_km = 516.9
 
+# TODO: verify constellation_name
 METADATA = SensorMetadata(
     "TerraSAR-X",  # sensor name/also the mission name
-    "TSX",  # TODO: verify constellation_name, here TSX refers to TSX and TDX/TanDEM-X satellite pair
-    ["TSX1", "TDX1"],  # TODO: verify constellation member names
-    514.8,  # average altitude source: https://eoportal.org/web/eoportal/satellite-missions/t/terrasar-x
+    "TSX",  #  TSX refers to TSX and TDX/TanDEM-X satellite pair
+    ["TSX1", "TDX1"],
+    514.8,  # average altitude, source: https://eoportal.org/web/eoportal/satellite-missions/t/terrasar-x
     9.65,
     POLARISATIONS
 )
@@ -72,7 +71,7 @@ XML_METADATA_BASE = (
 def _find_xml_meta_member(names):
     """Searches list of tarfile entries and returns the TSX/TDX XML metadata match obj."""
 
-    # TSX/TDX .tar.gz data files have several subdirs of info
+    # TSX/TDX .tar.gz data files have several data subdirs
     # the XML metadata file has the same name as its parent dir, note *duplicated* names in this example path:
     # 20170411/TDX1_SAR__SSC______SM_S_SRA_20170411T192821_20170411T192829/TDX1_SAR__SSC______SM_S_SRA_20170411T192821_20170411T192829.xml
     #
@@ -127,13 +126,12 @@ def get_data_swath_info(
     raw_data_path: Optional[Path]
 ):
     if raw_data_path:
-        # TODO: is this logic required? RSAT ignores raw_data_path
+        # TODO: is this logic required? e.g. RSAT ignores raw_data_path
         msg = "raw_data_path is not yet implemented for TSX..."
         _LOG.info(msg, raw_data_path=raw_data_path)
-        #raise NotImplementedError(msg)
 
     if data_path.is_dir():
-        # TODO: does already decompressed data need to be handled?
+        # TODO: does previously decompressed data need to be handled?
         raise NotImplementedError("TSX get_data_swath_info() with a dir in not yet implemented")
 
     # try matching the tar file patterns
@@ -184,8 +182,6 @@ def acquire_source_data(source_path: str, dst_dir: Path, pols: Optional[List[str
     # if pols is not None:
     #     raise NotImplementedError("acquiring source data for different polarisations is not implemented")
 
-    _LOG.info("Debugging acquire_source_data()", source_path=source_path, dst_dir=dst_dir)
-
     source_path = Path(source_path)
     if not source_path.exists():
         raise FileNotFoundError("The source data path does not exist!")
@@ -216,17 +212,14 @@ def acquire_source_data(source_path: str, dst_dir: Path, pols: Optional[List[str
 
             img_path = Path(m.name)
 
-            # TODO: product_dir needs to be:   dst_dir / date (2nd one) / TSX dir
-            # FIXME: quick: find the IMAGEDATA dir + return parent (the ugly TDX dir)
-            # BUSTED product_dir = dst_dir / os.path.commonpath(i.name for i in members)  # BROKEN
+            # returned product_dir needs to be: dst_dir / scene_date (from the .tar.gz) / long TSX dir
             img_parent = img_path.parent.name
             if "TDX" not in img_parent and "TSX" not in img_parent:
                 msg = f"parent path may not be a T[SD]X dir, img_path={img_parent}"
                 raise RuntimeError(msg)
 
             product_dir = dst_dir / img_path.parent  # need to return the big ugly TSX dir
-            _LOG.info("TSX debugging, acquire_source_data()", product_dir=product_dir, dst_dir=dst_dir)
             return product_dir  # pushes out to DataDownload task, raw_data/date/date/TSX...
 
     else:
-        raise RuntimeError(f"Unsupported source data path: {source_path}")
+        raise RuntimeError(f"Unsupported TSX source data path: {source_path}")

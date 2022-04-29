@@ -99,10 +99,7 @@ class CreateTSXSlcTasks(luigi.Task):
                     log.info(f"Skipping {pol} scene, only {pols} are enabled")
                     continue
 
-                # TODO: figure out what path is needed for TSX files or dirs
                 raw_data_dir = raw_dir / slc_scene / slc_scene  # NB: double scene date dir
-                log.info("CreateTSXSlcTasks.run() debugging", raw_data_dir=raw_data_dir)
-
                 tsx_dirs = list(raw_data_dir.glob("T[DS]X*"))
 
                 if not tsx_dirs:
@@ -110,9 +107,9 @@ class CreateTSXSlcTasks(luigi.Task):
                     log.error(msg, outdir=outdir, slc_dir=slc_dir, raw_dir=raw_dir, tsx_dirs=tsx_dirs)
                     raise RuntimeError(msg)
 
-                # TODO: assumption: there is only 1 scene dir for each date
+                # NB: it is assumed that only 1 scene dir exists for each date
                 if len(tsx_dirs) > 1:
-                    log.error("TODO: code assumes only 1 scene dir per date")
+                    log.error(f"2+ scene dirs found for {slc_scene}")
                     continue
 
                 slc_tasks.append(

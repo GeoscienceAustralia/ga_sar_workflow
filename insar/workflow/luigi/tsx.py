@@ -50,7 +50,7 @@ class ProcessTSXSlc(luigi.Task):
         log.info("Beginning TSX SLC processing", raw_path=raw_path, scene_out_dir=scene_out_dir)
 
         process_tsx_slc(
-            raw_path,  # NB: needs to be the extracted data dir
+            raw_path,  # NB: needs to be extracted scene_date / long TSX dir
             self.polarization,
             paths.slc
         )

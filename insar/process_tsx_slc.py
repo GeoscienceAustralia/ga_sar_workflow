@@ -1,18 +1,15 @@
 import json
 import tempfile
+from pathlib import Path
 
 from insar import constant
 from insar.process_utils import convert
+from insar.py_gamma_ga import GammaInterface, auto_logging_decorator, subprocess_wrapper
 
 import structlog
-from pathlib import Path
-from dataclasses import dataclass
-
-from insar.py_gamma_ga import GammaInterface, auto_logging_decorator, subprocess_wrapper
-from insar.paths.slc import SlcPaths
 
 
-# Customise Gamma shim to automatically handle basic error checking and logging
+# Customise GAMMA shim to automatically handle basic error checking and logging
 class ProcessSlcException(Exception):
     pass
 
@@ -24,61 +21,18 @@ pg = GammaInterface(
 
 
 # TODO: does there need to be any polarisation filtering?
-#       Possibly - proc file specifies a polarisation to use...
-#
-# TODO: does this dataclass need to get paths from the main proc file for SLCs?
 
-@dataclass
-class TSXPaths:
-    # output files
-    slc: Path
-    slc_par: Path
-    sigma0_slc: Path
-    sigma0_slc_par: Path
-    sigma0_slc_bmp: Path
-    sigma0_slc_png: Path
-
-    @classmethod
-    def create(cls, scene_date, dest_dir):
-        dest_dir = Path(dest_dir) if isinstance(dest_dir, str) else dest_dir
-        slc = (dest_dir / scene_date).with_suffix(".slc")
-        slc_par = (dest_dir / scene_date).with_suffix(".slc.par")
-        s0_slc = (dest_dir / scene_date).with_suffix(".sigma0.slc")
-        s0_slc_par = (dest_dir / scene_date).with_suffix(".sigma0.slc.par")
-        bmp = (dest_dir / scene_date).with_suffix(".sigma0.slc.bmp")
-        png = (dest_dir / scene_date).with_suffix(".sigma0.slc.png")
-
-        return TSXPaths(slc, slc_par, s0_slc, s0_slc_par, bmp, png)
-
-
-def _verify_date_dir(dirs, product_path):
-    if len(dirs) == 0:
-        msg = f"No scene date directory found in {product_path}"
-        raise ProcessSlcException(msg)
-    elif len(dirs) > 1:
-        msg = f"Multiple scene date dirs found in {product_path}:\n{dirs}"
-        raise ProcessSlcException(msg)
-
-
-def _verify_tsx_data_dirs(dirs, parent_path):
-    if len(dirs) == 0:
-        msg = f"No TSX data directory found in {parent_path}"
-        raise ProcessSlcException(msg)
-    elif len(dirs) > 1:
-        msg = f"Multiple dirs found in {parent_path}:\n{dirs}"
-        raise ProcessSlcException(msg)
-
-
-def _verify_tsx_annotation_file(xmls, tsx_dir):
+# TAR gzip file path validation funcs
+def _verify_tsx_annotation_path(xmls, tsx_dir):
     if len(xmls) == 0:
-        msg = f"No annotation XML file found in {tsx_dir}"
+        msg = f"No annotation XML file found in {tsx_dir}\nDir contents: {list(tsx_dir.glob('*'))}"
         raise ProcessSlcException(msg)
     elif len(xmls) > 1:
         msg = f"Multiple XML files found in {tsx_dir}, should only contain 1:\n{xmls}"
         raise ProcessSlcException(msg)
 
 
-def _verify_cosar_file(cos_files, image_dir):
+def _verify_cosar_path(cos_files, image_dir):
     if len(cos_files) == 0:
         msg = f"No COSAR file found in {image_dir}"
         raise ProcessSlcException(msg)
@@ -90,66 +44,44 @@ def _verify_cosar_file(cos_files, image_dir):
 def process_tsx_slc(
     product_path: Path,
     polarisation: str,
-    output_dir: Path,
-    slc_paths: SlcPaths = None,
+    output_slc_path: Path
 ):
     """
-    Processes TSX/TDX data into GAMMA SLC data.
+    Process source TSX/TDX data into GAMMA SLC files.
 
     :param product_path:
-        Path to the TSX product directory. This is the 2ND subdir with all the files:
-         e.g. "TDX1_SAR__SSC______SM_S_SRA_20170411T192821_20170411T192829"
+        Path to extracted TSX product dir. From acquire_source_data() it's expected to be the base TSX filename subdir,
+         e.g. "<scene_date>/<scene_date>/TDX1_SAR__SSC______SM_S_SRA_20170411T192821_20170411T192829" (i.e. automatic
+         descent into one level of )
     :param polarisation:
-        TODO
-    :param output_dir:
-        Dir path to write outputs to.
-    :param slc_paths:
-        Optional SlcPaths if the default file locations need to be changed.
+        scene polarisation value
+    :param output_slc_path:
+        Path to default SLC output file.
     """
-    # if not product_path.exists():
-    #     raise RuntimeError(f"The provided product path does not exist! product_path={product_path}")
-    #
-    # if not output_dir.is_dir():
-    #     raise RuntimeError("output_dir is a file...")
-    #
-    # if not output_dir.exists():
-    #     raise RuntimeError(f"The provided output dir path does not exist! output_dir={output_dir}")
+    if not product_path.exists():
+        raise ProcessSlcException(f"product_path does not exist! product_path={product_path}")
 
-    if slc_paths is None:
-        raise NotImplementedError("This code is dependent upon the SlcPaths dataclass")
+    if output_slc_path is None:
+        raise ValueError("output_slc_path cannot be None")
 
-    _LOG.info(f"process_tsx_slc(): product_path={product_path}")
+    # NB: manual path manipulation not ideal, but results in simpler calling code & tests
+    output_slc_par_path = output_slc_path.with_suffix(".slc.par")
 
-    # scene_date = product_path.name
-    # tsx_paths = tsx_paths if tsx_paths else TSXPaths.create(scene_date, output_dir)
-    #
-    # # find second scene date from root dir in the .tar.gz archive
-    # scene_date_pattern = "[0-9]" * 8
-    # date_dirs = list(product_path.glob(scene_date_pattern))
-    # _verify_date_dir(date_dirs, product_path)
-    # date_dir = date_dirs[0]  # is a Path
-    #
-    # # find long TSX dir under the "root" date dir
-    # pattern = "T[SD]X[0-9]_SAR_*T[0-9][0-9][0-9][0-9][0-9][0-9]"
-    # dirs = list(date_dir.glob(pattern))
-    # _verify_tsx_data_dirs(dirs, date_dir)
-    # tsx_dir = dirs[0]  # big ugly dir below the "root" date dir
-
-    # find the annotation XML file (duplicates the big ugly name & adds .xml suffix
+    # find the annotation XML file
     pattern = "T[SD]X[0-9]_SAR_*T[0-9][0-9][0-9][0-9][0-9][0-9]"
     xmls = list(product_path.glob(pattern + ".xml"))
-    _verify_tsx_annotation_file(xmls, product_path)
+    _verify_tsx_annotation_path(xmls, product_path)
     xml_meta = xmls[0]
 
     # locate the image data file
     image_dir = product_path / "IMAGEDATA"
     cos_files = list(image_dir.glob("IMAGE_*.cos"))
-    _verify_cosar_file(cos_files, image_dir)
+    _verify_cosar_path(cos_files, image_dir)
     cosar = cos_files[0]
 
     with tempfile.TemporaryDirectory() as td:
         tdir = Path(td)
-        base_name = slc_paths.slc.name
+        base_name = output_slc_path.name
         gamma_slc = tdir / f"gamma_{str(base_name)}"
         gamma_slc_par = tdir / f"gamma_{str(base_name)}.par"
 
@@ -162,11 +94,11 @@ def process_tsx_slc(
 
         # Apply stated calFactor from the xml file, scale according to sin(inc_angle) and
         # convert from scomplex to fcomplex. Output is sigma0
-        # This does the file MOVE step inline compared to BASH version
+        # NB: This does the file mv step inline unlike the BASH version
         pg.radcal_SLC(gamma_slc,
                       gamma_slc_par,
-                      slc_paths.slc,  # SLC output file, the sigma0
-                      slc_paths.slc_par,  # SLC PAR output file, the sigma0 par
+                      output_slc_path,  # SLC output file, the sigma0
+                      output_slc_par_path,  # SLC PAR output file, the sigma0 par
                       3,  # fcase: scomplex --> fcomplex
                       constant.NOT_PROVIDED,  # antenna gain file
                       0,  # rloss_flag
@@ -177,13 +109,13 @@ def process_tsx_slc(
         )
 
         # Make quick-look png image of SLC
-        par = pg.ParFile(slc_paths.slc_par.as_posix())
+        par = pg.ParFile(output_slc_par_path.as_posix())
         width = par.get_value("range_samples", dtype=int, index=0)
         lines = par.get_value("azimuth_lines", dtype=int, index=0)
-        bmp_path = slc_paths.slc.with_suffix(".bmp")
-        png_path = slc_paths.slc.with_suffix(".png")
+        bmp_path = output_slc_path.with_suffix(".slc.bmp")
+        png_path = output_slc_path.with_suffix(".slc.png")
 
-        pg.rasSLC(slc_paths.slc,
+        pg.rasSLC(output_slc_path,
                   width,
                   1,
                   lines,
@@ -200,18 +132,16 @@ def process_tsx_slc(
         convert(bmp_path, png_path)
         bmp_path.unlink()
 
-    # TODO: write metadata to avoid stack.py crapping itself
-    # Identify source data URL
+    # write metadata for stack.py / ard Luigi task
     src_url = product_path / "src_url"
     # - if this is raw_data we've extracted from a source archive, a src_url file will exist
     if src_url.exists():
-        src_url = src_url.read_text()
-    # - otherwise it's a source data directory that's been provided by the user
+        src_url = src_url.read_text()  # should get TAR file here, otherwise a src data dir provided by the user
     else:
         src_url = product_path.as_posix()
 
     # Write metadata used to produce this SLC
-    metadata_path = slc_paths.slc.parent / f"metadata_{polarisation}.json"
+    metadata_path = output_slc_path.parent / f"metadata_{polarisation}.json"
 
     metadata = {
         product_path.name: {

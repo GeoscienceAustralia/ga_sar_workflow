@@ -18,7 +18,9 @@ import pandas as pd
 
 
 class ProcessTSXSlc(luigi.Task):
-    """TODO"""
+    """
+    Produces an SLC product for a single date/polarisation of TSX/TDX data.
+    """
     raw_path = PathParameter()
 
     scene_date = luigi.Parameter()
@@ -37,27 +39,23 @@ class ProcessTSXSlc(luigi.Task):
     def run(self):
         log = STATUS_LOGGER.bind(
             scene_date=self.scene_date,
-            # sensor=self.sensor,
             polarisation=self.polarization
         )
 
         scene_out_dir = Path(self.slc_dir) / str(self.scene_date)
         scene_out_dir.mkdir(parents=True, exist_ok=True)
-
         raw_path = Path(str(self.raw_path))
-
-        log.info("ProcessTSXSlc / Beginning SLC processing", raw_path=raw_path, scene_out_dir=scene_out_dir)
-
         paths = SlcPaths(self.workdir, self.scene_date, self.polarization)
+
+        log.info("Beginning TSX SLC processing", raw_path=raw_path, scene_out_dir=scene_out_dir)
 
         process_tsx_slc(
             raw_path,  # NB: needs to be the extracted data dir
             self.polarization,
-            paths.dir,
-            paths
+            paths.slc
         )
 
-        log.info("ProcessTSXSlc / SLC processing complete")
+        log.info("TSX SLC processing complete")
 
         with self.output().open("w") as f:
             f.write("")
@@ -69,6 +67,9 @@ class ProcessTSXSlc(luigi.Task):
 # so this isn't a concern)
 @requires(InitialSetup)
 class CreateTSXSlcTasks(luigi.Task):
+    """
+    Creates Luigi tasks required to process TSX/TDX data.
+    """
 
     def output(self):
         return luigi.LocalTarget(
@@ -87,8 +88,6 @@ class CreateTSXSlcTasks(luigi.Task):
         slc_dir = outdir / proc_config.slc_dir
         raw_dir = outdir / proc_config.raw_data_dir
         os.makedirs(slc_dir, exist_ok=True)
-
-        log.info("CreateTSXSlcTasks.run() debugging", raw_dir=raw_dir)
 
         slc_frames = get_scenes(paths.acquisition_csv)
         slc_tasks = []

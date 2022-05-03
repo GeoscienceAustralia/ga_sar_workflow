@@ -17,6 +17,7 @@ releases any other way than via github.
 #### Supported Satellites and Sensors
 
 * Sentinel-1A/B
+* TerraSAR-X/TanDEM-X
 
 ## Installation
 

@@ -9,21 +9,15 @@
  * [PROJ](https://proj.org/) (for GAMMA/GDAL)
  * [FFTW](https://www.fftw.org/) (for GAMMA)
 
-In addition to the above native dependencies, gamma_insar has various python dependencies listed in `requirements.txt` - the
-exact python package versions required is tied to the GAMMA version being used (and `requirements.txt` is as loosely
-as possible frozen to the versions supported by the GAMMA version used in GA's production NCI environment).
+In addition to the above native dependencies, gamma_insar has various python dependencies listed in `requirements.txt` - the exact python package versions required is tied to the GAMMA version being used (and `requirements.txt` is as loosely as possible frozen to the versions supported by the GAMMA version used in GA's production NCI environment).
 
 ## Installation on arbitrary platforms
 
-In platform agnostic terms, gamma_insar should work in any environment in which
-it's dependencies (both native + python) are installed and found in the `PATH`/`PYTHONPATH`/`LD_LIBRARY_PATH` (or relevant platform specific analgoues).
+In platform agnostic terms, gamma_insar should work in any environment in which it's dependencies (both native + python) are installed and found in the `PATH`/`PYTHONPATH`/`LD_LIBRARY_PATH` (or relevant platform specific analgoues).
 
-`gamma_insar` provides a Dockerfile (based on OSGEO/DAL ubuntu images) a a simple method for bringing up a compatible environment on
-any platform which supports Docker.
+`gamma_insar` provides a Dockerfile (based on OSGEO/DAL ubuntu images) a a simple method for bringing up a compatible environment on any platform which supports Docker.
 
-`gamma_insar` also has various scripts (found under `configs/`) in which Python virtual environments are used to setup compatible environments on
-platforms where native dependencies already exist (such as the NCI environment), which may be used as a reference
-for those wanting to create similar venvs on other platforms.
+`gamma_insar` also has various scripts (found under `configs/`) in which Python virtual environments are used to setup compatible environments on platforms where native dependencies already exist (such as the NCI environment), which may be used as a reference for those wanting to create similar venvs on other platforms.
 
 ## Installation on NCI
 
@@ -49,8 +43,7 @@ cd ~
 git clone -b pygamma_workflow git@github.com:GeoscienceAustralia/gamma_insar.git
 ```
 
-We use Python virtual environments on gadi (using DEA modules for native dependencies) to manage installations of `gamma_insar`.  Scripts for
-creation and entering these environments are provided in `configs/createNCIenv.sh` and `configs/activateNCI.env` respectively.
+We use Python virtual environments on gadi (using DEA modules for native dependencies) to manage installations of `gamma_insar`.  Scripts for creation and entering these environments are provided in `configs/createNCIenv.sh` and `configs/activateNCI.env` respectively.
 
 Once logged into `gadi`, use the following command to create a new installation (assumes `~/gamma_insar` from above):
 

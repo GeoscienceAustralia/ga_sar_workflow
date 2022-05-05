@@ -10,7 +10,7 @@ The first step in creating the database is to extract the appropriate metadata f
 
 The archiving script currently only archives a single month at a time, specified via the `--year` and `--month` arguments.
 
-This example extracts the SLC acquisition details for Jan 2020 into YAML files (`--save-yaml`) for a single month from a dir specivied via `--slc-dir`.
+This example extracts the SLC acquisition details for Jan 2020 into YAML files (`--save-yaml`) for a single month from a dir specified via `--slc-dir`.
 
 ```BASH
 slc-archive slc-ingestion \
@@ -22,7 +22,7 @@ slc-archive slc-ingestion \
     --log-pathname /path/do/output/yaml_dir/archive_202001.log
 ```
 
-It takes 1-2 hours for ~5 years of Sentinel-1 acquisitions.
+This can take anywhere from a few minutes for just a couple of scenes, up to many hours for hundreds of scenes (eg: years of S1 data).
 
 #### Database Creation
 
@@ -37,4 +37,4 @@ slc-archive slc-ingest-yaml \
         --log-pathname <output-json-log-filename>
 ```
 
-Note: the run time can be quite long depending on how many yaml files there are.
+Note: the run time can be quite long depending (over an hour) on how many yaml files there are.

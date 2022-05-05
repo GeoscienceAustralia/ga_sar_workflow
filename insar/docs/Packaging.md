@@ -19,7 +19,7 @@ Additional options exist for handling various production scenarios - some of the
 
 # Re-packaging missing products
 
-If the user already has a set of packaged data they want to update with new data that did *not* previously exist, they can do so in much the same way they package data normally but with the flag `--overwrite-existing``.  This flag will essentially skip packaging of any data that already exists, and thus only package data which has not yet been packaged.
+If the user already has a set of packaged data they want to update with new data that did *not* previously exist, they can do so in much the same way they package data normally but with the flag `--overwrite-existing`.  This flag will essentially skip packaging of any data that already exists, and thus only package data which has not yet been packaged.
 
 If the original script above was used to package your data, re-running it with this flag would produce an identical packaged product with updated timestamps:
 

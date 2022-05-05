@@ -9,7 +9,7 @@ The main outputs of the `gamma_insar` workflow are the NRB and IFG products, how
 | --- | --- |
 | Satellite data acquisitions | To create a stack, we need satellite data to process - these data acquisitions are the input to our data processing. |
 | Stack directory and/or .proc file | While not strictly a "product", it's a key input into the dependency chain upon which everything depends.  There is no stack processing without a well defined stack. |
-| Mosaiced SLC scenes | `gamma_insar` normalizes all input SLC data into a concept of a "scene" which covers the whole region of the stack's extent... for many satellites which won't exactly match acquisition patterns to the user's stack frame extents this involves mosaicing multiple acquistions together into a single product. |
+| Mosaiced SLC scenes | `gamma_insar` normalizes all input SLC data into the concept of a "scene" which covers the whole region of the stack's extent... for many satellites which won't exactly match acquisition patterns to the user's stack frame extents, this involves mosaicing multiple acquistions together into a single product. |
 | Multi-looked SLC scenes | `gamma_insar` usage typically doesn't involve producing products at full resolution, instead they're downsampled by a factor of 2 which is referred to as the "multi-look" factor - multi-looked products are differentiated from full-resolution SLC data with the `.mli` extension instead of `.slc` |
 | DEM | In addition to SLC data from a SAR satellite, `gamma_insar` also requires a digital elevation model (DEM) to coregister to the stack's primary scene.  The provided DEM can be of any size (even the size of a whole continent or even a planet), `gamma_insar` will extract an appropriate region of interest out of it to keep memory usage low. |
 | Coregistration tree | To decide what secondary scenes are coregistered to one another, we build a kind of hierarchial "tree" structure that ensures scenes are all coregistered to scenes within 2 months of each other - this tree structure is serialised to the disk as a set of files in the `lists` dir along with other scene manifests. |
@@ -21,8 +21,8 @@ The main outputs of the `gamma_insar` workflow are the NRB and IFG products, how
 ## Design Requirements ##
 
 An important aspect to the design of the Luigi workflow is the fact we have some production requirements that aren't quite suited to how Luigi is typically used, these requirements are:
-1. End product (Ciregisteration, NRB & IFG) processing failures should NOT result in workflow failures, the stack should continue processing even if these products fail for one or more scenes.  The end result in a product failure should be a partially completed stack where interferograms have been produced for all scenes that succeeded, and products missing for those that failed - but the Luigi workflow should soldier on to the end regardless without error.
-2. Product failures should be able to be recovered from by re-processing those scenes (leaving the already successfully processed scenes alone), this combined with reuiqrement #1 implies Luigi task success does NOT correlate to product success...
+1. End product (coregistration, NRB & IFG) processing failures should NOT result in workflow failures, the stack should continue processing even if these products fail for one or more scenes.  The end result in a product failure should be a partially completed stack where interferograms have been produced for all scenes that succeeded, and products missing for those that failed - but the Luigi workflow should soldier on to the end regardless without error.
+2. Product failures should be able to be recovered from by re-processing those scenes (leaving the already successfully processed scenes alone), this combined with requirement #1 implies Luigi task success does NOT correlate to product success...
 3. Stack processing should be able to recover from unexpected failures (eg: Luigi being completely killed/interrupted before finishing), this is an implicit feature of Luigi when used normally but needs consideration due to quirks from us obeying requirements #1 & #2 above.
 4. The set of products that make up a stack can expand (eg: new products can be added by extending the end-date of a stack), thus a complete stack can be made incomplete by expanding the end date.
 
@@ -34,7 +34,7 @@ Below is a manifest of all the Luigi tasks in the workflow, with information on 
 | --------- | -------- | --- |
 | `ARD` | `InitialSetup` | Starts off the stack setup process & directs the DAG toward the right workflow pipeline depending on parameters given (eg: normal  vs. resume vs. append) |
 | `InitialSetup`| `DataDownload`, `CreateFullSlc` / `CreateRSAT2SlcTasks` / `CreateALOSSlcTasks`, `CalcInitialBaseline` | Finalises the stack setup process ensuring the stack is in a valid and complete state ready to begin processing. |
-| `DataDownload` | | Downloads satellite data acquisitions for a specified date |
+| `DataDownload` | | Downloads/copies satellite data acquisitions for a specified date and extract the data from them ready for processing (if they're bundled as an archive) |
 | `CreateFullSlc` | `ProcessSlc`, `CreateSlcMosaic` | Creates the SLC processing tasks for the stack's scene list with S1 data |
 | `ProcessSlc` | | Processes Sentinel-1 acquisition data into SLC scenes |
 | `CreateSlcMosaic` | `CreateMultilook`, `ProcessSlcMosaic` | Creates the SLC mosaicing tasks for the SLC scenes |
@@ -65,9 +65,9 @@ To help developers better visualise the data flow, a visual diagram has been mad
 
 ## Stack Setup ##
 
-The stack setup process is split across two tasks currently due to the nature of the ARD pipeline (which can work in different ways depending on parameters provided).  The first part of the setup is managed by the `ARD` task, while the bulk of the work is undertakeb by the `InitialSetup` task located in `insar/workflow/luigi/stack_setup.py`.
+The stack setup process is split across two tasks currently due to the nature of the ARD pipeline (which can work in different ways depending on parameters provided).  The first part of the setup is managed by the `ARD` task, while the bulk of the work is undertaken by the `InitialSetup` task located in `insar/workflow/luigi/stack_setup.py`.
 
-The `ARD` task essentially starts to "finalises" the .proc file, which means loading it, overriding any task-parameters that were provided to the task (these are often provided by the user as command line arguments), and validating that the proc file is valid (eg: if a stack already exists, that the .proc file is consistent with the existing stack / obeys resume or append logic).
+The `ARD` task essentially starts to "finalise" the .proc file, which means loading it, overriding any task-parameters that were provided to the task (these are often provided by the user as command line arguments), and validating that the proc file is valid (eg: if a stack already exists, that the .proc file is consistent with the existing stack / obeys resume or append logic).
 
 The `InitialSetup` task is responsible for setting up a stack and determining 'what' needs to be processed (as the set of products isn't well-defined until after the stack and datasets are loaded).  This task is one of the more important tasks in the workflow in the sense that it defines 'what' is processed, as it resolves include/exclude date periods into a set of data acquisitions from the geospatial/temporal database, downloads/determines if acquisitions are valid or invalid/corrupt (removing them from the stack).
 
@@ -85,15 +85,15 @@ This is implemented by putting all product processing code in try/except scope t
 
 Due to the technical implications of our product vs. task error design, we can't rely on Luigi's process for re-running or resuming a workflow pipeline, and instead we have had to implement our own resume logic as a distinct pipeline task called `TriggerResume`.
 
-The `TriggerResume` task kicks off an alternatie workflow pipeline where *scenes* are processed individually from SLC to end products, instead of the normal workflow which batch processes *products*.  The resume task identifies the completness of all scenes, and triggers the appropriate proessing tasks for all missing products for all scenes which miss any kind of product via the `ReprocessSingleSLC` task.
+The `TriggerResume` task kicks off an alternative workflow pipeline where *scenes* are processed individually from SLC to end products, instead of the normal workflow which batch processes *products*.  The resume task identifies the completeness of all scenes, and triggers the appropriate processing tasks for all missing products for all scenes which miss any kind of product via the `ReprocessSingleSLC` task.
 
-Due to the dynamic/runtime determination of completness of scenes, the `ReprocessSingleSLC` task uses dynamic dependencies in it's `run()` function which dispatches processing tasks for the earliest missing product (and all those that proceed it).  This is one of the few cases dynamic dependencies are used, and a cause of warnings in the Luigi workflow logs about changing dependencies (which comes with their use).
+Due to the dynamic/runtime determination of completeness of scenes, the `ReprocessSingleSLC` task uses dynamic dependencies in it's `run()` function which dispatches processing tasks for the earliest missing product (and all those that are derived from it).  This is one of the few cases dynamic dependencies are used, and a cause of warnings in the Luigi workflow logs about changing dependencies (which comes with their use).
 
 ## Stack Appending ##
 
 While most stack states/settings are immutable, one thing that can change is the end-date of a stack - which is typically referred to as "appending" to the stack.  This allows an already processed stack to grow into the future as new data becomes available.
 
-This is achieved with the `AppendDatesToStack` task, starts off similar to the `InitialSetup` task will load and finalise the .proc file but with special logic that allows for the extension of the stack's end date, but then immediately produces extra coregistration tree levels for the new scenes, and a **new** SBAS network (which shares some baseline dates w/ the tail end of the last SBAS network to ensure it can be linked w/ the existing stack scenes).  Once the stack state is valid and finalised, it continues processing the new dates with it's own processing pipeline similar-ish to the resume pipeline based on `ReprocessSingleSLC` and directly dispatching `CoregisterSecondary` / `ProcessBackscatter` / `ProcessIFG`.
+This is achieved with the `AppendDatesToStack` task, starts off similar to the `InitialSetup` task will load and finalise the .proc file but with special logic that allows for the extension of the stack's end date, but then immediately produces extra coregistration tree levels for the new scenes, and a **new** SBAS network (which shares some baseline dates with the tail end of the last SBAS network to ensure it can be linked with the existing stack scenes).  Once the stack state is valid and finalised, it continues processing the new dates with it's own processing pipeline similar-ish to the resume pipeline based on `ReprocessSingleSLC` and directly dispatching `CoregisterSecondary` / `ProcessBackscatter` / `ProcessIFG`.
 
 
 ## Satellite Specific Tasks ##

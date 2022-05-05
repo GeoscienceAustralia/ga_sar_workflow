@@ -2,7 +2,7 @@ This document covers how to run the `gamma_insar` workflow to produce ARD (analy
 
 The style of this guide is a step-by-step tutorial like approach, and should leave the reader having actually run the workflow and having produced products for them to use.
 
-This guide will inform the user on how to use the "Luigi ARD workflow runner" (`gamma_insar ARD`), however it largely applies to the "PBS ARD workflow runner" (`pbs-insar`) that's often used on the NCI as well which shares an identical workflow (it uses the Luigi ARD runner under the hood) but has some differences in the parameters it takes.
+This guide will inform the user on how to use the "Luigi ARD workflow runner" (using the `gamma_insar ARD` command), however it largely applies to the "PBS ARD workflow runner" (which is the `pbs-insar` command) that's often used on the NCI as well which shares an identical workflow (it uses the Luigi ARD runner under the hood) but has some differences in the parameters it takes.
 
 When running `gamma_insar ARD` the workflow is being run on the local machine, and when running `pbs-insar` the workflow will be scheduled as a PBS job to run on a different machine via PBS.
 
@@ -31,7 +31,7 @@ In addition to this the user will need to provide a shapefile from their framing
 
 ## Defining the stack ##
 
-To start processing we need to define "what" we intend to proces.  In very concise terms, this means defining all of the stack properties in `Stack.md` but for completeness we will describe the reasoning of appropriate settings below.
+To start processing we need to define "what" we intend to process.  In very concise terms, this means defining all of the stack properties in `Stack.md` but for completeness we will describe the reasoning of appropriate settings below.
 
 The most basic details we will want to establish is what we want to name our stack, and what date range the stack is producing data for (note: if there's no immediate end date that's okay - the end date can be set to the latest date for which data is available and the stack can have new dates appended at a later date).
 
@@ -99,8 +99,7 @@ gamma_insar ARD \
     --local-scheduler
 ```
 
-Note: If using `pbs-insar` to launch a PBS job, an additional parameter is required for providing an environment script that the job uses to setup the
-gamma environment for the job, eg: `--env /path/to/gamma_insar_install/NCI.env` - and the `--local-scheduler` parameter is not required.
+Note: If using `pbs-insar` to launch a PBS job, an additional parameter is required for providing an environment script that the job uses to setup the gamma environment for the job, eg: `--env /path/to/gamma_insar_install/NCI.env` - and the `--local-scheduler` parameter is not required.
 
 ## High performance computing ##
 
@@ -110,7 +109,7 @@ The workflow supports spreading tasks across multiple cores by specifying how ma
 
 As an example, to process up to 4 products at a time on a 32 core machine a user may want to use: `--workers 4 --num-threads 8`
 
-For users running on the NCI (or any other cluster using PBS for job scheduling), the above applies equally however the command is `pbs-insar` - this command is a helper that will generate a PBS job script that calls a similar `gamma_insar ARD` command on the scheduled node for the user, submitting that job to the queue specified w/ the resources requested.
+For users running on the NCI (or any other cluster using PBS for job scheduling), the above applies equally however the command is `pbs-insar` - this command is a helper that will generate a PBS job script that calls a similar `gamma_insar ARD` command on the scheduled node for the user, submitting that job to the queue specified with the resources requested.
 
 Additional arguments for `pbs-insar` are required to specify the project/user/resources of the job:
 ```
@@ -217,7 +216,7 @@ Sometimes a job will be interrupted before it can finish processing for some rea
 
 This process is as simple as running the **exact** same command as you did to process your original stack, with the **exact** same settings (any deviation will raise an error stating the stack is not the same) using the `--resume` flag.
 
-To copy the geospatial-DB example from the start of this guide, the equivilent resume command would be:
+To copy the geospatial-DB example from the start of this guide, the equivalent resume command would be:
 ```
 gamma_insar ARD \
     --stack-id tutorial_stack \

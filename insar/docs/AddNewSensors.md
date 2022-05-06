@@ -31,6 +31,11 @@ The sensor module extends functions defined in `insar/sensors/data.py` which for
 4. Implement the `get_data_swath_info()` function (also in `data.py`). The `data_path` arg is path to an archive file (or possibly a dir) of data. The function needs to extract metadata from the archive, store in a `dict` and return to the caller. Typically, the details are sourced from the data file name and/or metadata file(s) contained within.
 5. Next, implement `acquire_source_data()`. This function extracts data from archives (if required) and returns a _directory_ path to the data product. The returned path is later provided to the `Luigi` based `DataDownload` task (described below). The path returned is typically the first level directory in the data archive. For example, if the archive contains the files: `root_dir/example_metadata.xml`, `root_dir/example_sar_data.tiff`, `root_dir/example_content.xml`, the return path should be the `source_data_dir/root_dir`.  The `source_path` arg is typically the path to either the raw data dir or an archive file. The `dst_dir` is  typically a dir like `some/dir/path/raw_data/{scene_date}`. Note the addition of a scene date for the acquisition.
 
+### Sensor package configuration
+
+1. Locate `insar/sensors/__init__.py`
+2. Update `__init__.py` to include details of the new sensor, following the existing pattern.
+
 ### Updating data.py
 
 Some modifications are required so the data processing mechanism recognises new sensors.
@@ -62,6 +67,24 @@ This section explains how to write unittests for the sensor processing code.
   - It may also be possible to test with a corrupted data archive.
 4. Ensure the unittests pass.
 
+### Sensor unittests
+
+1. Locate `tests/test_sensors.py`.
+2. Implement sensor specific tests for:
+  - `test_xyz_source_data_identification()`.
+  - `test_xyz_swath_data_for_known_input()`.
+  - `test_xyz_swath_data_fails_for_missing_input()`.
+  - `test_xyz_swath_data_fails_for_invalid_input()`.
+  - `test_xyz_acquisition_for_good_input()`.
+  - `test_xyz_acquisition_for_corrupt_tar_gz()`.
+  - `test_xyz_acquisition_missing_input()`.
+3. Ensure the unittests pass.
+
+### Project configuration
+
+1. Locate `insar/project.py`.
+2. Update the `sensor_caps` variable to list the new sensor in `ProcConfig.validate()`.
+
 ### Luigi workflow configuration
 
 The workflow requires custom code to enable the new sensor processing steps.
@@ -73,6 +96,12 @@ The workflow requires custom code to enable the new sensor processing steps.
   - The raw data exists.
   - There is only one dir source of raw data.
   - A new `ProcessXYZSlc` task is created with appropriate args.
+
+### Luigi stack setup
+
+1. Locate `insar/workflow/luigi/stack_setup.py`
+2. Update the `DataDownload` class to add a handler for the new sensor. This may be as simple as a `pass` statement to avoid any further processing.
+3. **TODO:** document conditions under which custom handlers are needed here.
 
 ### Multilook configuration
 

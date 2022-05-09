@@ -17,9 +17,10 @@ If you are unfamiliar with the Git/project workflow, see [the contributing guide
 The `GAMMA InSAR` project relies on real, but small datasets for testing.
 
 1. Obtain test data files/data archives (e.g. `.zip`, `.tar.gz`) for 2-3 scenes. Small areas are good as for testing and storing as unit test data. For instance, see `tests/data/TSX` for an example data structure.
-2. To reduce test data cruft, manually strip out any unnecessary files in the archive such as documents, preview images (e.g. see `tests/data/TSX/20170411_TSX_T041D.tar.gz`). As a general guide, the InSAR team aims to keep to individual data files to 1 megabyte or less.
-3. From the project root, create a directory for unittest data, e.g. `tests/data/xyz/`.
-4. Copy the stripped down files to this location.
+2. To reduce test data cruft, manually strip out any unnecessary files in the archive such as documents, HTML, preview images (e.g. see `tests/data/TSX/20170411_TSX_T041D.tar.gz`). As a general guide, the InSAR team aims to keep to individual data files to 1 megabyte or less. You may need to decompress the data, edit and then recompress in the same format to mimic a normal data file.
+3. Resize large data files to 0, e.g. `truncate -s 0 some_large_data_file.ext`.
+4. From the project root, create a directory for unittest data, e.g. `tests/data/xyz/`.
+5. Copy the stripped down files to this location.
 
 ### Creating the sensor module
 

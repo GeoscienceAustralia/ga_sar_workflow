@@ -188,7 +188,7 @@ class PyGammaProxy(PyGammaProxy_v20191203):
             # rascc used default [0.1,0.9] scaling by default
             "min": cmin if cmin is not None else 0.1,
             "max": cmax if cmax is not None else 0.9,
-            "cflg": None,
+            "cflg": 1,
             # rashcc uses cc ramp
             "cmap": "cc.cm",
             "rasf": rasf,

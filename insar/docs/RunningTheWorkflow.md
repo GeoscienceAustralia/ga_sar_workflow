@@ -2,7 +2,7 @@ This document covers how to run the `gamma_insar` workflow to produce ARD (analy
 
 The style of this guide is a step-by-step tutorial like approach, and should leave the reader having actually run the workflow and having produced products for them to use.
 
-This guide will inform the user on how to use the "Luigi ARD workflow runner" (`gamma_insar ARD`), however it largely applies to the "PBS ARD workflow runner" (`pbs-insar`) that's often used on the NCI as well which shares an identical workflow (it uses the Luigi ARD runner under the hood) but has some differences in the parameters it takes.
+This guide will inform the user on how to use the "Luigi ARD workflow runner" (using the `gamma_insar ARD` command), however it largely applies to the "PBS ARD workflow runner" (which is the `pbs-insar` command) that's often used on the NCI as well which shares an identical workflow (it uses the Luigi ARD runner under the hood) but has some differences in the parameters it takes.
 
 When running `gamma_insar ARD` the workflow is being run on the local machine, and when running `pbs-insar` the workflow will be scheduled as a PBS job to run on a different machine via PBS.
 
@@ -31,7 +31,7 @@ In addition to this the user will need to provide a shapefile from their framing
 
 ## Defining the stack ##
 
-To start processing we need to define "what" we intend to proces.  In very concise terms, this means defining all of the stack properties in `Stack.md` but for completeness we will describe the reasoning of appropriate settings below.
+To start processing we need to define "what" we intend to process.  In very concise terms, this means defining all of the stack properties in `Stack.md` but for completeness we will describe the reasoning of appropriate settings below.
 
 The most basic details we will want to establish is what we want to name our stack, and what date range the stack is producing data for (note: if there's no immediate end date that's okay - the end date can be set to the latest date for which data is available and the stack can have new dates appended at a later date).
 
@@ -99,8 +99,7 @@ gamma_insar ARD \
     --local-scheduler
 ```
 
-Note: If using `pbs-insar` to launch a PBS job, an additional parameter is required for providing an environment script that the job uses to setup the
-gamma environment for the job, eg: `--env /path/to/gamma_insar_install/NCI.env` - and the `--local-scheduler` parameter is not required.
+Note: If using `pbs-insar` to launch a PBS job, an additional parameter is required for providing an environment script that the job uses to setup the gamma environment for the job, eg: `--env /path/to/gamma_insar_install/NCI.env` - and the `--local-scheduler` parameter is not required.
 
 ## High performance computing ##
 
@@ -110,7 +109,7 @@ The workflow supports spreading tasks across multiple cores by specifying how ma
 
 As an example, to process up to 4 products at a time on a 32 core machine a user may want to use: `--workers 4 --num-threads 8`
 
-For users running on the NCI (or any other cluster using PBS for job scheduling), the above applies equally however the command is `pbs-insar` - this command is a helper that will generate a PBS job script that calls a similar `gamma_insar ARD` command on the scheduled node for the user, submitting that job to the queue specified w/ the resources requested.
+For users running on the NCI (or any other cluster using PBS for job scheduling), the above applies equally however the command is `pbs-insar` - this command is a helper that will generate a PBS job script that calls a similar `gamma_insar ARD` command on the scheduled node for the user, submitting that job to the queue specified with the resources requested.
 
 Additional arguments for `pbs-insar` are required to specify the project/user/resources of the job:
 ```
@@ -210,3 +209,40 @@ Finally, if something obscure happens it's possible to investigate the log files
 Specifically at a high level the `status-log.jsonl` log has per-product overviews of how things went, and `insar-log.jsonl` has lower level information about every single GAMMA command that was executed (including full command line outputs) plus ancillary logged events.
 
 An existing document already exists that is best placed to help users understand these logs: `Logging.md`
+
+## Recovering from an incomplete job/stack ##
+
+Sometimes a job will be interrupted before it can finish processing for some reason such as a system/power related failure.  In this scenario the processed data already computed is not wasted or lost, as a stack can be "resumed" at any time to continue processing any missing products in the stack.
+
+This process is as simple as running the **exact** same command as you did to process your original stack, with the **exact** same settings (any deviation will raise an error stating the stack is not the same) using the `--resume` flag.
+
+To copy the geospatial-DB example from the start of this guide, the equivalent resume command would be:
+```
+gamma_insar ARD \
+    --stack-id tutorial_stack \
+    --sensor S1 \
+    --polarization VV --polarization VH \
+    --include-dates '2019-12-20-2020-01-05' \
+    --shape-file /path/to/our/shapefile.shp \
+    --proc-file our_stack_settings.proc \
+    --workdir /path/to/workdir \
+    --outdir /path/to/outdir \
+    --local-scheduler \
+    --resume
+```
+
+The status log will have events indicating what products were detected as missing, and that they have been resumed for processing.
+
+## Recovering from products with errors ##
+
+In some circumstances errors will occur in products as a result of complexity issues in the scene that GAMMA can not handle, or environmental issues in the thirdparty libraries being used, or possibly a `gamma_insar` bug.  These errors can be identified using the reporting scripts already described in prior sections of this guide.
+
+Alternatively if there is **any* other reason at all the user needs to re-process a specific product it can be deleted and re-processed with this method.
+
+Once scenes have been identified, simply deleting their respective product date directories in the stack and `--resume` 'ing them with the the recovery of an incomplete stack described above can be applied (as deleting the products essentially makes the stack incomplete and ready for resuming).
+
+## Appending new data to a stack ##
+
+If users have a need to extend the temporal period of their stack, `gamma_insar` does support adding dates **after** the current end date of a stack (a.k.a. extending the end date of a stack).  Like much of the post-initial-stack processing, this is largely supported by simply adding a single extra flag to a standard stack processing command - namely `--append`.
+
+Unlike `--resume` which requires that the stack properties for the command match the existing stack **exactly**, `--append` allows that the end-date of the stack to change as well as for extra source files to be provided past the original end date.

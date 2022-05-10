@@ -1,4 +1,4 @@
-`gamma_insar` stacks has a few metadata files which contain information on the stack itself, as well as some of it's products.  These files ultimately provide enough information (when combined with the stack's .proc settings) to reproduce the whole stack from scratch.
+`gamma_insar` stacks have a few metadata files which contain information on the stack itself, as well as some of it's products.  These files ultimately provide enough information (when combined with the stack's .proc settings) to reproduce the whole stack from scratch.
 
 At a high level, the two sets of metadata files in the stack are:
  * The stack metadata, named `metadata.json` in the output directory of the stack itself.
@@ -21,10 +21,10 @@ At the top level of the stack's output directory exists `metadata.json` - this f
 |`"stack_extent"`|The final computed geospatial stack extent, in the format `[[min lon, min lat], [max lon, max lat]]`|
 |`"poeorb_path"`|The path to the Sentinel-1 precise orbit files used for processing (if any)|
 |`"resorb_path"`|The path to the Sentinel-1 restitute orbit files used for processing (if any)|
-|`"source_data_path"`|The most common base directory of all soure data acquisitions queried from the DB that were processed by the stack.|
+|`"source_data_path"`|The most common base directory of all source data acquisitions queried from the DB that were processed by the stack.|
 |`"dem_path"`|The path to the input reference DEM used for stack processing|
 |`"primary_ref_scene"`|The scene date (`YYYYMMDD` format) that the stack uses as the primary scene|
-|`"include_dates"`|A list of date ranges to query the DB for scenes that are **included** in the stack's|
+|`"include_dates"`|A list of date ranges to query the DB for scenes that are to be **included** in the stack|
 |`"exclude_dates"`|A list of date ranges to **exclude** from the stack (overrides `include_dates`)|
 |`"burst_data"`|The path to the .csv file which holds Sentinel-1 burst data information for all acquisitions included in the stack|
 |`"num_scene_dates"`|The number of scene dates the stack contains|

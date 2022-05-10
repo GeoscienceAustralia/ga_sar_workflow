@@ -5,8 +5,6 @@ from PIL import Image
 import numpy as np
 import insar.constant as const
 import os
-
-# TEMP: delete before PR
 from pathlib import Path
 
 class PyGammaProxy(PyGammaProxy_v20191203):
@@ -144,7 +142,7 @@ class PyGammaProxy(PyGammaProxy_v20191203):
         data = np.mod(data + np.pi, np.pi * 2)
 
         #
-        # Step 3. apply the final colour map (data is currently in grayscale / gray.cm)
+        # Step 4. apply the final colour map (data is currently in grayscale / gray.cm)
         #
         # Note: This would typically done by GAMMA's `ras2ras` but even THAT seems to be completely broken / doesn't apply colour maps...
         # so we ALSO do this ourselves...

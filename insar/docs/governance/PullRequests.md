@@ -1,22 +1,22 @@
 # Pull Request Process #
 
-The `gamma_insar` project (requires)[ContributingCode.md] all contributions to go through a pull request process.  This is very similar to most pull requests developers would be familiar with working with other projects hosted in git repositories.
+The `gamma_insar` project (requires all contributions)[ContributingCode.md] to go through a pull request process.  This is very similar to most pull requests developers would be familiar with working with other projects hosted in git repositories.
 
 For completeness, we detail some specific recommendations and requirements in our PR process below.
 
 ## Code Review Guidelines ##
 
-During the creation of the PR the contributer should make sure they appropriately describe the contents of the PR, and the purpose of the review / any areas of interest that may need focus (or that are large trivial areas and probably don't need attention), make sure they reference the relevant Github issues for that the PR is addressing, and requests a minimum of 2 reviewers for the review.
+During the creation of the PR the contributor should make sure they appropriately describe the contents of the PR, and the purpose of the review / any areas of interest that may need focus (or that are large trivial areas and probably don't need attention), make sure they reference the relevant Github issues for that the PR is addressing, and requests a minimum of 2 reviewers for the review.
 
-Once the review has started, the reviewers will give comments on areas of they code they have questions/requests/etc about the code.
-The contributer will address the comments and make appropriate modiifications if they're needed.  Largely this process is a sanity check that all our quality standards are being obided by, the new code/logic looks sane, tested properly, etc.
+Once the review has started, the reviewers will provide comments on areas of they code they have questions/requests/etc about.
+The contributor will address the comments and make appropriate modifications if they're needed.  Largely this process is a sanity check that all our quality standards are being followed, the new code/logic looks sane, tested properly, etc.
 
 Whenever possible reviewers should try and focus on actual errors, design problems, quality concerns, etc.  Trying to keep nit-picking to a minimum reduces noise and makes the PR process clearer, although it's entirely up to developer discretion (some nit picks can be very useful / are worth it).
 
 When changes are requested that could potentially be large or off-topic - it's recommended these be deferred to another issue if it's not a blocking issue for the PR and/or not related to the PR directly... this prevents PRs being strung along into longer living tasks, which ensures:
 1. PRs don't live for weeks/months causing ongoing merge complications as other work is merged upstream.
 2. The cognitive context people have about the PR's nuances don't get lost to time.
-3. Mitigates the risk of PR contributers moving on while the PR is active.
+3. Mitigates the risk of PR contributors moving on while the PR is active.
 4. Essentially removes the risks of feature/scope creep.
 
 ## Continuous Integration ##
@@ -29,7 +29,7 @@ While we make an effort to ensure the CI system enforces all of our quality cont
 
 ## Approval ##
 
-A pull request is only ready for merging only once there are a minimum of two approvals from two different reviewers.  This helps keep the quality of the project from degrading toom uch by ensuring multiple perspectives are taken into consideration, and that multiple sets of eyes have had a chance to find things that might not be obvious to everyone.
+A pull request is only ready for merging only once there are a minimum of two approvals from two different reviewers.  This helps keep the quality of the project from degrading too much by ensuring multiple perspectives are taken into consideration, and that multiple sets of eyes have had a chance to find things that might not be obvious to everyone.
 
 Additionally, the review can be considered complete once all comments that could be interpreted as needing some action taken are considered resolved (eg: the developer has addressed the concerns of all the unresolved comments).
 
@@ -41,4 +41,4 @@ Before clicking the merge button, it's good practice to:
 1. Double check everything has been covered properly in the code and review (especially for larger PRs)
 2. Review the commit message and make any adjustments if the automatically generated one is missing any detail.
 
-Once satisfied, click the merge button (we typically stick to squashed merges, but there's no limit on what kind of merge we accept - squashed merges just keep the history a bit cleaner/easier to read by assocciating each commit to a PR).
+Once satisfied, click the merge button (we typically stick to squashed merges, but there's no limit on what kind of merge we accept - squashed merges just keep the history a bit cleaner/easier to read by associating each commit to a PR).

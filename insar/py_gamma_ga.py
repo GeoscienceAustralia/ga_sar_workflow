@@ -138,6 +138,12 @@ def subprocess_wrapper(cmd, *args, **kwargs):
     cmd_list = [cmd]
     cmd_list.extend("-" if a is None else str(a) for a in args)
 
+    # Drop trailing '-' / not-provided / use-default, as some trailing arguments are
+    # actually "optional without default value" (mostly for optional output files) where
+    # "-" is interpreted literally
+    #while cmd_list and cmd_list[-1] == "-":
+    #    cmd_list.pop()
+
     p = subprocess.run(
         cmd_list, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True
     )

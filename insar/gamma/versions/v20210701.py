@@ -133,10 +133,10 @@ class PyGammaProxy(PyGammaProxy_v20191203):
 
         # Apply phase offset & scale
         if ph_offset:
-            data = data - ph_offset
+            data -= ph_offset
 
         if ph_scale:
-            data = data * ph_scale
+            data *= ph_scale
 
         # Cycle colour every 2pi radians (starting from -pi)
         data = np.mod(data + np.pi, np.pi * 2)

@@ -64,7 +64,6 @@ class ProcConfig:
         *__subdir_attribs__,
         *__filename_attribs__,
         "stack_id",
-        "project",
         "track",
         "orbit",
         "land_center",
@@ -74,7 +73,6 @@ class ProcConfig:
         # "sensor_subtype" setting or something along those lines, IF we never
         # intend to support mixed-sensor stacks (if we do, keeping separate makes sense)
         "ers_sensor",
-        "palsar2_type",
         "multi_look",
         "range_looks",
         "azimuth_looks",

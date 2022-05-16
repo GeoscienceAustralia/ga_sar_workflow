@@ -1,4 +1,3 @@
-import os
 import re
 from typing import List, Optional
 import tarfile
@@ -20,7 +19,7 @@ ANY_DATA_PATTERN = (
 
 SOURCE_DATA_PATTERN = ANY_DATA_PATTERN
 POLARISATIONS = ["HH", "VV", "HV", "VH"]  # TODO: anything else?
-SUPPORTS_GEOSPATIAL_DB = False  # TODO: verify
+SUPPORTS_GEOSPATIAL_DB = False
 
 
 _LOG = structlog.get_logger("insar")
@@ -125,14 +124,10 @@ def get_data_swath_info(
     data_path: Path,
     raw_data_path: Optional[Path]
 ):
-    if raw_data_path:
-        # TODO: is this logic required? e.g. RSAT ignores raw_data_path
-        msg = "raw_data_path is not yet implemented for TSX..."
-        _LOG.info(msg, raw_data_path=raw_data_path)
-
     if data_path.is_dir():
-        # TODO: does previously decompressed data need to be handled?
-        raise NotImplementedError("TSX get_data_swath_info() with a dir in not yet implemented")
+        # TODO: does previously decompressed data ever need to be handled?
+        msg = "TSX sensor: get_data_swath_info() with a directory is not yet implemented"
+        raise NotImplementedError(msg)
 
     # try matching the tar file patterns
     match = re.match(ANY_DATA_PATTERN, data_path.name)
@@ -187,8 +182,8 @@ def acquire_source_data(source_path: str, dst_dir: Path, pols: Optional[List[str
         raise FileNotFoundError("The source data path does not exist!")
 
     if source_path.is_dir():
-        # TODO: is this functionality required for TSX?
-        raise NotImplementedError("Currently only .tar.gz files are handled")
+        # TODO: is this functionality ever required for TSX?
+        raise NotImplementedError("TSX Sensor: currently only .tar.gz files are handled")
 
     # This extracts the contents of the archive directly into dst_dir, TSX/TDX products contain a
     # scene_date top level dir, and we should have a dst_dir/{scene_date} dir of the tar archive contents.

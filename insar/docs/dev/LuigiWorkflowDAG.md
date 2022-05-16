@@ -105,9 +105,11 @@ The key difference between Sentinel-1 and the other satellites is the fact S1 ac
 Because of this, Sentinel-1 has the additional `CreateSlcMosaic` task which runs the mosaicing process, and has it's own dedicated coregistration processing modules used by the `CoregisterSecondary` task (which will dispatch to the S1-specific code when given S1 data).
 
 Additionally all satellites currently have their own SLC scene processing tasks, which for completeness are listed:
- * Sentinel-1 uses `CreateFullSlc` -> `ProcessSlc` (they will eventually be renamed to be consistent to other task names)
- * ALOS PALSAR uses `CreateALOSSlcTasks` -> `ProcessALOSSlc`
- * RADARSAT-2 uses `CreateRSAT2SlcTasks` -> `ProcessRSAT2Slc`
+
+* Sentinel-1 uses `CreateFullSlc` -> `ProcessSlc` (they will eventually be renamed to be consistent to other task names)
+* ALOS PALSAR uses `CreateALOSSlcTasks` -> `ProcessALOSSlc`
+* RADARSAT-2 uses `CreateRSAT2SlcTasks` -> `ProcessRSAT2Slc`
+* TSX/TDX uses `CreateTSXSlcTasks` -> `ProcessTSXSlc`
 
 The satellite specific `Create*` tasks are a known code smell, they're largely identical code that shouldn't be repeated - these will eventually be condensed down into a single task.
 

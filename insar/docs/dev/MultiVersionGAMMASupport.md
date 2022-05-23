@@ -19,7 +19,7 @@ This additional layer of abstraction would let us translate the old GAMMA API ou
 
 This would require the least amount of code changes to existing processing modules as they can continue working like they currently do, and we just swap in different implementations of this proxy/translation layer if we run the workflow with a different version of GAMMA which translates our GAMMA-old intent into GAMMA-new logic.
 
-In essence we would essntially be saying "GAMMA 20191203 is the minimum version we support", and then as new versions of GAMMA become available we evaluate the breaking changes and implement a proxy/translation layer for those areas of the API that have changed every time we need to support a new version without having to touch the greater `gamma_insar` code base **at all**.
+In essence we would essentially be saying "GAMMA 20191203 is the minimum version we support", and then as new versions of GAMMA become available we evaluate the breaking changes and implement a proxy/translation layer for those areas of the API that have changed every time we need to support a new version without having to touch the greater `gamma_insar` code base **at all**.
 
 ## Alternative Solutions & why they weren't chosen ##
 
@@ -52,13 +52,13 @@ In an absolute worst case... where a program is removed and there is **no way** 
 
 It's possible (and GAMMA has indeed done this) that function arguments will get re-ordered and/or re-named.
 
-When this occurs for **required** arguments, the function will still need to be overridden in the proxy/translation layer to re-order the arguments (as these are represented as positional-required argumeents in python) from the old 20191203 order/naming, to the newer GAMMA order/naming - however beyond this, the translation shouldn't require additional logic - it's simply forwarding the same arguments to the same function in a slightly different order.
+When this occurs for **required** arguments, the function will still need to be overridden in the proxy/translation layer to re-order the arguments (as these are represented as positional-required arguments in python) from the old 20191203 order/naming, to the newer GAMMA order/naming - however beyond this, the translation shouldn't require additional logic - it's simply forwarding the same arguments to the same function in a slightly different order.
 
-When this occurs with **optional** arguments, the function will also still need ot be overriden in the proxy/translation layer to do a name translation from the old-optional-argument-name to the new-optional-argument-name (as these are represented as optional-keyword arguments in python (eg: can **NOT** be passed positional, and have a default value)).
+When this occurs with **optional** arguments, the function will also still need to be overridden in the proxy/translation layer to do a name translation from the old-optional-argument-name to the new-optional-argument-name (as these are represented as optional-keyword arguments in python (eg: can **NOT** be passed as positional, and have a default value)).
 
 ## Handling missing/removed program arguments ##
 
-In the event program arguments are removed from an existing function (which GAMMA has done w/ it's `ras*` programs, eg: to remove left/right mirroring support) there's three potential outcomes.
+In the event program arguments are removed from an existing function (which GAMMA has done with it's `ras*` programs, eg: to remove left/right mirroring support) there's three potential outcomes.
 
 1. We don't use or require that functionality and there's no change required (since we never used that argument)
 2. We do pass in that argument but we never used anything but the default / never really used that feature, in which case there's no change required (the new program lacking that optional argument would behave the same without it)

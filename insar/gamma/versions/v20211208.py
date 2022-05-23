@@ -1,13 +1,5 @@
 # We base the 20211208 proxy off of the 20210701 release
 from insar.gamma.versions.v20210701 import PyGammaProxy as PyGammaProxy_v20210701
-import inspect
-from PIL import Image
-import numpy as np
-import insar.constant as const
-import os
-
-# TEMP: delete before PR
-from pathlib import Path
 
 
 class PyGammaProxy(PyGammaProxy_v20210701):

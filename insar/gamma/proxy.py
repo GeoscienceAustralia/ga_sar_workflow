@@ -1,7 +1,6 @@
 import os
 import importlib
 from insar.py_gamma_ga import GammaInterface, auto_logging_decorator, subprocess_wrapper
-#from insar.logs import INSAR_LOG
 import structlog
 
 def get_gamma_version():

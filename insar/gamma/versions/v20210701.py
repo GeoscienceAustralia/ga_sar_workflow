@@ -1,11 +1,12 @@
 # We base the 20210701 proxy off of the 20191203 release
-from insar.gamma.versions.v20191203 import PyGammaProxy as PyGammaProxy_v20191203
+import os
 import inspect
+from pathlib import Path
+
+from insar.gamma.versions.v20191203 import PyGammaProxy as PyGammaProxy_v20191203
 from PIL import Image
 import numpy as np
 import insar.constant as const
-import os
-from pathlib import Path
 
 class PyGammaProxy(PyGammaProxy_v20191203):
 
@@ -83,7 +84,7 @@ class PyGammaProxy(PyGammaProxy_v20191203):
 
         # We don't implement power/intensity scaling (see justification below)
         if pwr and str(pwr) != "-":
-            raise NotImplemented("pwr intensity scaling not implemented!")
+            raise NotImplementedError("pwr intensity scaling not implemented!")
 
         # Load colour map
         cmap = Path(os.environ["DISP_HOME"]) / "cmaps" / "rmg.cm"
@@ -147,8 +148,8 @@ class PyGammaProxy(PyGammaProxy_v20191203):
         # Note: This would typically done by GAMMA's `ras2ras` but even THAT seems to be completely broken / doesn't apply colour maps...
         # so we ALSO do this ourselves...
         #
-        data = data / (np.pi * 2)
-        data = data * 255.0
+        data /= (np.pi * 2)
+        data *= 255.0
         data = cmap[data.astype(np.uint8)]
         data[mask] = [0, 0, 0]
 

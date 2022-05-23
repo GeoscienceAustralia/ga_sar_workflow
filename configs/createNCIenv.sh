@@ -33,6 +33,7 @@ sed -e 's|VENV_PATH=$1'"|VENV_PATH=$ENV_PATH|" $REPO_ROOT/configs/activateNCI.en
 python -m pip install --upgrade pip wheel
 
 # TODO: zlib and libtiff
+# See: https://github.com/GeoscienceAustralia/gamma_insar/issues/368
 
 # Download and extract sources
 mkdir -p $ENV_PATH/build

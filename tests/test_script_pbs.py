@@ -24,7 +24,7 @@ from insar.project import ARDWorkflow
 
 def test_pbs_job_script(monkeypatch, s1_proc, temp_out_dir):
     """
-    This test very saimply submits a typical S1 job, checking the script is made
+    This test very simply submits a typical S1 job, checking the script is made
     and qsub is called w/o any errors (but doesn't validate the script in any way)
     """
 

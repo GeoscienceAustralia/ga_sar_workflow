@@ -18,7 +18,9 @@ import structlog
 import pkg_resources
 from insar.logs import COMMON_PROCESSORS
 
-from tests.py_gamma_test_proxy import PyGammaTestProxy
+# Unit tests don't detect any GAMMA version / we just use the min version
+# which is functionally equivilent to how we unit tested before the version abstraction
+from insar.gamma.versions.v20191203 import PyGammaProxy
 
 from insar.constant import SCENE_DATE_FMT
 from insar.project import ProcConfig
@@ -69,6 +71,20 @@ ALOS2_TEST_DATA_IDS = [
     "20151215_PALSAR2_T124A_F6660",
     "20160614_PALSAR2_T124A_F6660"
 ]
+
+TSX_TEST_DATA_IDS = [
+    "20170411_TSX_T041D"
+]
+
+TSX_TEST_DATA_SUBDIRS = [
+    # the big ugly dir path the data is stored in
+    "TDX1_SAR__SSC______SM_S_SRA_20170411T192821_20170411T192829"
+]
+
+TSX_TEST_DATA_DATES = [
+    "20170411"
+]
+
 
 def copy_test_proc_into_dir(proc_path, out_dir):
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -215,6 +231,27 @@ def alos2_test_data(test_data_dir):
     return [test_data_dir / i[:8] for i in ALOS2_TEST_DATA_IDS]
 
 
+@pytest.fixture
+def tsx_test_tar_gzips():
+    return [TEST_DATA_BASE / "TSX" / f"{_id}.tar.gz" for _id in TSX_TEST_DATA_IDS]
+
+
+@pytest.fixture(scope="session")
+def tsx_test_data(test_data_dir):
+    # Extract test data from files in the repo
+    for _id, _date in zip(TSX_TEST_DATA_IDS, TSX_TEST_DATA_DATES):
+        assert _id.startswith(_date)
+        path = TEST_DATA_BASE / "TSX" / f"{_id}.tar.gz"
+        assert path.exists()
+
+        tsx_src_data = test_data_dir / "tsx_src_data" / _date  # mimic DataDownload luigi task path
+
+        with tarfile.open(path, 'r') as archive:
+            archive.extractall(tsx_src_data)
+
+    return [test_data_dir / "tsx_src_data" / i for i in TSX_TEST_DATA_DATES]
+
+
 def generate_testable_s1_proc(test_data_dir, touch_poeorb):
     src_proc_path = TEST_DATA_BASE / f"{S1_TEST_STACK_ID}_S1A.proc"
     test_procfile_path = copy_test_proc_into_dir(src_proc_path, test_data_dir)
@@ -322,7 +359,10 @@ def s1_temp_job_proc(logging_ctx, temp_out_dir, s1_proc):
 
 @pytest.fixture
 def pgp():
-    return PyGammaTestProxy(exception_type=RuntimeError)
+    proxy = PyGammaProxy(exception_type=RuntimeError)
+    # Enable mocking of outputs for unit testing
+    proxy.mock_outputs = True
+    return proxy
 
 def copy_tab_entries(src_tab_lines, dst_tab_lines):
     for src_line, dst_line in zip(src_tab_lines, dst_tab_lines):
@@ -334,7 +374,7 @@ def copy_tab_entries(src_tab_lines, dst_tab_lines):
 
 @pytest.fixture
 def pgmock(monkeypatch, pgp):
-    pgmock = mock.Mock(spec=PyGammaTestProxy, wraps=pgp)
+    pgmock = mock.Mock(spec=PyGammaProxy, wraps=pgp)
     pgmock.ParFile.side_effect = pgp.ParFile
 
     def par_RSAT2_SLC_mock(*args, **kwargs):
@@ -352,6 +392,30 @@ def pgmock(monkeypatch, pgp):
         return result
 
     pgmock.par_RSAT2_SLC.side_effect = par_RSAT2_SLC_mock
+
+    def par_TX_SLC_mock(*args, **kwargs):
+        result = pgp.par_TX_SLC(*args, **kwargs)
+
+        xml_annotation, cosar, slc_par, slc = args[:4]
+
+        # Substitute well-known .par files for well-known data
+        # so unit tests have real data to work with
+        test_slc_par = TEST_DATA_BASE / "TSX" / "output_20170411.slc.par"
+        shutil.copyfile(test_slc_par, slc_par)
+        return result
+
+    pgmock.par_TX_SLC.side_effect = par_TX_SLC_mock
+
+    def radcal_SLC_mock(*args, **kwargs):
+        result = pgp.radcal_SLC(*args, **kwargs)
+        _, _, _, sigma0_slc_par = args[:4]  # ignore other trailing settings
+
+        # copy param file for use in unit tests / simulate its creation
+        test_sigma0_par = TEST_DATA_BASE / "TSX" / "sigma0_20170411.slc.par"
+        shutil.copyfile(test_sigma0_par, sigma0_slc_par)
+        return result
+
+    pgmock.radcal_SLC.side_effect = radcal_SLC_mock
 
     def par_S1_SLC_mock(*args, **kwargs):
         result = pgp.par_S1_SLC(*args, **kwargs)
@@ -784,7 +848,7 @@ def pgmock(monkeypatch, pgp):
     before_diff_par = insar.coregister_dem.create_diff_par
 
     # Use PyGamma mock interface in all processing modules
-    os.environ["GAMMA_INSTALL_DIR"] = "PyGammaTestProxy-1234"
+    os.environ["GAMMA_INSTALL_DIR"] = "PyGammaProxy-1234"
     GammaInterface.set_proxy(pgmock)
 
     monkeypatch.setattr(insar.process_rsat2_slc, 'pg', pgmock)

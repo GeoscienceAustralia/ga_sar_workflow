@@ -11,7 +11,9 @@ For developers unfamiliar with the pull-request model, Github provides (guides a
 Before any work is done, it's good practice to have a (Github issue)[https://github.com/GeoscienceAustralia/gamma_insar/issues] for the project.
 Doing this lets other people know what work people are interested in having done on the project, let's other developers give feedback and advice on the issue, helps prevent people duplicating effort by working on the same thing without realising it, and provides a place to let people know how you're progressing or what problems you might be encountering.
 
-This is standard practice for all work being done on `gamma_insar` by the project's developers, and highly encouraged for third-party contributers to help everyone have the smoothest development experience possible.
+Whenever possible, it's reasonable to want to group closely related *small* chunks of work together in a single issue.  If an issue you're having or some work you're wanting to contribute matches an existing issue, and isn't too far out of scope - it's recommended to try and add your work to existing issues if they're available.
+
+This is standard practice for all work being done on `gamma_insar` by the project's developers, and highly encouraged for third-party contributors to help everyone have the smoothest development experience possible.
 
 Raising an issue is also a good way to get others interested and potentially help you implement your changes!
 
@@ -21,11 +23,11 @@ We try and keep all code in the `gamma_insar` project consistent by keeping to a
 
 The coding standards are documented in more detail [in another document](CodingStandards.md)
 
-Deviations from the standard are likely to be raised in PRs for any contrubutions made, so sticking to the standard will prevent future work having to clean things up during PR.  Deviations are also likely to by raised during the linting process described below.
+Deviations from the standard are likely to be raised in PRs for any contributions made, so sticking to the standard will prevent future work having to clean things up during PR.  Deviations are also likely to by raised during the linting process described below.
 
 ## PyLint ##
 
-To help with compliying with code style & keep the code base from regressing we use enforce PyLint errors as CI errors, thus PyLint metrics are a big part of contributing code to `gamma_insar` as contributions will not pass PR if CI doesn't pass, and CI won't pass if there are PyLint errors.
+To help with complying with code style & keep the code base from regressing, we enforce PyLint errors as CI errors. PyLint metrics are a big part of contributing code to `gamma_insar` as contributions will not pass PR if CI doesn't pass, and CI won't pass if there are PyLint errors.
 
 All contributions accepted by PR will need to ensure they don't add any extra PyLint errors, otherwise they won't pass CI or be able to be merged.
 
@@ -37,7 +39,7 @@ We really appreciate everyone ensuring new code they add is properly tested with
 
 ## Pull Requests ##
 
-Once you're happy with your modifications and are ready to get it merged upstream into the officla repo, it's time to start the (pull request process)[PullRequests.md].
+Once you're happy with your modifications and are ready to get it merged upstream into the official repo, it's time to start the (pull request process)[PullRequests.md].
 
 All contributions are required to go through PR with a minimum of 2 reviewers and 2 approvals, as well as pass all CI checks (eg: unit testing and linting) before it can be merged up-stream.
 

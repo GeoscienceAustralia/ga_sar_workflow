@@ -4,15 +4,13 @@ This document provides an overview of what a "stack" is in the `gamma_insar` pro
 
 At a high level a "stack" is simple a collection of "scenes" whose spatial extents match up exactly, with each scene having data that was aquired on a different date. A stack there for has a geospatial extent as well as a temporal extent associated with it, and is made up from a series of data acquisitions across it's temporal extent.
 
-A stack may be appended to, however once data is added to the stack it may not be removed.  As data is appended to the stack, the structure
-which associates the scenes with one another is also updated/appended-to in such a way that there are consistent coregistration properties
-as well as consistent interferogram pairing properties across the temporal extent of scenes.
+A stack may be appended to, however once data is added to the stack it may not be removed.  As data is appended to the stack, the structure which associates the scenes with one another is also updated/appended-to in such a way that there are consistent coregistration properties as well as consistent interferogram pairing properties across the temporal extent of scenes.
 
 A major property of scenes processed in `gamma_insar` stacks is the fact they're coregistered, meaning every pixel in every scene is as closely aligned to the same geocoded coordinate as possible (and thus all scenes should be directly comparable at the pixel level).  This is critically important as interferometry is sensitive to differences much smaller than the area of a pixel (which is typically meters), and poorly aligned pixel data will result in poor interferometric coherence.
 
 ## Stack Properties ##
 
-The stack has a set of high-level properties which define how the it was produced, and ultimately could be used to re-produce the same stack.
+The stack has a set of high-level properties which define how it was produced, and ultimately could be used to re-produce the same stack.
 
 Most stack properties are immutable, with the exception of the temporal extent and data sources which may be added to (but never removed from in any way).
 
@@ -34,12 +32,11 @@ All timestamps are in UTC.
 
 Scenes are defined as a continuous (eg: no holes within the geometry, and no separated geometry) geospatial region which has full sensor data coverage that are acquired on the same date.  All scenes in a stack share the same geospatial region (thus it's considered a stack property), and all scenes are assigned a specific date... however if a sequence of acquisitions into a scene span two dates (eg: around midnight UTC) then the date the data acquisition 'ends' is considered the scene date of those acquisitions.
 
-A stack may be made up of one or more source data acquisitions, such as multiple swaths or segments of a track from a satellite acquisition;  in the case a scene's source data has more data than the scene defines, that data is ultimately removed during processing leaving just the data within the stack's geospatial region intract.
+A stack may be made up of one or more source data acquisitions, such as multiple swaths or segments of a track from a satellite acquisition;  in the case a scene's source data has more data than the scene defines, that data is ultimately removed during processing leaving just the data within the stack's geospatial region interact.
 
 Scenes have provenance for all the source data that makes up the pixels in it's region for every polarisation. This information for a scene can be found in it's respective `metadata_POL.json` file in the SLC directory of the scene, where `POL` should be replaced for the respective polarisation of interest (eg: `VV`).  Note: For some satellites there may be little to no difference between metadata of different polarisations in the same date.
 
-A stack is made up of many of these scenes stacked temporally, thus for the whole temporal region of the stack in which scenes exist - there exists
-sensor data for that scene's whole region, for every polarisation, traceable back to it's provenance.
+A stack is made up of many of these scenes stacked temporally, thus for the whole temporal region of the stack in which scenes exist - there exists sensor data for that scene's whole region, for every polarisation, traceable back to it's provenance.
 
 ## Stack Structure ##
 
@@ -90,7 +87,7 @@ The SLC mosaic product paths for the date `<scene_date>` and polarisation `<pol>
 
 ### Coregistered SLC ###
 
-The SLC mosaics above are then coregistered with the primary reference scene of the stack (s.t. each pixel in all of the scenes are as closely alinged as possible), these coregistered SLC mosaics are then also multi-looked (downsampled) into smaller products.
+The SLC mosaics above are then coregistered with the primary reference scene of the stack (such that each pixel in all of the scenes are as closely alinged as possible), these coregistered SLC mosaics are then also multi-looked (downsampled) into smaller products.
 
 These products are also written to the stack's SLC directory for each scene date, eg: `SLC/<scene_date>/...`.
 

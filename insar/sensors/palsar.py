@@ -73,9 +73,9 @@ def get_data_swath_info(
         summary = parse_product_summary(summary[0].read_text())
         processing_level = summary["Lbi_ProcessLevel"]
 
-        if "1.1" in processing_level:
+        if "1.0" in processing_level:
             processing_level = 0
-        elif "1.0" in processing_level:
+        elif "1.1" in processing_level:
             processing_level = 1
         else:
             raise RuntimeError(f"Unsupported ALOS 'Lbi_ProcessLevel': {processing_level}")

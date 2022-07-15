@@ -178,7 +178,7 @@ def offset_calc(
     nrb_paths = BackscatterPaths(coreg_paths.primary)
 
     # Get land center from user provided value if possible
-    if land_center is not None:
+    if land_center:
         rpos, azpos = latlon_to_px(pg, coreg_paths.r_dem_primary_mli_par, *land_center)
 
         log.info(

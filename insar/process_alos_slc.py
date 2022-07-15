@@ -8,7 +8,7 @@ import tempfile
 
 from insar.gamma.proxy import create_gamma_proxy
 from insar.subprocess_utils import working_directory
-from insar.sensors.palsar import METADATA as alos
+from insar.sensors.palsar import METADATA as alos, parse_product_summary
 from insar.project import ProcConfig
 import insar.constant as const
 from insar.process_utils import convert
@@ -238,8 +238,8 @@ def level1_slc(
     pol: str,
     output_slc_path: Path
 ) -> ALOSPaths:
-    leader_path = list(product_path.glob("LED-ALOS*"))
-    img_path = list(product_path.glob(f"IMG-{pol}-ALOS*"))
+    leader_path = list(product_path.glob("LED-*"))
+    img_path = list(product_path.glob(f"IMG-{pol}-*"))
 
     if len(leader_path) == 0 or len(img_path) == 0:
         raise ProcessSlcException("Invalid product path, could not find LED and/or IMG data!")
@@ -315,6 +315,23 @@ def process_alos_slc(
     pol: str,
     output_slc_path: Path
 ):
+    summary = list(product_path.glob("summary.txt"))
+
+    if len(summary) == 0:
+        raise ProcessSlcException("Invalid product path, no summary.txt found!")
+    elif len(summary) > 1:
+        raise ProcessSlcException("Invalid product path, more than one summary.txt found!")
+
+    summary = parse_product_summary(summary[0].read_text())
+    processing_level = summary["Lbi_ProcessLevel"]
+
+    if "1.1" in processing_level:
+        processing_level = 0
+    elif "1.0" in processing_level:
+        processing_level = 1
+    else:
+        raise RuntimeError(f"Unsupported ALOS 'Lbi_ProcessLevel': {processing_level}")
+
     # Inentify ALOS 1 or 2... (this function supports both as they share logic)
     alos1_acquisitions = list(product_path.glob("IMG-*-ALP*"))
     alos2_acquisitions = list(product_path.glob("IMG-*-ALOS*"))
@@ -344,10 +361,7 @@ def process_alos_slc(
     # Generate SLC
     mode = None
 
-    if len(alos1_acquisitions) > 0:
-        # Note: If we want to support 'raw' PALSAR2 data as well, it should
-        # go through this level0 path
-
+    if processing_level == 0:
         if num_hv == 0 and pol == "HH":
             mode = "FBS"
         elif num_hv > 0 and pol == "HH":
@@ -364,7 +378,7 @@ def process_alos_slc(
             output_slc_path
         )
 
-    else:
+    elif processing_level == 1:
         paths = level1_slc(
             proc_config,
             product_path,
@@ -372,6 +386,9 @@ def process_alos_slc(
             pol,
             output_slc_path
         )
+
+    else:
+        raise RuntimeError(f"Unsupported ALOS processing level: {processing_level}")
 
     # FBD -> FBS conversion
     if pol == "HH" and mode == "FBD":

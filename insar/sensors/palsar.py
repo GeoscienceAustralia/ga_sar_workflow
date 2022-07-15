@@ -38,6 +38,18 @@ METADATA = SensorMetadata(
 
 pg = create_gamma_proxy(Exception)
 
+def parse_product_summary(summary_text: str) -> dict:
+    """
+    Parses the ALOS `summary.txt` files that come with the JAXA products into a dict.
+    """
+    # Convert from key="value", into [ (key, value) ]
+    summary = [ [ i.strip('"') for i in line.split('=') ] for line in summary_text.splitlines() ]
+    # Convert from [ (key, value) ] into { key: value }
+    summary = { key: val for key, val in summary }
+
+    return summary
+
+
 def get_data_swath_info(
     data_path: Path,
     raw_data_path: Optional[Path]
@@ -52,12 +64,28 @@ def get_data_swath_info(
     with tempfile.TemporaryDirectory() as temp_dir_name:
         temp_dir = Path(temp_dir_name)
 
+        summary = list(raw_data_path.glob("*/summary.txt"))
+        if len(summary) == 0:
+            raise FileNotFoundError("Failed to find ALOS product, no summary.txt found!")
+        elif len(summary) > 1:
+            raise RuntimeError("Multiple ALOS products detected, more than one summary.txt found!")
+
+        summary = parse_product_summary(summary[0].read_text())
+        processing_level = summary["Lbi_ProcessLevel"]
+
+        if "1.1" in processing_level:
+            processing_level = 0
+        elif "1.0" in processing_level:
+            processing_level = 1
+        else:
+            raise RuntimeError(f"Unsupported ALOS 'Lbi_ProcessLevel': {processing_level}")
+
         # Inentify ALOS 1 or 2... (this function supports both as they share logic)
         alos1_acquisitions = list(raw_data_path.glob("*/IMG-*-ALP*"))
         alos2_acquisitions = list(raw_data_path.glob("*/IMG-*-ALOS*"))
 
         if not alos1_acquisitions and not alos2_acquisitions:
-            raise Exception(f"Provided product does not contain any ALOS data")
+            raise FileNotFoundError("Provided product does not contain any ALOS data")
 
         if alos1_acquisitions and alos2_acquisitions:
             raise Exception("Unsupported ALOS product, has a mix of both PALSAR 1 and 2 products")
@@ -76,7 +104,7 @@ def get_data_swath_info(
 
         # Parse CEOS headers to get scene center and pixel spacing
         # and use this to get a VERY crude estimate of scene extent
-        if alos1_acquisitions:
+        if processing_level == 0:
             sar_par_path = temp_dir / "sar.par"
             proc_par_path = temp_dir / "proc.par"
 
@@ -96,7 +124,7 @@ def get_data_swath_info(
             scene_lat = proc_par.get_value("scene_center_latitude", dtype=float, index=0)
             scene_lon = proc_par.get_value("scene_center_longitude", dtype=float, index=0)
 
-        else:
+        elif processing_level == 1:
             slc_par_path = temp_dir / "slc.par"
 
             pg.par_EORC_PALSAR(
@@ -111,6 +139,9 @@ def get_data_swath_info(
 
             scene_lat = slc_par.get_value("center_latitude", dtype=float, index=0)
             scene_lon = slc_par.get_value("center_longitude", dtype=float, index=0)
+
+        else:
+            raise RuntimeError(f"Unsupported ALOS processing level: {processing_level}")
 
         scene_center = (scene_lon, scene_lat)
 
@@ -170,8 +201,8 @@ def acquire_source_data(source_path: str, dst_dir: Path, pols: Optional[List[str
     # - a.k.a. `cp -r source_path dst_dir/source_path`
     if source_path.is_dir():
         def ignore_filter(dir, names):
-            included_imagery = [f"imagery_{p}" for p in pols]
-            return [i for i in names if "imagery" in i and Path(i).stem not in included_imagery]
+            included_imagery = [f"IMG-{p}" for p in pols]
+            return [i for i in names if "IMG-" in i and Path(i.name).name[:6] not in included_imagery]
 
         if pols:
             shutil.copytree(source_path, dst_dir / source_path.stem, ignore=ignore_filter, dirs_exist_ok=True)

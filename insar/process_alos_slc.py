@@ -360,7 +360,7 @@ def process_alos_slc(
 
     # Determine mode
     # Note: BASH impl only did this in L0, or L1 when ALOS1 (not ALOS2)
-    if product_sensor == "ALOS1" or processing_level == 0:
+    if product_sensor == "PALSAR1" or processing_level == 0:
         if num_hv == 0 and pol == "HH":
             mode = "FBS"
         elif num_hv > 0 and pol == "HH":

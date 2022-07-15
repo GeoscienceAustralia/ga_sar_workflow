@@ -14,6 +14,8 @@ import insar.constant as const
 from insar.process_utils import convert
 from insar.path_util import append_suffix
 
+from insar.logs import STATUS_LOGGER
+
 # Customise Gamma shim to automatically handle basic error checking and logging
 class ProcessSlcException(Exception):
     pass
@@ -315,6 +317,8 @@ def process_alos_slc(
     pol: str,
     output_slc_path: Path
 ):
+    log = STATUS_LOGGER.bind(stack_id=proc_config.stack_id)
+
     summary = list(product_path.glob("summary.txt"))
 
     if len(summary) == 0:
@@ -367,6 +371,8 @@ def process_alos_slc(
             mode = "FBD"
         elif pol == "HV":
             mode = "FBD"
+
+        log.info(f"ALOS product status", product_sensor=product_sensor, mode=mode, num_hv=num_hv)
 
     # Generate SLC
     if processing_level == 0:

@@ -5,6 +5,7 @@ from attr.setters import convert
 import os
 import json
 import tempfile
+import shutil
 
 from insar.gamma.proxy import create_gamma_proxy
 from insar.subprocess_utils import working_directory
@@ -414,8 +415,8 @@ def process_alos_slc(
             paths.slc.unlink()
             paths.slc_par.unlink()
 
-            temp_slc.rename(paths.slc)
-            temp_slc_par.rename(paths.slc_par)
+            shutil.move(temp_slc, paths.slc)
+            shutil.move(temp_slc_par, paths.slc_par)
 
     # Generate quicklook
     slc_par = pg.ParFile(paths.slc_par)

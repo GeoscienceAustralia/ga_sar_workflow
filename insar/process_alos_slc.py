@@ -353,15 +353,14 @@ def process_alos_slc(
     if sensor != product_sensor:
         raise ProcessSlcException(f"Mismatch between requested {sensor} sensor and provided {product_sensor} product")
 
-    # Determine mode
     alos1_hv_acquisitions = list(product_path.glob("IMG-HV-ALP*"))
     alos2_hv_acquisitions = list(product_path.glob("IMG-HV-ALOS*"))
     num_hv = len(alos1_hv_acquisitions) + len(alos2_hv_acquisitions)
-
-    # Generate SLC
     mode = None
 
-    if processing_level == 0:
+    # Determine mode
+    # Note: BASH impl only did this in L0, or L1 when ALOS1 (not ALOS2)
+    if product_sensor == "ALOS1" or processing_level == 0:
         if num_hv == 0 and pol == "HH":
             mode = "FBS"
         elif num_hv > 0 and pol == "HH":
@@ -369,6 +368,8 @@ def process_alos_slc(
         elif pol == "HV":
             mode = "FBD"
 
+    # Generate SLC
+    if processing_level == 0:
         paths = level0_lslc(
             proc_config,
             product_path,

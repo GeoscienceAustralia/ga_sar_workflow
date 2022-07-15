@@ -357,9 +357,7 @@ def process_alos_slc(
     if sensor != product_sensor:
         raise ProcessSlcException(f"Mismatch between requested {sensor} sensor and provided {product_sensor} product")
 
-    alos1_hv_acquisitions = list(product_path.glob("IMG-HV-ALP*"))
-    alos2_hv_acquisitions = list(product_path.glob("IMG-HV-ALOS*"))
-    num_hv = len(alos1_hv_acquisitions) + len(alos2_hv_acquisitions)
+    num_hv = len(list(product_path.glob("IMG-HV-A*")))
     mode = None
 
     # Determine mode
@@ -372,7 +370,7 @@ def process_alos_slc(
         elif pol == "HV":
             mode = "FBD"
 
-        log.info(f"ALOS product status", product_sensor=product_sensor, mode=mode, num_hv=num_hv)
+        log.info("ALOS product status", product_sensor=product_sensor, mode=mode, num_hv=num_hv)
 
     # Generate SLC
     if processing_level == 0:

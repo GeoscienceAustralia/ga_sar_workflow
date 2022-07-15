@@ -192,6 +192,9 @@ def get_data_swath_info(
 
 
 def acquire_source_data(source_path: str, dst_dir: Path, pols: Optional[List[str]] = None, **kwargs):
+    # Note: We intentionally ignore `pols` filtering, as the interpretation of HH data can depend on the
+    # existence of HV data (thus we have to extract the HV even if we only care about HH to determine this)
+
     # We only support local paths currently
     source_path = Path(source_path)
     if not source_path.exists():
@@ -200,14 +203,7 @@ def acquire_source_data(source_path: str, dst_dir: Path, pols: Optional[List[str
     # The end result is a subdir in dst_dir identical to source_path (including it's name)
     # - a.k.a. `cp -r source_path dst_dir/source_path`
     if source_path.is_dir():
-        def ignore_filter(dir, names):
-            included_imagery = [f"IMG-{p}" for p in pols]
-            return [i for i in names if "IMG-" in i and Path(i.name).name[:6] not in included_imagery]
-
-        if pols:
-            shutil.copytree(source_path, dst_dir / source_path.stem, ignore=ignore_filter, dirs_exist_ok=True)
-        else:
-            shutil.copytree(source_path, dst_dir / source_path.stem, dirs_exist_ok=True)
+        shutil.copytree(source_path, dst_dir / source_path.stem, dirs_exist_ok=True)
 
         return dst_dir / source_path.stem
 
@@ -216,15 +212,7 @@ def acquire_source_data(source_path: str, dst_dir: Path, pols: Optional[List[str
     # with a dst_dir/{scene_date} dir of the archive contents.
     elif source_path.name.endswith(".tar.gz"):
         with tarfile.open(source_path) as archive:
-            filtered_list = None
-
-            # Only extract imagery for pols we care about
-            if pols:
-                filtered_list = archive.getmembers()
-                included_imagery = [f"IMG-{p}" for p in pols]
-                filtered_list = [i for i in filtered_list if "IMG-" not in i.name or Path(i.name).name[:6] in included_imagery]
-
-            archive.extractall(dst_dir, filtered_list)
+            archive.extractall(dst_dir)
 
             return dst_dir / os.path.commonpath(i.name for i in archive.getmembers())
 

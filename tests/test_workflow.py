@@ -89,7 +89,7 @@ def do_ard_workflow_validation(
     reprocess_failed: bool = False,
     require_poeorb: bool = False
 ) -> Tuple[Path, Path, tempfile.TemporaryDirectory]:
-    # Reset pygamma proxy/mock stats
+    # Reset gasw proxy/mock stats
     pgp.reset_proxy()
 
     # Setup temporary dirs to run the workflow in

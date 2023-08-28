@@ -1,4 +1,4 @@
-This document covers how to run the `ga_sar_workflow` workflow to produce ARD (analysis ready data) products for NRB (normalised radar backscatter) and interferometry.
+This document covers how to run the `ga_sar_workflow (gasw)` workflow to produce ARD (analysis ready data) products for NRB (normalised radar backscatter) and interferometry.
 
 The style of this guide is a step-by-step tutorial like approach, and should leave the reader having actually run the workflow and having produced products for them to use.
 

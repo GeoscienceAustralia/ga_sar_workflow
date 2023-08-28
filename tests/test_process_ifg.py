@@ -133,12 +133,12 @@ def test_run_workflow_full(
     m_shutil.copy.return_value = []
     monkeypatch.setattr(process_ifg, "shutil", m_shutil)
 
-    m_pygamma = mock.NonCallableMock()
-    m_pygamma.base_perp.return_value = PG_RETURN_VALUE
-    m_pygamma.coord_to_sarpix.return_value = PG_RETURN_SARPIX_VALUE
-    m_pygamma.base_orbit.side_effect = base_orbit_se
-    m_pygamma.base_orbit.return_value = PG_RETURN_VALUE
-    monkeypatch.setattr(process_ifg, "pg", m_pygamma)
+    m_gasw = mock.NonCallableMock()
+    m_gasw.base_perp.return_value = PG_RETURN_VALUE
+    m_gasw.coord_to_sarpix.return_value = PG_RETURN_SARPIX_VALUE
+    m_gasw.base_orbit.side_effect = base_orbit_se
+    m_gasw.base_orbit.return_value = PG_RETURN_VALUE
+    monkeypatch.setattr(process_ifg, "pg", m_gasw)
 
     # mock out smaller helper functions (prevent I/O etc)
     monkeypatch.setattr(process_ifg, "remove_files", remove_mock)
@@ -161,13 +161,13 @@ def test_run_workflow_full(
     )
 
     # check some of the funcs in each step are called
-    assert m_pygamma.create_offset.called
-    assert m_pygamma.base_orbit.called
-    # assert m_pygamma.multi_cpx.called  - only called if refinement enabled
-    assert m_pygamma.adf.called
-    assert m_pygamma.rascc_mask.called
-    assert m_pygamma.interp_ad.called
-    assert m_pygamma.data2geotiff.called
+    assert m_gasw.create_offset.called
+    assert m_gasw.base_orbit.called
+    # assert m_gasw.multi_cpx.called  - only called if refinement enabled
+    assert m_gasw.adf.called
+    assert m_gasw.rascc_mask.called
+    assert m_gasw.interp_ad.called
+    assert m_gasw.data2geotiff.called
     assert remove_mock.called
 
 
@@ -562,7 +562,7 @@ def test_calc_unw_thinning(logging_ctx, monkeypatch, pg_unw_mock, pc_mock, ic_mo
 
 @pytest.fixture
 def pg_geocode_mock():
-    """Basic mock for pygamma calls in GEOCODE"""
+    """Basic mock for gasw calls in GEOCODE"""
     pgm = mock.NonCallableMock()
     pgm.geocode_back.return_value = PG_RETURN_VALUE
     pgm.mask_data.return_value = PG_RETURN_VALUE

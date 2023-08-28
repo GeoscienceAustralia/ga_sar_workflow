@@ -25,7 +25,7 @@ DT_FMT_NO_NS_JSON="%Y-%m-%dT%H:%M:%SZ"
 
 def query_out_dir(dir: Path):
     """
-    Scans a PyGamma output directory for information about the job that was processed.
+    Scans a ga_sar_workflow output directory for information about the job that was processed.
     """
 
     print("Scanning output directory for information...")
@@ -133,7 +133,7 @@ def query_out_dir(dir: Path):
 
 def query_job_dir(dir: Path):
     """
-    Scans a PyGamma job directory for information about the job that was processed.
+    Scans a ga_sar_workflow job directory for information about the job that was processed.
     """
 
     print("Scanning job directory for information...")

@@ -20,7 +20,7 @@ from insar.logs import COMMON_PROCESSORS
 
 # Unit tests don't detect any GAMMA version / we just use the min version
 # which is functionally equivilent to how we unit tested before the version abstraction
-from insar.gamma.versions.v20191203 import PyGammaProxy
+from insar.gamma.versions.v20191203 import GammaProxy
 
 from insar.constant import SCENE_DATE_FMT
 from insar.project import ProcConfig
@@ -359,7 +359,7 @@ def s1_temp_job_proc(logging_ctx, temp_out_dir, s1_proc):
 
 @pytest.fixture
 def pgp():
-    proxy = PyGammaProxy(exception_type=RuntimeError)
+    proxy = GammaProxy(exception_type=RuntimeError)
     # Enable mocking of outputs for unit testing
     proxy.mock_outputs = True
     return proxy
@@ -374,7 +374,7 @@ def copy_tab_entries(src_tab_lines, dst_tab_lines):
 
 @pytest.fixture
 def pgmock(monkeypatch, pgp):
-    pgmock = mock.Mock(spec=PyGammaProxy, wraps=pgp)
+    pgmock = mock.Mock(spec=GammaProxy, wraps=pgp)
     pgmock.ParFile.side_effect = pgp.ParFile
 
     def par_RSAT2_SLC_mock(*args, **kwargs):
@@ -847,8 +847,8 @@ def pgmock(monkeypatch, pgp):
     before_pg = insar.process_rsat2_slc.pg
     before_diff_par = insar.coregister_dem.create_diff_par
 
-    # Use PyGamma mock interface in all processing modules
-    os.environ["GAMMA_INSTALL_DIR"] = "PyGammaProxy-1234"
+    # Use Gamma mock interface in all processing modules
+    os.environ["GAMMA_INSTALL_DIR"] = "GammaProxy-1234"
     GammaInterface.set_proxy(pgmock)
 
     monkeypatch.setattr(insar.process_rsat2_slc, 'pg', pgmock)

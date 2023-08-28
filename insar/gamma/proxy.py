@@ -5,7 +5,7 @@ import os
 from typing import Type, cast
 from insar.logs import GAMMA_LOGGER as LOG
 from insar.py_gamma_ga import GammaInterface, auto_logging_decorator, subprocess_wrapper
-from insar.gamma.generated import PyGammaProxy
+from insar.gamma.generated import GammaProxy
 
 
 def get_gamma_version() -> str:
@@ -23,7 +23,7 @@ def get_gamma_version() -> str:
     return version
 
 
-def create_versioned_gamma_proxy(gamma_ver: str, base_wrapper: object, exception_type: Type[Exception]) -> PyGammaProxy:
+def create_versioned_gamma_proxy(gamma_ver: str, base_wrapper: object, exception_type: Type[Exception]) -> GammaProxy:
     """
     Creates a GAMMA proxy object for a specific version of GAMMA, which translates from the API for
     GAMMA version 20191203 into the user specified GAMMA version.

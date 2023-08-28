@@ -2,7 +2,7 @@
 import insar.gamma.generated.py_gamma_proxy
 import inspect
 
-ga_sar_workflowProxyBase = insar.gamma.generated.py_gamma_proxy.ga_sar_workflowProxy
+GammaProxyBase = insar.gamma.generated.py_gamma_proxy.GammaProxy
 
-class ga_sar_workflowProxy(ga_sar_workflowProxyBase):
+class GammaProxy(GammaProxyBase):
     pass

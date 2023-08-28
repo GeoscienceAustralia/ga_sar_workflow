@@ -26,7 +26,7 @@ def generate_slc_metadata(
     slc-ingestion and ard_insar commands.
 
     Intermittent issues with extracting burst metadata from xml files
-    using pygamma has necessitated the creation of a slc metadata
+    using gasw (ga_sar_workflow) has necessitated the creation of a slc metadata
     diagnosis tool. This tool has been successful at identifying
     slc metadata that does not have essential information. In the
     workflow, the generate_slc_metadata() function in

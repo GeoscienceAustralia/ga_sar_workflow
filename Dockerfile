@@ -1,4 +1,4 @@
-# Build: docker build -t gasw_workflow .
+# Build: docker build -t gasw_workflow (note gasw is an acronym for ga_sar_workflow).
 # Usage: docker run -v $(pwd):/usr/src/gasw:ro -t -i gasw_workflow pytest
 #        docker run -v $(pwd):/usr/src/gasw -t -i gasw_workflow pytest --cov-report=html --cov=insar tests
 

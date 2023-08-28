@@ -132,7 +132,7 @@ class SlcMetadata:
         metadata["measurements"] = dict()
         for xml_file in annotation_xmls:
             xml_pbase = os.path.basename(xml_file)
-            # use pygamma to extract burst/swath info from xml:
+            # use gasw (ga_sar_workflow) to extract burst/swath info from xml:
             metadata["measurements"][xml_pbase] = self.metadata_swath(xml_file)
 
         metadata["id"] = str(uuid.uuid4())
@@ -359,7 +359,7 @@ class SlcMetadata:
         ------
             Dictionary containing relevant items & values of
             individual bursts extracted from xml files using
-            pygamma
+            gasw (ga_sar_workflow)
         """
 
         swath_meta = dict()

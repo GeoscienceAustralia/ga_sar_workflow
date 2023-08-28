@@ -1,5 +1,5 @@
 """
-This is just a script to convert gamma CLI help files into a PyGamma test
+This is just a script to convert gamma CLI help files into a ga_sar_workflow test
 proxy object for testing/validation.
 
 The expected input path is the "gamma_usage" directory generated from the
@@ -183,7 +183,7 @@ def _usage2decl(module, program, file):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
-        description="Convert gamma CLI help files into a PyGamma test proxy object for testing/validation generated at ~/GA/py_gamma_test_proxy.py"
+        description="Convert gamma CLI help files into a ga_sar_workflow test proxy object for testing/validation generated at ~/GA/py_gamma_test_proxy.py"
     )
     parser.add_argument(
         "path",
@@ -259,7 +259,7 @@ if __name__ == "__main__":
                 "# See utils/gamma_usage2py.py",
                 "# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!",
                 "",
-                'PyGammaCall = NamedTuple("PyGammaCall", [("module", str), ("program", str), ("parameters", Dict[str, object]), ("status", int)])',
+                'GammaCall = NamedTuple("GammaCall", [("module", str), ("program", str), ("parameters", Dict[str, object]), ("status", int)])',
                 "",
                 "",
                 "class SimpleParFile(object):",
@@ -291,7 +291,7 @@ if __name__ == "__main__":
                 "            return [attempt_convert(i) for i in self.values[value_id].split()]",
                 "",
                 "",
-                "class PyGammaProxy(object):",
+                "class GammaProxy(object):",
             ],
         )
 
@@ -303,7 +303,7 @@ if __name__ == "__main__":
                 "validate_inputs: bool = True",
                 "mock_outputs: bool = False",
                 "",
-                "call_sequence: Sequence[PyGammaCall]",
+                "call_sequence: Sequence[GammaCall]",
                 "call_count: Counter",
                 "error_count: int",
                 "",
@@ -344,7 +344,7 @@ if __name__ == "__main__":
                 "        result = getattr(self._wraps, gamma_program)(*program_args)",
                 "",
                 "    self.call_count[gamma_program] += 1",
-                "    self.call_sequence.append(PyGammaCall(gamma_module, gamma_program, program_args, result[0]))",
+                "    self.call_sequence.append(GammaCall(gamma_module, gamma_program, program_args, result[0]))",
                 "    self._on_error(gamma_program, program_args, result[0])",
                 "",
                 "    return result",

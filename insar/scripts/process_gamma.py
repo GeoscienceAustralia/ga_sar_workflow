@@ -13,7 +13,7 @@ warnings.simplefilter(action='error', category=UserWarning)
 warnings.simplefilter(action='once', category=FutureWarning)
 
 def run() -> None:
-    print("PyGamma")
+    print("ga_sar_workflow")
     luigi.run()
     print("Finished.")
 

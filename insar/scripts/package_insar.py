@@ -271,7 +271,7 @@ class SLC:
                 # to find the respective yaml files. If these yamls
                 # do not exist or if the user did not provide a
                 # yaml directory, then the S1 zips are used to
-                # extract metadata (this requires pygamma)
+                # extract metadata (this requires gasw)
                 s1_zip_list = get_s1_files(burst_data, scene_date)
 
                 # get multi-layered slc ESA metadata dict
@@ -626,7 +626,7 @@ def package(
                     # note the software versions used
                     p.note_software_version("gamma", "http://www/gamma-rs.ch", workflow_metadata["gamma_version"])
                     p.note_software_version("GDAL", "https://gdal.org/", workflow_metadata["gdal_version"])
-                    p.note_software_version("PyGamma", "https://github.com/GeoscienceAustralia/PyGamma", workflow_metadata["pygamma_version"])
+                    p.note_software_version("ga_sar_workflow", "https://github.com/GeoscienceAustralia/ga_sar_workflow", workflow_metadata["gasw_version"])
 
                     # Check if the scene has already been packaged
                     scene_pkg_dir = out_directory / p.names.dataset_folder

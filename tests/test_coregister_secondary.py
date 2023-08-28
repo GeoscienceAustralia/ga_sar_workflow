@@ -23,7 +23,7 @@ def simple_coreg(proc_config, primary_slc, secondary_slc, out_slc, out_mli):
     #
     # It's especially irrelevant in unit tests, where the contents of the file don't
     # matter as we don't have GAMMA licenses to process the data for real, it's all
-    # just running through mocked PyGamma objects that do high-level validation and file
+    # just running through mocked Gamma objects that do high-level validation and file
     # exists/touch operations only...
     with logging_directory(proc_config.job_path):
         coregister_secondary(

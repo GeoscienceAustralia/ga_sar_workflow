@@ -162,7 +162,7 @@ class InitialSetup(luigi.Task):
 
         # If we have a shape file, query the DB for scenes in that extent
         # TBD: The database geospatial/temporal query is currently Sentinel-1 only
-        # GH issue: https://github.com/GeoscienceAustralia/PyGamma/issues/261
+        # GH issue: https://github.com/GeoscienceAustralia/ga_sar_workflow/issues/261
         if shape_file and proc_config.sensor == "S1":
             # get the relative orbit number, which is int value of the numeric part of the track name
             # Note: This is S1 specific...
@@ -381,9 +381,9 @@ class InitialSetup(luigi.Task):
             "num_scene_dates": len(formatted_scene_dates),
             "polarisations": pols,
 
-            # Software versions used for processing
+            # Software versions used for processing (note gasw stands for ga_sar_workflow)
             "gamma_version": gamma_version,
-            "pygamma_version": insar.__version__,
+            "gasw_version": insar.__version__,
             "gdal_version": str(osgeo.gdal.VersionInfo()),
         }
 

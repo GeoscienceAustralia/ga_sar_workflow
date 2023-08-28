@@ -680,7 +680,7 @@ def print_report(summary: dict):
     pols = metadata["polarisations"]
 
     print_header_line()
-    print_header_line("PyGamma processing summary report")
+    print_header_line("ga_sar_workflow processing summary report")
     print_header_line(f"generated at {summary['timestamp']} on {summary['node']}")
     print_header_line()
     print("Stack ID:",stack_id)

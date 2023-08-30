@@ -2,7 +2,7 @@
 
 The following guide explains the process to constructing the code required to incorporate a new sensor into the processing framework.
 
-As of mid-2022, `ga_sar_workflow` supports several sensors in addition to `Sentinel-1`. Geoscience Australia's software is designed to handle data from multiple sensors, as long as they are supported by the `GAMMA` software package. A list of supported sensors is included in [this PDF from GAMMA](https://gamma-rs.ch/uploads/media/GAMMA_Software_information.pdf). `PyGamma` only supports a small subset of these, the PDF list is intended as an example of sensors which _could_ be supported.
+As of mid-2022, `ga_sar_workflow` supports several sensors in addition to `Sentinel-1`. Geoscience Australia's software is designed to handle data from multiple sensors, as long as they are supported by the `GAMMA` software package. A list of supported sensors is included in [this PDF from GAMMA](https://gamma-rs.ch/uploads/media/GAMMA_Software_information.pdf). `ga_sar_workflow` only supports a small subset of these, the PDF list is intended as an example of sensors which _could_ be supported.
 
 Please see the `insar/sensors` directory for a list of currently supported sensors. If a sensor is not supported by `ga_sar_workflow`, user contributions are welcomed.
 

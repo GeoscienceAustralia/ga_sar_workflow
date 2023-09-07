@@ -192,7 +192,7 @@ def resolve_stack_scene_additional_files(
 
     # Gather swath information for all source files, grouping by date
     for data_path in include_source_files:
-        _, _, scene_date = identify_data_source(data_path)
+        _, _, scene_date = identify_data_source(Path(data_path))
 
         if scene_date not in swath_info_by_date:
             swath_info_by_date[scene_date] = []

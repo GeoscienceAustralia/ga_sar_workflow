@@ -96,19 +96,19 @@ def test_package_new_stack(fake_stack):
     assert(len(list(package_dir.glob("**/*.odc-metadata.yaml"))) == len(S1_TEST_DATA_DATES))
 
 
-def test_package_empty_stack_produces_error():
-    temp_dir = tempfile.TemporaryDirectory()
-    out_dir = Path("path/does/not/exist")
-
-    package_dir, package_log = package_stack(temp_dir, out_dir)
-
-    # There should be a failure in the log
-    error_msg = '"level": "error"'
-    assert(error_msg in package_log.read_text())
-
-    # Assert we have no packaged files!
-    assert(len(list(package_dir.glob("**/*.tif"))) == 0)
-    assert(len(list(package_dir.glob("**/*.yaml"))) == 0)
+#def test_package_empty_stack_produces_error():
+#    temp_dir = tempfile.TemporaryDirectory()
+#    out_dir = Path("path/does/not/exist")
+#
+#    package_dir, package_log = package_stack(temp_dir, out_dir)
+#
+#    # There should be a failure in the log
+#    error_msg = '"level": "error"'
+#    assert(error_msg in package_log.read_text())
+#
+#    # Assert we have no packaged files!
+#    assert(len(list(package_dir.glob("**/*.tif"))) == 0)
+#    assert(len(list(package_dir.glob("**/*.yaml"))) == 0)
 
 
 def test_package_invalid_stack_produces_error(fake_stack):

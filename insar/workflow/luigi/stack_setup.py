@@ -56,7 +56,7 @@ class DataDownload(luigi.Task):
             LOG.info(f"Unpacking data from {self.data_path} to {self.output_dir}")
 
             # Setup sensor-specific data acquisition info
-            constellation, _, _ = identify_data_source(self.data_path)
+            constellation, _, _ = identify_data_source(Path(self.data_path))
             kwargs = {}
 
             if constellation == S1_ID:
@@ -257,7 +257,7 @@ class InitialSetup(luigi.Task):
 
             download_tasks = []
             for slc_url in download_list:
-                _, _, scene_date = identify_data_source(slc_url)
+                _, _, scene_date = identify_data_source(Path(slc_url))
 
                 download_tasks.append(
                     DataDownload(
@@ -279,7 +279,7 @@ class InitialSetup(luigi.Task):
                     if not failed_file:
                         continue
 
-                    _, _, scene_date = identify_data_source(failed_file)
+                    _, _, scene_date = identify_data_source(Path(failed_file))
 
                     LOG.info(
                         f"Corrupted file detected: {failed_file}, removed date {scene_date} from processing",

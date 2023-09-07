@@ -11,7 +11,7 @@ import yaml
 from insar.meta_data.s1_slc import SlcMetadata
 from insar.meta_data.metadata_diagnosis import diagnose
 
-_LOG = structlog.get_logger("insar")
+LOG = structlog.get_logger("insar")
 
 
 def generate_slc_metadata(
@@ -60,9 +60,7 @@ def generate_slc_metadata(
     # all the necessary information or max_retries is reached
     retry_cnt = 0
     while retry_cnt < max_retries:
-        _LOG.info(
-            "creating slc-metadata", S1_scene=slc_scene, retry=retry_cnt,
-        )
+        LOG.info(f"creating slc-metadata {slc_scene} retry={retry_cnt}")
 
         # ----- get slc_metadata ----- #
         scene_obj = SlcMetadata(slc_scene)
@@ -92,17 +90,9 @@ def generate_slc_metadata(
         retry_cnt += 1
 
     if retry_cnt >= max_retries:
-        _LOG.error(
-            "error: max. retries hit for slc-metadata creation",
-            S1_scene=slc_scene,
-            num_retries=retry_cnt,
-        )
+        LOG.error(f"error: max. retries hit for slc-metadata creation S1_scene={slc_scene} num_retries={retry_cnt}")
     else:
-        _LOG.info(
-            "slc-metadata created and passed checks",
-            S1_scene=slc_scene,
-            num_retries=retry_cnt,
-        )
+        LOG.info(f"slc-metadata created and passed checks S1_scene={slc_scene} num_retries={retry_cnt}")
 
     # What should occur if max retries is reached? should
     # the slc-metadata be saved??

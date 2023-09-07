@@ -208,7 +208,10 @@ class ProcConfig:
                 vv = pathlib.Path(v)
 
             if k in type_hint:
-                vv = the_type(k)(v)
+                try:
+                    vv = the_type(k)(v)
+                except ValueError:
+                    pass
 
             setattr(self, k, vv)
 

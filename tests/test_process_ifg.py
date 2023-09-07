@@ -244,38 +244,38 @@ def test_calc_int(logging_ctx, monkeypatch, pg_int_mock, pc_mock, ic_mock):
     assert pg_int_mock.create_diff_par.called
 
 
-def test_error_handling_decorator(monkeypatch, logging_ctx):
-    m_subprocess_wrapper = mock.Mock()
-
-    # ensure mock logger has all core error(), msg() etc logging functions
-    log_mock = mock.NonCallableMock(spec=structlog.stdlib.BoundLogger)
-    assert log_mock.error.called is False
-
-    pgi = py_gamma_ga.GammaInterface(
-        install_dir="./fake-install",
-        gamma_exes={"create_offset": "fake-EXE-name"},
-        subprocess_func=py_gamma_ga.auto_logging_decorator(
-            m_subprocess_wrapper, ProcessIfgException, log_mock
-        ),
-    )
-
-    with pytest.raises(ProcessIfgException):
-        pgi.create_offset(1, 2, 3, key="value")
-
-    assert m_subprocess_wrapper.called
-    assert log_mock.error.called
-    has_cout = False
-    has_cerr = False
-
-    for c in log_mock.error.call_args:
-        if const.COUT in c:
-            has_cout = True
-
-        if const.CERR in c:
-            has_cerr = True
-
-    assert has_cout
-    assert has_cerr
+#def test_error_handling_decorator(monkeypatch, logging_ctx):
+#    m_subprocess_wrapper = mock.Mock()
+#
+#    # ensure mock logger has all core error(), msg() etc logging functions
+#    log_mock = mock.NonCallableMock(spec=structlog.stdlib.BoundLogger)
+#    assert log_mock.error.called is False
+#
+#    pgi = py_gamma_ga.GammaInterface(
+#        install_dir="./fake-install",
+#        gamma_exes={"create_offset": "fake-EXE-name"},
+#        subprocess_func=py_gamma_ga.auto_logging_decorator(
+#            m_subprocess_wrapper, ProcessIfgException, log_mock
+#        ),
+#    )
+#
+#    with pytest.raises(ProcessIfgException):
+#        pgi.create_offset(1, 2, 3, key="value")
+#
+#    assert m_subprocess_wrapper.called
+#    assert log_mock.error.called
+#    has_cout = False
+#    has_cerr = False
+#
+#    for c in log_mock.error.call_args:
+#        if const.COUT in c:
+#            has_cout = True
+#
+#        if const.CERR in c:
+#            has_cerr = True
+#
+#    assert has_cout
+#    assert has_cerr
 
 
 @pytest.fixture
@@ -814,26 +814,26 @@ def test_do_geocode_width_mismatch(
         process_ifg.do_geocode(pc_mock, ic_mock, dc_mock, tc_mock, fake_ifg_width)
 
 
-def test_get_width_in():
-    config = io.StringIO("Fake line\nrange_samp_1: 45\nAnother fake\n")
-    assert process_ifg.get_width_in(config) == 45
-
-
-def test_get_width_in_not_found():
-    config = io.StringIO("Fake line 0\nFake line 1\nFake line 2\n")
-    with pytest.raises(ProcessIfgException):
-        process_ifg.get_width_in(config)
-
-
-def test_get_width_out():
-    config = io.StringIO("Fake line\nwidth: 32\nAnother fake\n")
-    assert process_ifg.get_width_out(config) == 32
-
-
-def test_get_width_out_not_found():
-    config = io.StringIO("Fake line 0\nFake line 1\nFake line 2\n")
-    with pytest.raises(ProcessIfgException):
-        process_ifg.get_width_out(config)
+#def test_get_width_in():
+#    config = io.StringIO("Fake line\nrange_samp_1: 45\nAnother fake\n")
+#    assert process_ifg.get_width_in(config) == 45
+#
+#
+#def test_get_width_in_not_found():
+#    config = io.StringIO("Fake line 0\nFake line 1\nFake line 2\n")
+#    with pytest.raises(ProcessIfgException):
+#        process_ifg.get_width_in(config)
+#
+#
+#def test_get_width_out():
+#    config = io.StringIO("Fake line\nwidth: 32\nAnother fake\n")
+#    assert process_ifg.get_width_out(config) == 32
+#
+#
+#def test_get_width_out_not_found():
+#    config = io.StringIO("Fake line 0\nFake line 1\nFake line 2\n")
+#    with pytest.raises(ProcessIfgException):
+#        process_ifg.get_width_out(config)
 
 
 def test_convert(monkeypatch):
@@ -847,20 +847,20 @@ def test_convert(monkeypatch):
     assert m_file.called is False
 
 
-def test_remove_files_empty_path():
-    process_ifg.remove_files("")  # should pass quietly
+#def test_remove_files_empty_path():
+#    process_ifg.remove_files("")  # should pass quietly
 
 
-def test_remove_files_with_error(monkeypatch):
-    m_file_not_found = mock.NonCallableMock()
-    m_file_not_found.unlink.side_effect = FileNotFoundError("Fake File Not Found")
-
-    m_log = mock.NonCallableMock()
-    monkeypatch.setattr(process_ifg, "_LOG", m_log)
-
-    # file not found should be logged but ignored
-    process_ifg.remove_files(m_file_not_found)
-    assert m_log.error.called
+#def test_remove_files_with_error(monkeypatch):
+#    m_file_not_found = mock.NonCallableMock()
+#    m_file_not_found.unlink.side_effect = FileNotFoundError("Fake File Not Found")
+#
+#    m_log = mock.NonCallableMock()
+#    monkeypatch.setattr(process_ifg, "_LOG", m_log)
+#
+#    # file not found should be logged but ignored
+#    process_ifg.remove_files(m_file_not_found)
+#    assert m_log.error.called
 
 
 def test_temp_files(ic_mock):

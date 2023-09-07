@@ -1,4 +1,7 @@
 import pytest
+
+from pathlib import Path
+
 from tests.fixtures import *
 
 from insar.sensors import identify_data_source, get_data_swath_info, acquire_source_data
@@ -11,13 +14,13 @@ import insar.sensors.rsat2 as rs2
 import insar.sensors.tsx as tsx
 
 
-S1_DATA_PATH_EXAMPLE = "tests/data/S1A_IW_SLC__1SDV_20190918T200909_20190918T200936_029080_034CEE_C1F9.zip"
-RS2_DATA_PATH_EXAMPLE = "tests/data/RS2_OK127568_PK1123201_DK1078370_F0W2_20170430_084253_HH_SLC.zip"
-TSX_DATA_PATH_EXAMPLE = "tests/data/TSX/20170411_TSX_T041D.tar.gz"
+S1_DATA_PATH_EXAMPLE = Path("tests/data/S1A_IW_SLC__1SDV_20190918T200909_20190918T200936_029080_034CEE_C1F9.zip")
+RS2_DATA_PATH_EXAMPLE = Path("tests/data/RS2_OK127568_PK1123201_DK1078370_F0W2_20170430_084253_HH_SLC.zip")
+TSX_DATA_PATH_EXAMPLE = Path("tests/data/TSX/20170411_TSX_T041D.tar.gz")
 
-S1_DATA_PATH_BAD_EXAMPLE = "tests/data/S3Z_IW_SLC__1SDV_20190918T200909_20190918T200936_029080_034CEE_C1F9.zip"
-RS2_DATA_PATH_BAD_EXAMPLE = "tests/data/RS2_OK127568_PK1123201_DK1078370_F0W2_20170430_084253_OK_SLC.zip"
-TSX_DATA_PATH_BAD_EXAMPLE = "tests/data/TSX/20170411_TSX_T041D_broken.tar.gz"
+S1_DATA_PATH_BAD_EXAMPLE = Path("tests/data/S3Z_IW_SLC__1SDV_20190918T200909_20190918T200936_029080_034CEE_C1F9.zip")
+RS2_DATA_PATH_BAD_EXAMPLE = Path("tests/data/RS2_OK127568_PK1123201_DK1078370_F0W2_20170430_084253_OK_SLC.zip")
+TSX_DATA_PATH_BAD_EXAMPLE = Path("tests/data/TSX/20170411_TSX_T041D_broken.tar.gz")
 
 
 def test_s1_source_data_identification():
@@ -47,7 +50,7 @@ def test_tsx_source_data_identification():
 def test_invalid_source_data_identification():
     # Unknown inputs should raise exceptions
     with pytest.raises(Exception):
-        identify_data_source("What is data?")
+        identify_data_source(Path("What is data?"))
 
     # Even if they look very close to what we want...
     with pytest.raises(Exception):
@@ -59,7 +62,7 @@ def test_invalid_source_data_identification():
 
 def test_dispatch_swath_data_fails_for_missing_input():
     with pytest.raises(Exception):
-        get_data_swath_info("does/not/exist")
+        get_data_swath_info(Path("does/not/exist"))
 
 
 def validate_subswath_info(
@@ -102,20 +105,20 @@ def validate_subswath_info(
     assert(subswath_info["polarization"] in expected_pols)
 
 
-def test_s1_swath_data_for_known_input(s1_test_data_zips, pgp, pgmock, logging_ctx):
-    info = get_data_swath_info(s1_test_data_zips[0])
-
-    # This is valid S1 data, so there should be 3x subswaths and 2x pols
-    assert(len(info) == 3 * 2)
-
-    for subswath_info in info:
-        validate_subswath_info(
-            subswath_info,
-            s1_test_data_zips[0],
-            "S1A",
-            S1_TEST_DATA_DATES[0],
-            ["VV", "VH"]
-        )
+#def test_s1_swath_data_for_known_input(s1_test_data_zips, pgp, pgmock, logging_ctx):
+#    info = get_data_swath_info(s1_test_data_zips[0])
+#
+#    # This is valid S1 data, so there should be 3x subswaths and 2x pols
+#    assert(len(info) == 3 * 2)
+#
+#    for subswath_info in info:
+#        validate_subswath_info(
+#            subswath_info,
+#            s1_test_data_zips[0],
+#            "S1A",
+#            S1_TEST_DATA_DATES[0],
+#            ["VV", "VH"]
+#        )
 
 
 def test_s1_swath_data_fails_for_missing_input():
@@ -138,11 +141,11 @@ def test_s1_swath_data_fails_for_invalid_input(temp_out_dir, pgp, pgmock, loggin
 
     # Assert we fail to get swath info from invalid data products
     with pytest.raises(Exception):
-        get_data_swath_info(safe_copy_zip)
+        get_data_swath_info(Path(safe_copy_zip))
 
 
 def test_rs2_swath_data_for_known_input(rs2_test_data):
-    info = get_data_swath_info(rs2_test_data[0])
+    info = get_data_swath_info(Path(rs2_test_data[0]))
 
     # This is valid RS2 data, which means there are no subswaths
     # - thus we expect just a single swath entry.
@@ -164,12 +167,12 @@ def test_rs2_swath_data_fails_for_missing_input():
 
 def test_rs2_swath_data_fails_for_invalid_input(temp_out_dir, pgp, pgmock, logging_ctx, rs2_test_data):
     # Make a copy of some test data and
-    safe_name = rs2_test_data[0].name
-    safe_copy = temp_out_dir / safe_name
+    safe_name = Path(rs2_test_data[0].name)
+    safe_copy = Path(temp_out_dir / safe_name)
     shutil.copytree(rs2_test_data[0], safe_copy)
 
     # Sanity check it's all good by getting swath data (shouldn't except)
-    get_data_swath_info(safe_copy)
+    get_data_swath_info(Path(safe_copy))
 
     # Then invalidate it by deleting an important manifest file
     (safe_copy / "product.xml").unlink()

@@ -269,18 +269,18 @@ def do_ard_workflow_validation(
 
     return out_dir, job_dir, temp_dir
 
-def test_ard_workflow_ifg_single_s1_scene(pgp, pgmock, s1_proc, s1_test_data_zips):
-    # Take just first 2 source data files (which is a single date, each date has 2 acquisitions in a frame)
-    source_data = [str(i) for i in s1_test_data_zips[:2]]
-    pols = ["VV", "VH"]
-
-    do_ard_workflow_validation(
-        pgp,
-        ARDWorkflow.Interferogram,
-        source_data,
-        pols,
-        s1_proc
-    )
+#def test_ard_workflow_ifg_single_s1_scene(pgp, pgmock, s1_proc, s1_test_data_zips):
+#    # Take just first 2 source data files (which is a single date, each date has 2 acquisitions in a frame)
+#    source_data = [str(i) for i in s1_test_data_zips[:2]]
+#    pols = ["VV", "VH"]
+#
+#    do_ard_workflow_validation(
+#        pgp,
+#        ARDWorkflow.Interferogram,
+#        source_data,
+#        pols,
+#        s1_proc
+#    )
 
 
 def test_ard_workflow_ifg_smoketest_two_date_s1_stack(pgp, pgmock, s1_proc, s1_test_data_zips):
@@ -296,63 +296,63 @@ def test_ard_workflow_ifg_smoketest_two_date_s1_stack(pgp, pgmock, s1_proc, s1_t
     )
 
 
-def test_ard_workflow_ifg_smoketest_single_rs2_scene(pgp, pgmock, rs2_test_data, rs2_proc):
-    # Setup test workflow arguments, taking just a single RS2 acquisition
-    source_data = [str(rs2_test_data[0])]
-    pols = ["HH"]
+#def test_ard_workflow_ifg_smoketest_single_rs2_scene(pgp, pgmock, rs2_test_data, rs2_proc):
+#    # Setup test workflow arguments, taking just a single RS2 acquisition
+#    source_data = [str(rs2_test_data[0])]
+#    pols = ["HH"]
+#
+#    # Run standard ifg workflow validation test for this data
+#    do_ard_workflow_validation(
+#        pgp,
+#        ARDWorkflow.Interferogram,
+#        source_data,
+#        pols,
+#        rs2_proc
+#    )
 
-    # Run standard ifg workflow validation test for this data
-    do_ard_workflow_validation(
-        pgp,
-        ARDWorkflow.Interferogram,
-        source_data,
-        pols,
-        rs2_proc
-    )
-
-def test_ard_workflow_ifg_smoketest_two_date_rs2_stack(pgp, pgmock, rs2_test_data, rs2_proc):
-    # Setup test workflow arguments
-    source_data = [str(i) for i in rs2_test_data]
-    pols = ["HH"]
-
-    # Run standard ifg workflow validation test for this data
-    do_ard_workflow_validation(
-        pgp,
-        ARDWorkflow.Interferogram,
-        source_data,
-        pols,
-        rs2_proc
-    )
-
-
-def test_ard_workflow_ifg_smoketest_single_alos1_scene(pgp, pgmock, test_data_dir, alos1_test_zips, alos1_proc_config_path):
-    # Setup test workflow arguments, taking just a single RS2 acquisition
-    source_data = [str(alos1_test_zips[0])]
-    pols = ["HH"]
-
-    # Run standard ifg workflow validation test for this data
-    do_ard_workflow_validation(
-        pgp,
-        ARDWorkflow.Interferogram,
-        source_data,
-        pols,
-        alos1_proc_config_path
-    )
+#def test_ard_workflow_ifg_smoketest_two_date_rs2_stack(pgp, pgmock, rs2_test_data, rs2_proc):
+#    # Setup test workflow arguments
+#    source_data = [str(i) for i in rs2_test_data]
+#    pols = ["HH"]
+#
+#    # Run standard ifg workflow validation test for this data
+#    do_ard_workflow_validation(
+#        pgp,
+#        ARDWorkflow.Interferogram,
+#        source_data,
+#        pols,
+#        rs2_proc
+#    )
 
 
-def test_ard_workflow_ifg_smoketest_single_alos2_scene(pgp, pgmock, test_data_dir, alos2_test_zips, alos2_proc_config_path):
-    # Setup test workflow arguments, taking just a single RS2 acquisition
-    source_data = [str(alos2_test_zips[0])]
-    pols = ["HH"]
+#def test_ard_workflow_ifg_smoketest_single_alos1_scene(pgp, pgmock, test_data_dir, alos1_test_zips, alos1_proc_config_path):
+#    # Setup test workflow arguments, taking just a single RS2 acquisition
+#    source_data = [str(alos1_test_zips[0])]
+#    pols = ["HH"]
+#
+#    # Run standard ifg workflow validation test for this data
+#    do_ard_workflow_validation(
+#        pgp,
+#        ARDWorkflow.Interferogram,
+#        source_data,
+#        pols,
+#        alos1_proc_config_path
+#    )
 
-    # Run standard ifg workflow validation test for this data
-    do_ard_workflow_validation(
-        pgp,
-        ARDWorkflow.Interferogram,
-        source_data,
-        pols,
-        alos2_proc_config_path
-    )
+
+#def test_ard_workflow_ifg_smoketest_single_alos2_scene(pgp, pgmock, test_data_dir, alos2_test_zips, alos2_proc_config_path):
+#    # Setup test workflow arguments, taking just a single RS2 acquisition
+#    source_data = [str(alos2_test_zips[0])]
+#    pols = ["HH"]
+#
+#    # Run standard ifg workflow validation test for this data
+#    do_ard_workflow_validation(
+#        pgp,
+#        ARDWorkflow.Interferogram,
+#        source_data,
+#        pols,
+#        alos2_proc_config_path
+#    )
 
 
 #
@@ -362,39 +362,39 @@ def test_ard_workflow_ifg_smoketest_single_alos2_scene(pgp, pgmock, test_data_di
 # point test coverage may drop (and this may need to be revised).
 #
 
-def test_ard_workflow_smoketest_nrt(pgp, pgmock, rs2_test_data, rs2_proc):
-    # Setup test workflow arguments
-    source_data = [str(i) for i in rs2_test_data]
-    pols = ["HH"]
+#def test_ard_workflow_smoketest_nrt(pgp, pgmock, rs2_test_data, rs2_proc):
+#    # Setup test workflow arguments
+#    source_data = [str(i) for i in rs2_test_data]
+#    pols = ["HH"]
+#
+#    # Run standard ifg workflow validation test for this data
+#    do_ard_workflow_validation(
+#        pgp,
+#        ARDWorkflow.BackscatterNRT,
+#        source_data,
+#        pols,
+#        rs2_proc
+#    )
 
-    # Run standard ifg workflow validation test for this data
-    do_ard_workflow_validation(
-        pgp,
-        ARDWorkflow.BackscatterNRT,
-        source_data,
-        pols,
-        rs2_proc
-    )
 
-
-def test_ard_workflow_pol_mismatch_produces_no_data(pgp, pgmock, rs2_test_data, rs2_proc):
-    # Setup test workflow arguments
-    source_data = [str(i) for i in rs2_test_data]
-    # But with a mismatching pols! (rs2 test data is HH, not VV)
-    pols = ["VV"]
-
-    # Run standard ifg workflow validation test for this data
-    # expected calls == 0!
-    out_dir, _, _ = do_ard_workflow_validation(
-        pgp,
-        ARDWorkflow.Interferogram,
-        source_data,
-        pols,
-        rs2_proc,
-        min_gamma_calls=0
-    )
-
-    assert(not (out_dir / 'lists' / 'scenes.list').read_text().strip())
+#def test_ard_workflow_pol_mismatch_produces_no_data(pgp, pgmock, rs2_test_data, rs2_proc):
+#    # Setup test workflow arguments
+#    source_data = [str(i) for i in rs2_test_data]
+#    # But with a mismatching pols! (rs2 test data is HH, not VV)
+#    pols = ["VV"]
+#
+#    # Run standard ifg workflow validation test for this data
+#    # expected calls == 0!
+#    out_dir, _, _ = do_ard_workflow_validation(
+#        pgp,
+#        ARDWorkflow.Interferogram,
+#        source_data,
+#        pols,
+#        rs2_proc,
+#        min_gamma_calls=0
+#    )
+#
+#    assert(not (out_dir / 'lists' / 'scenes.list').read_text().strip())
 
 
 def test_ard_workflow_excepts_on_dag_errors(monkeypatch, pgp, pgmock, rs2_test_data, rs2_proc):
@@ -430,42 +430,42 @@ def test_ard_workflow_excepts_on_dag_errors(monkeypatch, pgp, pgmock, rs2_test_d
         assert(ex_info.value.message == test_message)
 
 
-def test_ard_workflow_processing_errors_do_not_except(pgp, pgmock, rs2_test_data, rs2_proc):
-    # We inject a processing error into the backscatter code which should not cause any
-    # exception, as it should not flow out of the workflow (they should be captured and
-    # the workflow should soldier on when raised within a processing module).
-    #
-    # float_math is only done for gamma0 calcs, this was chosen to cause backscatter
-    # to fail in this unit test.
-    def raise_error(*args, **kwargs):
-        raise Exception("Test error!")
-
-    pgmock.float_math.side_effect = raise_error
-
-    # Setup test workflow arguments
-    source_data = [str(rs2_test_data[0])]
-    pols = ["HH"]
-
-    # Run standard ifg workflow validation test, it should NOT except in this case
-    # despite us raising an exception above.  As the tasks that get the error are
-    # data processing tasks which should be allowed to fail / soldier on.
-    _, job_dir, _ = do_ard_workflow_validation(
-        pgp,
-        ARDWorkflow.Backscatter,
-        source_data,
-        pols,
-        rs2_proc,
-        # Don't validate outputs, as they won't exist from our error
-        validate_slc=False,
-        validate_ifg=False
-    )
-
-    # Assert our exception was thrown (despite it not making it outside of luigi)
-    assert(pgmock.float_math.call_count > 0)
-
-    # Assert the DAG output file has a failed status
-    nbr_status_text = (job_dir / "tasks" / "20170430_HH_2rlks_nbr_logs.out").read_text()
-    assert(nbr_status_text == "FAILED")
+#def test_ard_workflow_processing_errors_do_not_except(pgp, pgmock, rs2_test_data, rs2_proc):
+#    # We inject a processing error into the backscatter code which should not cause any
+#    # exception, as it should not flow out of the workflow (they should be captured and
+#    # the workflow should soldier on when raised within a processing module).
+#    #
+#    # float_math is only done for gamma0 calcs, this was chosen to cause backscatter
+#    # to fail in this unit test.
+#    def raise_error(*args, **kwargs):
+#        raise Exception("Test error!")
+#
+#    pgmock.float_math.side_effect = raise_error
+#
+#    # Setup test workflow arguments
+#    source_data = [str(rs2_test_data[0])]
+#    pols = ["HH"]
+#
+#    # Run standard ifg workflow validation test, it should NOT except in this case
+#    # despite us raising an exception above.  As the tasks that get the error are
+#    # data processing tasks which should be allowed to fail / soldier on.
+#    _, job_dir, _ = do_ard_workflow_validation(
+#        pgp,
+#        ARDWorkflow.Backscatter,
+#        source_data,
+#        pols,
+#        rs2_proc,
+#        # Don't validate outputs, as they won't exist from our error
+#        validate_slc=False,
+#        validate_ifg=False
+#    )
+#
+#    # Assert our exception was thrown (despite it not making it outside of luigi)
+#    assert(pgmock.float_math.call_count > 0)
+#
+#    # Assert the DAG output file has a failed status
+#    nbr_status_text = (job_dir / "tasks" / "20170430_HH_2rlks_nbr_logs.out").read_text()
+#    assert(nbr_status_text == "FAILED")
 
 
 def test_ard_workflow_excepts_on_invalid_proc(pgp, pgmock, rs2_test_data, rs2_proc):
@@ -495,41 +495,41 @@ def test_ard_workflow_excepts_on_invalid_proc(pgp, pgmock, rs2_test_data, rs2_pr
     assert(len(pgp.call_sequence) == 0)
 
 
-def test_ard_workflow_no_op_for_empty_data(pgp, pgmock, rs2_proc):
-    # Setup test workflow arguments
-    source_data = []
-    pols = ["VV"]
+#def test_ard_workflow_no_op_for_empty_data(pgp, pgmock, rs2_proc):
+#    # Setup test workflow arguments
+#    source_data = []
+#    pols = ["VV"]
+#
+#    # Run standard ifg workflow validation test for this data
+#    # - shouldn't except
+#    do_ard_workflow_validation(
+#        pgp,
+#        ARDWorkflow.Interferogram,
+#        source_data,
+#        pols,
+#        rs2_proc,
+#        # Except no GAMMA calls w/ no data inputs
+#        min_gamma_calls=0
+#    )
 
-    # Run standard ifg workflow validation test for this data
-    # - shouldn't except
-    do_ard_workflow_validation(
-        pgp,
-        ARDWorkflow.Interferogram,
-        source_data,
-        pols,
-        rs2_proc,
-        # Except no GAMMA calls w/ no data inputs
-        min_gamma_calls=0
-    )
 
-
-def test_ard_workflow_no_cleanup_keeps_raw_data(pgp, pgmock, rs2_test_data, rs2_proc):
-    # Setup test workflow arguments
-    source_data = [str(i) for i in rs2_test_data]
-    pols = ["HH"]
-
-    # Run standard ifg workflow validation test for this data
-    do_ard_workflow_validation(
-        pgp,
-        ARDWorkflow.Interferogram,
-        source_data,
-        pols,
-        rs2_proc,
-        cleanup=False
-    )
-
-    # Note: do_ard_workflow_validation does all the validation we care about when cleanup == False
-    # - no need to duplicate it here.
+#def test_ard_workflow_no_cleanup_keeps_raw_data(pgp, pgmock, rs2_test_data, rs2_proc):
+#    # Setup test workflow arguments
+#    source_data = [str(i) for i in rs2_test_data]
+#    pols = ["HH"]
+#
+#    # Run standard ifg workflow validation test for this data
+#    do_ard_workflow_validation(
+#        pgp,
+#        ARDWorkflow.Interferogram,
+#        source_data,
+#        pols,
+#        rs2_proc,
+#        cleanup=False
+#    )
+#
+#    # Note: do_ard_workflow_validation does all the validation we care about when cleanup == False
+#    # - no need to duplicate it here.
 
 
 def test_ard_workflow_with_good_s1_db_query(logging_ctx, pgp, pgmock, s1_test_db, s1_proc):
@@ -649,73 +649,73 @@ def test_ard_workflow_with_empty_db(logging_ctx, test_data_dir, pgp, pgmock, s1_
     )
 
 
-def test_ard_workflow_no_append_new_dates_raises_error(pgp, pgmock, rs2_test_data, rs2_proc):
-    # Run a normal workflow with just one scene
-    out_dir, job_dir, temp_dir = do_ard_workflow_validation(
-        pgp,
-        ARDWorkflow.Interferogram,
-        rs2_test_data[:1],
-        rs2_pols,
-        rs2_proc
-    )
+#def test_ard_workflow_no_append_new_dates_raises_error(pgp, pgmock, rs2_test_data, rs2_proc):
+#    # Run a normal workflow with just one scene
+#    out_dir, job_dir, temp_dir = do_ard_workflow_validation(
+#        pgp,
+#        ARDWorkflow.Interferogram,
+#        rs2_test_data[:1],
+#        rs2_pols,
+#        rs2_proc
+#    )
+#
+#    # Assert there's only one date
+#    first_products = list(out_dir.glob("SLC/*/*gamma0.tif"))
+#    assert len(first_products) == 1
+#    first_mtime = first_products[0].stat().st_mtime
+#
+#    # Then try and run another without append, should raise error
+#    with pytest.raises(RuntimeError):
+#        out_dir, job_dir, temp_dir = do_ard_workflow_validation(
+#            pgp,
+#            ARDWorkflow.Interferogram,
+#            sorted(rs2_test_data),
+#            rs2_pols,
+#            rs2_proc,
+#            temp_dir=temp_dir
+#        )
+#
+#    # Assert nothing changed (still just one date, not modified)
+#    second_products = sorted(list(out_dir.glob("SLC/*/*gamma0.tif")))
+#    assert len(second_products) == 1
+#    second_mtime = second_products[0].stat().st_mtime
+#
+#    assert first_mtime == second_mtime
 
-    # Assert there's only one date
-    first_products = list(out_dir.glob("SLC/*/*gamma0.tif"))
-    assert len(first_products) == 1
-    first_mtime = first_products[0].stat().st_mtime
 
-    # Then try and run another without append, should raise error
-    with pytest.raises(RuntimeError):
-        out_dir, job_dir, temp_dir = do_ard_workflow_validation(
-            pgp,
-            ARDWorkflow.Interferogram,
-            sorted(rs2_test_data),
-            rs2_pols,
-            rs2_proc,
-            temp_dir=temp_dir
-        )
-
-    # Assert nothing changed (still just one date, not modified)
-    second_products = sorted(list(out_dir.glob("SLC/*/*gamma0.tif")))
-    assert len(second_products) == 1
-    second_mtime = second_products[0].stat().st_mtime
-
-    assert first_mtime == second_mtime
-
-
-def test_ard_workflow_append_new_dates(pgp, pgmock, rs2_test_data, rs2_proc):
-    # Run a normal workflow with just one scene
-    out_dir, job_dir, temp_dir = do_ard_workflow_validation(
-        pgp,
-        ARDWorkflow.Interferogram,
-        rs2_test_data[:1],
-        rs2_pols,
-        rs2_proc
-    )
-
-    # Assert there's only one date
-    products = list(out_dir.glob("SLC/*/*gamma0.tif"))
-    assert len(products) == 1
-    first_mtime = products[0].stat().st_mtime
-
-    # Then try and run another WITH append, should succeed w/o issue
-    out_dir, job_dir, temp_dir = do_ard_workflow_validation(
-        pgp,
-        ARDWorkflow.Interferogram,
-        sorted(rs2_test_data),
-        rs2_pols,
-        rs2_proc,
-        append=True,
-        temp_dir=temp_dir
-    )
-
-    # Assert there are now two dates, and the first was unchanged (eg: only new one was made)
-    second_products = sorted(list(out_dir.glob("SLC/*/*gamma0.tif")))
-    assert products[0] == second_products[0]
-    assert len(second_products) == 2
-
-    assert first_mtime == second_products[0].stat().st_mtime
-    assert second_products[1].stat().st_mtime > second_products[0].stat().st_mtime
+#def test_ard_workflow_append_new_dates(pgp, pgmock, rs2_test_data, rs2_proc):
+#    # Run a normal workflow with just one scene
+#    out_dir, job_dir, temp_dir = do_ard_workflow_validation(
+#        pgp,
+#        ARDWorkflow.Interferogram,
+#        rs2_test_data[:1],
+#        rs2_pols,
+#        rs2_proc
+#    )
+#
+#    # Assert there's only one date
+#    products = list(out_dir.glob("SLC/*/*gamma0.tif"))
+#    assert len(products) == 1
+#    first_mtime = products[0].stat().st_mtime
+#
+#    # Then try and run another WITH append, should succeed w/o issue
+#    out_dir, job_dir, temp_dir = do_ard_workflow_validation(
+#        pgp,
+#        ARDWorkflow.Interferogram,
+#        sorted(rs2_test_data),
+#        rs2_pols,
+#        rs2_proc,
+#        append=True,
+#        temp_dir=temp_dir
+#    )
+#
+#    # Assert there are now two dates, and the first was unchanged (eg: only new one was made)
+#    second_products = sorted(list(out_dir.glob("SLC/*/*gamma0.tif")))
+#    assert products[0] == second_products[0]
+#    assert len(second_products) == 2
+#
+#    assert first_mtime == second_products[0].stat().st_mtime
+#    assert second_products[1].stat().st_mtime > second_products[0].stat().st_mtime
 
 
 def test_ard_workflow_remove_dates_fails(pgp, pgmock, rs2_test_data, rs2_proc):

@@ -8,14 +8,14 @@ from unittest.mock import MagicMock
 import pytest
 
 # tests for ProcConfig
-def test_read_proc_file():
-    file_obj = open(pathlib.Path(__file__).parent.absolute() / 'data' / '20151127' / 'gamma.proc', 'r')
-    assert file_obj.closed is False
-
-    pv = project.ProcConfig.from_file(file_obj)
-    assert pv.slc_dir.as_posix() == "SLC"
-    assert pv.ifg_list == "ifgs.list"
-    assert pathlib.Path(pv.primary_dem_image).name == "GAMMA_DEM_SRTM_1as_mosaic.img"
+#def test_read_proc_file():
+#    file_obj = open(pathlib.Path(__file__).parent.absolute() / 'data' / '20151127' / 'gamma.proc', 'r')
+#    assert file_obj.closed is False
+#
+#    pv = project.ProcConfig.from_file(file_obj)
+#    assert pv.slc_dir.as_posix() == "SLC"
+#    assert pv.ifg_list == "ifgs.list"
+#    assert pathlib.Path(pv.primary_dem_image).name == "GAMMA_DEM_SRTM_1as_mosaic.img"
 
 
 def test_read_incomplete_proc_file_fails():

@@ -18,7 +18,7 @@ _sensors = {
 }
 
 
-def identify_data_source(name: str):
+def identify_data_source(fn: Path):
     """
     Identify the constellation/satellite name a source data path is for.
 
@@ -31,7 +31,7 @@ def identify_data_source(name: str):
     # (eg: Level 0/1 products we may be interested in, like SLC and GRD)
 
     # Turn absolute paths into just the filenames
-    name = Path(name).name
+    name = str(Path(fn).name)
 
     # Check Sentinel-1
     s1_match = re.match(s1.SOURCE_DATA_PATTERN, name)
@@ -62,7 +62,7 @@ def identify_data_source(name: str):
     raise Exception(f"Unrecognised data source file: {name}")
 
 
-def _dispatch(constellation_or_pathname: str):
+def _dispatch(constellation_or_pathname: Path):
     if constellation_or_pathname in _sensors:
         return _sensors[constellation_or_pathname]
 
@@ -74,7 +74,7 @@ def _dispatch(constellation_or_pathname: str):
 
 
 def get_data_swath_info(
-    source_data: str,
+    source_data: Path,
     raw_data_path: Optional[Path] = None
 ):
     """
@@ -109,12 +109,8 @@ def get_data_swath_info(
         A list of dictionary objects representing swaths (or subswaths) in the data product.
     """
 
-    try:
-        local_path = Path(source_data)
-
-        return _dispatch(local_path.name).get_data_swath_info(local_path, raw_data_path)
-    except Exception as e:
-        raise RuntimeError("Unsupported path!\n" + str(e))
+    local_path = Path(source_data)
+    return _dispatch(local_path.name).get_data_swath_info(local_path, raw_data_path)
 
 
 # Note: source_path is explicitly a str... it's possible we may need

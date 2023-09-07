@@ -623,8 +623,8 @@ def pgmock(monkeypatch, pgp):
     def S1_burstloc_mock(*args, **kwargs):
         from tests.fixture_S1_burstloc import S1_burstloc_outputs
 
-        result = pgp.S1_burstloc(*args, **kwargs)
         xml_file = Path(args[0])
+        result = pgp.S1_burstloc(xml_file, **kwargs)
 
         return result[0], S1_burstloc_outputs[xml_file.name], []
 

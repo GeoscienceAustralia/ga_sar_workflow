@@ -21,8 +21,11 @@ dill>=0.3.3
 # If we have speciifc version requirements, they should be enforced in
 # environment-specific setup/install scripts, NOT in requirements.txt
 # which is environment-agnostic (specific to our code, not target envs)
+
 pytest
 pytest-cov
+pytest-mypy
+mypy
 simplekml
 rasterio
 pyproj>=2.4
@@ -36,17 +39,6 @@ matplotlib
 numpy>=1.19
 Pillow>=8.0.1
 PyYAML
-six
 spatialist
 structlog>=21.1
 eodatasets3
-dataclasses; python_version < '3.7'
-
-## Type checking
-
-typing-extensions
-types-Pillow
-pandas-stubs
-
-# deprecated?
-data-science-types

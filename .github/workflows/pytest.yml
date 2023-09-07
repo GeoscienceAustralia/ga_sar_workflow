@@ -34,7 +34,7 @@ jobs:
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
     - name: Test with pytest
       env:
-        GAMMA_VER: 20191203
+        GAMMA_VER: 20221129
       run: |
         export PYTHONPATH=${PYTHONPATH}:$(pwd)
-        pytest
+        pytest --mypy

@@ -35,44 +35,26 @@ show_error_codes = true
 no_implicit_optional = true
 warn_return_any = true
 warn_unused_ignores = true
-exclude = ["docs", "configs", "utils", "tests", "integration"]
+exclude = ["docs", "configs", "utils", "integration"]
 
 [[tool.mypy.overrides]]
-module = "simplekml.*"
-ignore_missing_imports = true
-
-[[tool.mypy.overrides]]
-module = "shapely.*"
-ignore_missing_imports = true
-
-[[tool.mypy.overrides]]
-module = "spatialist.*"
-ignore_missing_imports = true
-
-[[tool.mypy.overrides]]
-module = "geopandas.*"
-ignore_missing_imports = true
-
-[[tool.mypy.overrides]]
-module = "luigi.*"
-ignore_missing_imports = true
-
-[[tool.mypy.overrides]]
-module = "osgeo.*"
-ignore_missing_imports = true
-
-[[tool.mypy.overrides]]
-module = "rasterio.*"
-ignore_missing_imports = true
-
-[[tool.mypy.overrides]]
-module = "eodatasets3.*"
-ignore_missing_imports = true
-
-[[tool.mypy.overrides]]
-module = "mpl_toolkits.*"
-ignore_missing_imports = true
-
-[[tool.mypy.overrides]]
-module = "py_gamma.*"
+module = [
+    "simplekml.*",
+    "shapely.*",
+    "spatialist",
+    "geopandas",
+    "luigi.*",
+    "osgeo.*",
+    "rasterio",
+    "eodatasets3",
+    "pandas",
+    "PIL.*",
+    "Pillow",
+    "click.*",
+    "PyYAML",
+    "pkg_resources",
+    "yaml",
+    "matplotlib",
+    "mpl_toolkits.*",
+]
 ignore_missing_imports = true

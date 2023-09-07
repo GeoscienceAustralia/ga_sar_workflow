@@ -40,7 +40,7 @@ export TMPDIR=$PBS_JOBFS
 export TEMP=$TMPDIR
 export TMP=$TMPDIR
 
-pygamma ARD \
+gaws ARD \
     --proc-file {proc_file} \
     --shape-file {shape_file} \
     --include-dates '{include_dates}' \
@@ -466,7 +466,7 @@ def ard_insar(
     workflow_idx = workflows.index(workflow.lower())
     workflow = [o.name for o in ARDWorkflow][workflow_idx]
 
-    # The polarization command for PyGamma ARD is a Luigi
+    # The polarization command for ga_sar_workflow ARD is a Luigi
     # ListParameter, where the list is a <JSON string>
     # e.g.
     #    --polarization '["VV"]'

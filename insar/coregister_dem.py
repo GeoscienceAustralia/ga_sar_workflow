@@ -77,7 +77,7 @@ def gen_dem_rdc(dem_paths: DEMPaths, coreg_paths: CoregisteredPrimaryPaths, dem_
     ls_mode = 2
 
     # Replaced gc_map1 with gc_map2. The former was deprecated by GAMMA.
-    # See https://github.com/GeoscienceAustralia/PyGamma/issues/232
+    # See https://github.com/GeoscienceAustralia/ga_sar_workflow/issues/232
 
     pg.gc_map2(
         mli_par_pathname,
@@ -1023,7 +1023,7 @@ def coregister_primary(
         # terrain. In that case, the synthetic amplitude image has no
         # variation and therefore there is no features to use to align the
         # image during co-registration. I am happy for it to be left out of
-        # pygamma. We haven't used the feature for many years. If we need it
+        # gasw (ga_sar_workflow). We haven't used the feature for many years. If we need it
         # later we can implement it at that time.
 
         msg = "Feature is rarely used & disabled until required"

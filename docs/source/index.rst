@@ -1,12 +1,12 @@
-.. PyGamma documentation master file, created by
+.. ga_sar_workflow documentation master file, created by
    sphinx-quickstart on Thu Jan 23 07:57:00 2020.
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-PyGamma
+ga_sar_workflow
 ===========
 
-PyGamma is a workflow managers designed to generate SAR/InSAR analysis ready data using
+ga_sar_workflow is a workflow managers designed to generate SAR/InSAR analysis ready data using
 `GAMMA SOFTWARE`_
 
 .. _GAMMA SOFTWARE: http://www.gamma-rs.ch/
@@ -41,7 +41,7 @@ archived into a database. Extracted slc metadata can be supplied to be archived:
 Query Sqlite SLC archive database
 #################################
 Example to query database for to generate input files needed to form SLC input for
-SAR / InSAR processing using PyGamma module::
+SAR / InSAR processing using ga_sar_workflow module::
 
     from datetime import datetime
     from insar.s1_slc_metadata import Archive

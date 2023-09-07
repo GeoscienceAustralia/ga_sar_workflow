@@ -1,4 +1,4 @@
-This document attempts to introduce the `PyGamma` project to developers who are completely new to it.  It covers the general code structure, concepts, and common foundational classes that they may need to understand before diving into specific parts of the project.
+This document attempts to introduce the `ga_sar_workflow` project to developers who are completely new to it.  It covers the general code structure, concepts, and common foundational classes that they may need to understand before diving into specific parts of the project.
 
 As a warning, the current state of the code base is not yet perfectly structured or final & as such some classes aren't necessarily in the most obvious files and some attributes aren't documented perfectly with docstrings as of yet - this document points these inconsistencies out and will be updated as the project matures.
 
@@ -6,10 +6,10 @@ As a warning, the current state of the code base is not yet perfectly structured
 
 | Location | Description |
 | ------------------------------- | --- |
-| config/...          | This folder contains scripts used to create and setup `PyGamma` environments for Linux-like operating systems, these are used at the NCI and by our Dockerfile |
+| config/...          | This folder contains scripts used to create and setup `ga_sar_workflow` environments for Linux-like operating systems, these are used at the NCI and by our Dockerfile |
 | docs/...            | This folder contains an older attempt to create Sphinx docs for the project (this is not maintained/used/up-to-date). |
 | insar/docs/...      | This folder contains the user and technical documentation for the project. |
-| insar/scripts/...   | This folder contains the user level scripts that are used to run the `PyGamma` processing/packaging/etc. |
+| insar/scripts/...   | This folder contains the user level scripts that are used to run the `ga_sar_workflow` processing/packaging/etc. |
 | insar/paths/...     | This folder contains classes that are used to define the filesystem structure of the stack in a definitive way which can then be re-used by the rest of the code base, this is described in further detail in a later section of this document. |
 | insar/meta_data/... | This folder holds all of the Sentinel-1 metadata handling and nosql database/spatialite logic for creating the geospatial/temporal database files. |
 | insar/sensors/...   | This folder contains modules for each supported satellite sensor which abstracts querying of acquisition metadata, and loading of acquisitions. |
@@ -23,10 +23,10 @@ Each stage of the data processing workflow is separated into it's own processing
 
 | Product | Module                                      | Description                                                                                         |
 | ------- |---------------------------------------------|-----------------------------------------------------------------------------------------------------|
-| SLC | `insar/process_s1_slc.py`       | This module processes Sentinel-1 satellite acquisitions into `PyGamma` SLC "scenes"             |
-| SLC | `insar/process_rsat2_slc.py`    | This module processes RADARSAT-2 satellite acquisitions into `PyGamma` SLC "scenes"             |
-| SLC | `insar/process_alos_slc.py`     | This module processes ALOS PALSAR (1 & 2) satellite acquisitions into `PyGamma` SLC "scenes"    |
-| SLC | `insar/process_tsx_slc.py`      | This module processes TSX / TDX satellite acquisitions into `PyGamma` SLC "scenes"              |
+| SLC | `insar/process_s1_slc.py`       | This module processes Sentinel-1 satellite acquisitions into `ga_sar_workflow` SLC "scenes"             |
+| SLC | `insar/process_rsat2_slc.py`    | This module processes RADARSAT-2 satellite acquisitions into `ga_sar_workflow` SLC "scenes"             |
+| SLC | `insar/process_alos_slc.py`     | This module processes ALOS PALSAR (1 & 2) satellite acquisitions into `ga_sar_workflow` SLC "scenes"    |
+| SLC | `insar/process_tsx_slc.py`      | This module processes TSX / TDX satellite acquisitions into `ga_sar_workflow` SLC "scenes"              |
 | SLC | `insar/coregister_dem.py`       | This module coregisters the primary scene to the DEM                                                |
 | SLC | `insar/coregister_slc.py`       | This module coregisters Sentinel-1 secondary scenes to the primary scene                            |
 | SLC | `insar/coregister_secondary.py` | This module coregisters secondary scenes to the primary scene (for other sensors except Sentinel-1) |
@@ -76,11 +76,11 @@ The `ProcConfig` class currently lives in `insar/project.py` and has functions f
 
 ## User facing CLI scripts ##
 
-The `insar/scripts/` directory holds all the CLI scripts used by users to run the `PyGamma` processing pipeline, however the most important:
-2. `insar/scripts/process_gamma.py` - this script is the main entrypoint to running the Luigi DAG for the SAR and InSAR processing workflows, and as such all processing scripts build upon this (and users run this directly with the `pygamma` command).
+The `insar/scripts/` directory holds all the CLI scripts used by users to run the `ga_sar_workflow` processing pipeline, however the most important:
+2. `insar/scripts/process_gamma.py` - this script is the main entrypoint to running the Luigi DAG for the SAR and InSAR processing workflows, and as such all processing scripts build upon this (and users run this directly with the `gasw` command).
 2. `insar/scripts/insar_pbs.py` - this script is the PBS job launcher, for users on the NCI or any other system using PBS for scheduling/running jobs.  It's the main script our current users are using to process their data.
 It essentially takes in the user's stack properties & PBS details, validates them, sets up a PBS bash script for the processing, and then `qsub`'s it for them.
-3. `insar/scripts/package_insar.py` - this script uses the `eodatasets3` module to package a `PyGamma` stack ready for use by ODC (open data cube).
+3. `insar/scripts/package_insar.py` - this script uses the `eodatasets3` module to package a `ga_sar_workflow` stack ready for use by ODC (open data cube).
 4. `insar/scripts/process_nci_report.py` - this script will analyse an existing stack (complete or not) and give a summary of the state of the stack, any missing or failed products, etc.
 
 ## Logging Infrastructure ##
@@ -102,7 +102,7 @@ As work is done on the project it's ideal if we can identify and move any magic/
 
 ## GAMMA python interface ##
 
-Most of the processing done by `PyGamma` is done by thirdparty software called GAMMA, which is primarily a suite of command line tools intended to be used directly by humans in a console.
+Most of the processing done by `ga_sar_workflow` is done by thirdparty software called GAMMA, which is primarily a suite of command line tools intended to be used directly by humans in a console.
 
 We use these programs programmatically through a simple command line wrapper called `GammaInterface` in `insar/py_gamma_ga.py` which identifies the GAMMA executables available at runtime which:
 * exposes them as attribute functions which automatically forward the function's parameters as command line arguments
@@ -110,7 +110,7 @@ We use these programs programmatically through a simple command line wrapper cal
 * automatically logs the GAMMA call (success or fail) to the appropriate log
 * automatically detects failures and converts that into a runtime exception.
 
-`insar/py_gamma_ga.py` is a drop in replacement for the GAMMA supplied `py_gamma.py` module. GAMMA's module is intended to handle interactive use and contains asynchronous/non-blocking code. In practice, this is more complex and not required for `PyGamma`. GA uses `insar/py_gamma_ga.py` as its single-threaded design results in shorter processing runtimes.
+`insar/py_gamma_ga.py` is a drop in replacement for the GAMMA supplied `py_gamma.py` module. GAMMA's module is intended to handle interactive use and contains asynchronous/non-blocking code. In practice, this is more complex and not required for `ga_sar_workflow`. GA uses `insar/py_gamma_ga.py` as its single-threaded design results in shorter processing runtimes.
 
 This interface is often given the `pg` variable name in processing modules, instantiated at the module level as `pg = GammaInterface(...)` thus all `pg.abc()` calls are calls into GAMMA.
 

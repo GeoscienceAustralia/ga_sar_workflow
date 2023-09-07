@@ -402,32 +402,32 @@ def slc_inputs(slc_data_input: Dict) -> pd.DataFrame:
     scene_dates = sorted([dt for dt in slc_data_input])
 
     # create dataframe and store slc details
-    slc_input_df = pd.DataFrame()
+    slc_input_df = pd.DataFrame(columns=["date", "swath", "burst_number", "swath_extent", "sensor",
+                                         "url", "total_bursts", "polarization", "acquisition_datetime",
+                                         "missing_primary_bursts"])
 
     for dt in scene_dates:
         for swath in _swath_keys:
             swath_data = slc_data_input[dt][swath]
-
-            missing_primary_bursts = list(swath_data["missing_primary_bursts"])
+            missing_primary_bursts = [int(x) for x in swath_data["missing_primary_bursts"]]
             swath_extent = swath_data["swath_extent"]
 
             for slc_id, slc_val in swath_data.items():
                 if re.match(_regx_uuid, slc_id):
-                    slc_input_df = slc_input_df.append(
-                        {
-                            "date": dt,
-                            "swath": swath,
-                            "burst_number": slc_val["burst_number"],
-                            "swath_extent": swath_extent,
-                            "sensor": slc_val["sensor"],
-                            "url": slc_val["url"],
-                            "total_bursts": slc_val["total_bursts"],
-                            "polarization": slc_val["polarization"],
-                            "acquisition_datetime": slc_val["acquisition_datetime"],
-                            "missing_primary_bursts": list(
-                                map(lambda x: int(x), missing_primary_bursts)
-                            ),
-                        },
-                        ignore_index=True,
-                    )
+                    for b in slc_val["burst_number"]:
+                        for mb in missing_primary_bursts:
+                            newrow = pd.DataFrame({
+                                    "date": dt,
+                                    "swath": swath,
+                                    "burst_number": b,
+                                    "swath_extent": swath_extent,
+                                    "sensor": slc_val["sensor"],
+                                    "url": slc_val["url"],
+                                    "total_bursts": slc_val["total_bursts"],
+                                    "polarization": slc_val["polarization"],
+                                    "acquisition_datetime": slc_val["acquisition_datetime"],
+                                    "missing_primary_bursts": mb
+                                    })
+                            slc_input_df = pd.concat([slc_input_df, newrow], ignore_index=True)
+
     return slc_input_df

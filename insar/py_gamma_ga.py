@@ -46,10 +46,10 @@ CERR = "cerr"
 #        raise iex
 #
 #    # ugly hack
-#    class DummyPyGamma:
+#    class Dummyga_sar_workflow:
 #        ParFile = None
 #
-#    py_gamma_broken = DummyPyGamma()
+#    py_gamma_broken = Dummyga_sar_workflow()
 
 
 class GammaInterfaceException(Exception):

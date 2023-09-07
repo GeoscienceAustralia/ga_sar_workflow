@@ -132,7 +132,7 @@ class SlcMetadata:
         metadata["measurements"] = dict()
         for xml_file in annotation_xmls:
             xml_pbase = os.path.basename(xml_file)
-            # use pygamma to extract burst/swath info from xml:
+            # use gasw (ga_sar_workflow) to extract burst/swath info from xml:
             metadata["measurements"][xml_pbase] = self.metadata_swath(xml_file)
 
         metadata["id"] = str(uuid.uuid4())
@@ -359,7 +359,7 @@ class SlcMetadata:
         ------
             Dictionary containing relevant items & values of
             individual bursts extracted from xml files using
-            pygamma
+            gasw (ga_sar_workflow)
         """
 
         swath_meta = dict()
@@ -395,7 +395,7 @@ class SlcMetadata:
             with TemporaryDirectory(delete=const.DISCARD_TEMP_FILES) as tmp_dir:
                 self.extract_archive_tofile(target_file=xml_path, outdir=tmp_dir, retry=3)
 
-                tmp_path = os.path.join(tmp_dir, os.path.basename(xml_path))
+                tmp_path = Path(os.path.join(tmp_dir, os.path.basename(xml_path)))
                 _, cout, _ = pg.S1_burstloc(tmp_path)
                 return _parse_s1_burstloc(cout)
 
@@ -423,7 +423,7 @@ class SlcMetadata:
                 ann_tree.find(".//projection").text.replace(" ", "_").upper()
             )
 
-        burst_meta = _metadata_burst(xml_file)
+        burst_meta = _metadata_burst(Path(xml_file))
 
         return {**swath_meta, **burst_meta}
 
@@ -574,8 +574,8 @@ class SlcMetadata:
         # target_file = S1A_IW_SLC__1SDV_20180106T193808_{blah}_8674.SAFE/measurement/s1a-iw1-{blah}-004.tiff
         with zf.ZipFile(self.scene, "r") as zip_archive:
             # open S1 zip and get contents from a target file
-            source_size = zip_archive.getinfo(target_file).file_size
-            archive_dump = zip_archive.read(target_file)  # <class 'bytes'>
+            source_size = zip_archive.getinfo(str(target_file)).file_size
+            archive_dump = zip_archive.read(str(target_file))  # <class 'bytes'>
 
         _copy_target_contents(outfile, archive_dump)
 

@@ -31,7 +31,7 @@ pg = create_gamma_proxy(ProcessSlcException)
 # GA's InSAR team found S1 data before Nov 2015 is of poorer quality for SAR interferometry & more
 # likely to create interferogram discontinuities. GAMMA's SLC_phase_shift uses March 2015 though.
 # The InSAR team has decided not to use interferometric products before this. See:
-# https://github.com/GeoscienceAustralia/PyGamma/pull/157
+# https://github.com/GeoscienceAustralia/ga_sar_workflow/pull/157
 
 PHASE_SHIFT_DATE = datetime.date(2015, 3, 10)
 
@@ -241,7 +241,7 @@ def read_raw_data(
             xml_pattern = xml_pattern.format(swath=swath, polarisation=polarisation.lower())
 
             for xml_file in save_file.glob(xml_pattern):
-                _, cout, _ = pg.S1_burstloc(xml_file)
+                _, cout, _ = pg.S1_burstloc(Path(xml_file))
                 num_bursts = sum([line.startswith("Burst") for line in cout])
                 LOG.debug(f"nbursts: {num_bursts} from: {xml_file}")
                 num_subswath_burst += num_bursts

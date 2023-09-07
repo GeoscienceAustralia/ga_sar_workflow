@@ -7,7 +7,7 @@ from pathlib import Path
 
 import insar.constant as const
 
-from insar.gamma.generated import PyGammaProxy
+from insar.gamma.generated import GammaProxy
 from insar.constant import SCENE_DATE_FMT
 from insar.logs import STATUS_LOGGER as LOG
 from insar.project import ProcConfig
@@ -68,11 +68,11 @@ def read_land_center_coords(shapefile: Path) -> Optional[Tuple[int, int]]:
     return (north_lat, east_lon)
 
 
-def latlon_to_px(pg: PyGammaProxy, mli_par: Path, lat: float, lon: float, hgt: float = 0) -> Tuple[int, int]:
+def latlon_to_px(pg: GammaProxy, mli_par: Path, lat: float, lon: float, hgt: float = 0) -> Tuple[int, int]:
     """
     Reads land center coordinates from a shapefile and converts into pixel coordinates for a multilook image
 
-    :param pg: the PyGamma wrapper object used to dispatch gamma commands
+    :param pg: the ga_sar_workflow wrapper object used to dispatch gamma commands
     :param mli_par: the path to the .mli.par file in which the pixel coordinates should be for
     :param lat: The latitude coordinate
     :param lon: The longitude coordinate

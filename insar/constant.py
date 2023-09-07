@@ -168,7 +168,7 @@ CPX_TO_REAL_OUTPUT_TYPE_PHASE : int = 4
 
 RAS2RAS_GREY_COLOUR_MAP : Path = Path("gray.cm")
 
-# Data types NOTE: these are NOT consistent between pygamma programs!
+# Data types NOTE: these are NOT consistent between gasw (ga_sar_workflow) programs!
 DTYPE_FLOAT : int = 0  # (default)
 DTYPE_FCOMPLEX : int = 1
 #    2: SUN raster/BMP/TIFF format

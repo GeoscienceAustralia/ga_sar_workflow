@@ -3,12 +3,12 @@ import numpy as np
 import inspect
 import os
 
-from insar.gamma.generated import PyGammaProxy as PyGammaProxyBase
+from insar.gamma.generated import GammaProxy as GammaProxyBase
 from insar.logs import STATUS_LOGGER
 
 print(f"Interfacing with GAMMA Proxy {__file__}")
 
-class PyGammaProxy(PyGammaProxyBase):
+class GammaProxy(GammaProxyBase):
 
 #    def create_offset(self, SLC1_par: str, SLC2_par: str, OFF_par: str, algorithm = None, rlks = None, azlks = None, iflg = 0):
 #        supplied_args = self._clean_call_args(locals(), inspect.signature(self.create_offset))

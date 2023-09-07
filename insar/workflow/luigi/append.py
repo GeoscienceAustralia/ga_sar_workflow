@@ -158,7 +158,7 @@ class AppendDatesToStack(luigi.Task):
                 if not failed_file:
                     continue
 
-                _, _, scene_date = identify_data_source(failed_file)
+                _, _, scene_date = identify_data_source(Path(failed_file))
 
                 log.info(
                     f"corrupted zip file detected, removed whole date from processing",

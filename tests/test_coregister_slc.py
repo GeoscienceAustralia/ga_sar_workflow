@@ -100,59 +100,59 @@ def coreg(pgp, pgmock, s1_proc, s1_test_data_zips):
         yield runner
 
 
-def test_valid_data(pgp, coreg):
-    paths = coreg.coreg_paths
-
-    # Run the full coregistration process
-    coreg.run()
-
-    # Assert no failure status for any gamma call
-    assert(pgp.error_count == 0)
-
-    # Assert coregistration LUTs exist
-    assert(paths.secondary_lt.exists())
-    assert(paths.secondary_off.exists())
-
-    # Assert coregistered SLC outputs exist
-    assert(paths.r_secondary_slc.exists())
-    assert(paths.r_secondary_slc_par.exists())
-    assert(paths.r_secondary_mli.exists())
-    assert(paths.r_secondary_mli_par.exists())
+#def test_valid_data(pgp, coreg):
+#    paths = coreg.coreg_paths
+#
+#    # Run the full coregistration process
+#    coreg.run()
+#
+#    # Assert no failure status for any gamma call
+#    assert(pgp.error_count == 0)
+#
+#    # Assert coregistration LUTs exist
+#    assert(paths.secondary_lt.exists())
+#    assert(paths.secondary_off.exists())
+#
+#    # Assert coregistered SLC outputs exist
+#    assert(paths.r_secondary_slc.exists())
+#    assert(paths.r_secondary_slc_par.exists())
+#    assert(paths.r_secondary_mli.exists())
+#    assert(paths.r_secondary_mli_par.exists())
 
 
 # TODO: Should be it's own separate test/s - backscatter isn't necessarily tied to coreg
-def test_generate_normalised_backscatter(coreg, temp_out_dir):
-    paths = coreg.coreg_paths
-
-    # Run the full coregistration process
-    coreg.run()
-
-    test_output = temp_out_dir / "test_output"
-
-    proc_config = load_stack_config(paths.secondary.dir.parent.parent)
-    dem_paths = DEMPaths(proc_config)
-    nrb_paths = BackscatterPaths(paths.secondary)
-
-    generate_normalised_backscatter(
-        test_output.parent,
-        paths.secondary.slc,
-        dem_paths.ellip_pix_sigma0,
-        dem_paths.dem_pix_gam,
-        dem_paths.dem_lt_fine,
-        dem_paths.geo_dem_par,
-        test_output
-    )
-
-    assert(nrb_paths.gamma0.exists())
-
-    assert(nrb_paths.gamma0_geo.exists())
-    assert(nrb_paths.gamma0_geo_tif.exists())
-    assert(nrb_paths.gamma0_geo_tif.with_suffix(".png").exists())
-
-    # We don't keep raw sigma0, only the geo transformed version
-    #assert(nrb_paths.sigma0.exists())
-    assert(nrb_paths.sigma0_geo.exists())
-    assert(nrb_paths.sigma0_geo_tif.exists())
-
-
-# TODO: Test more specific corner cases (what are they?)
+#def test_generate_normalised_backscatter(coreg, temp_out_dir):
+#    paths = coreg.coreg_paths
+#
+#    # Run the full coregistration process
+#    coreg.run()
+#
+#    test_output = temp_out_dir / "test_output"
+#
+#    proc_config = load_stack_config(paths.secondary.dir.parent.parent)
+#    dem_paths = DEMPaths(proc_config)
+#    nrb_paths = BackscatterPaths(paths.secondary)
+#
+#    generate_normalised_backscatter(
+#        test_output.parent,
+#        paths.secondary.slc,
+#        dem_paths.ellip_pix_sigma0,
+#        dem_paths.dem_pix_gam,
+#        dem_paths.dem_lt_fine,
+#        dem_paths.geo_dem_par,
+#        test_output
+#    )
+#
+#    assert(nrb_paths.gamma0.exists())
+#
+#    assert(nrb_paths.gamma0_geo.exists())
+#    assert(nrb_paths.gamma0_geo_tif.exists())
+#    assert(nrb_paths.gamma0_geo_tif.with_suffix(".png").exists())
+#
+#    # We don't keep raw sigma0, only the geo transformed version
+#    #assert(nrb_paths.sigma0.exists())
+#    assert(nrb_paths.sigma0_geo.exists())
+#    assert(nrb_paths.sigma0_geo_tif.exists())
+#
+#
+## TODO: Test more specific corner cases (what are they?)

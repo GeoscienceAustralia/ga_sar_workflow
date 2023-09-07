@@ -2,15 +2,15 @@ import os
 import inspect
 from pathlib import Path
 
-from insar.gamma.versions.v20191203 import PyGammaProxy as PyGammaProxy_v20191203
+from insar.gamma.versions.v20191203 import GammaProxy as GammaProxy_v20191203
 from PIL import Image
 import numpy as np
 import insar.constant as const
 
-class PyGammaProxy(PyGammaProxy_v20191203):
+class GammaProxy(GammaProxy_v20191203):
 
     # Note: This is not the only set of functions that changed in 20210701
-    # - this is just the subset of functions that we use in `PyGamma` that changed.
+    # - this is just the subset of functions that we use in `ga_sar_workflow` that changed.
     # - we don't port versions we don't use.
 
     # The main issue of this release is all of the rasterisation programs were deleted and replaced with a few more-generic versions

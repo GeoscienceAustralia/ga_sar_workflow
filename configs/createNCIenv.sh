@@ -13,7 +13,7 @@ fi
 echo "$CWD $REPO_ROOT"
 
 if [[ $CWD == "$REPO_ROOT"* ]]; then
-  echo "Error: You should not run this from the PyGamma repository directory."
+  echo "Error: You should not run this from the ga_sar_workflow repository directory."
   exit 1
 fi
 
@@ -107,7 +107,7 @@ echo "LDFLAGS=${LDFLAGS}"
 echo "LD_LIBRARY_PATH=${LD_LIBRARY_PATH}"
 echo "PKG_CONFIG_PATH=${PKG_CONFIG_PATH}"
 
-# Add stand-alone env script for PyGamma
+# Add stand-alone env script for ga_sar_workflow
 
 sed -e 's|VENV_PATH=$1'"|VENV_PATH=$ENV_PATH|" $REPO_ROOT/configs/activateNCI.env > $ENV_PATH/NCI.env
 
@@ -297,7 +297,7 @@ python3 -m pip install --no-binary :all: --upgrade --force-reinstall "GDAL~=$GDA
 
 popd > /dev/null
 
-# Install dependencies and PyGamma into venv
+# Install dependencies and ga_sar_workflow into venv
 
 python3 -m pip install -r requirements.txt || exit
 python3 setup.py install || exit

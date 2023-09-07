@@ -1,6 +1,6 @@
-## PyGamma
+## ga_sar_workflow
 
-PyGamma is a tool to process Sentinel-1 SLC data into Analysis Ready Data (ARD) using the [GAMMA](http://www.gamma-rs.ch/) software, specifically ARD products for georeferenced backscatter and interferograms.
+ga_sar_workflow is a tool to process Sentinel-1 SLC data into Analysis Ready Data (ARD) using the [GAMMA](http://www.gamma-rs.ch/) software, specifically ARD products for georeferenced backscatter and interferograms.
 
 This project is intended to be generic and reusable, __however__... it should be noted to adopters that this project at the time of writing has only been used by Geoscience Australia on specific Sentinel-1, RADARSAT-2, and ALOS datasets - as such there are certain assumptions still being made in some areas of the code with respect to things like GAMMA program settings being hard-coded in some cases.
 
@@ -35,7 +35,7 @@ User guides:
 
 Technical Documents:
  * [InSAR Stack description](insar/docs/Stack.md)
- * [PyGamma logging information](insar/docs/Logging.md)
+ * [ga_sar_workflow logging information](insar/docs/Logging.md)
  * [Metadata documentation](insar/docs/Metadata.md)
 
 Developer guides:
@@ -48,12 +48,12 @@ Developer guides:
 
 ### Notes on shapefile creation
 
-Usage of `PyGamma` typically needs a shapefile to process larger datasets (to keep the area of interest small enough to fit into memory), however no standard approach exists to creation of these shapefiles as yet.  This will eventually be addressed, but for now examples exist in `tests/data/...` and it's currently up to the user to create their own.
+Usage of `ga_sar_workflow` typically needs a shapefile to process larger datasets (to keep the area of interest small enough to fit into memory), however no standard approach exists to creation of these shapefiles as yet.  This will eventually be addressed, but for now examples exist in `tests/data/...` and it's currently up to the user to create their own.
 
-Shapefiles should typically match data acquisition patterns for the sensor data being processed, this is because mismatches in available data across acquisitions can cause complex problems in `PyGamma` due to requirements imposed by the coregistration & the interferogram tree linking algorithm.
+Shapefiles should typically match data acquisition patterns for the sensor data being processed, this is because mismatches in available data across acquisitions can cause complex problems in `ga_sar_workflow` due to requirements imposed by the coregistration & the interferogram tree linking algorithm.
 
 Due to how coregistration & interferogram trees work - only dates that share identical "sets geographic regions" in the source data (eg: bursts in Sentinel-1) may be correlated, and thus any acquisition that does **not** share the most expansive set of data will be excluded (in other words, any scene which is missing data that exists in even just one other acquisition will be excluded).  This is especially critical in scenarios where you have 1 scene which has a burst no other scene has, and that scene is missing a burst that others do - in this highlighted case, not a single scene will contain the most expensive set of data and the stack will be considered empty as not a single scene will be considered complete.
 
-The reason for this largely comes down to the fact that both coregistration and interferograms are in their nature an operation between two distinct scenes, and thus if data in scene A does not exist in scene B there is nothing to coregister with nor produce an interferogram from... thus we require all scenes to share data.  PyGamma chose the requirement of only including the most expansive scenes, as the alternative of only processing the least common denominator of data will often result in geospatial holes in the products (from one or two bad acquisitions missing a burst) - with this approach the bad acquisitions are instead excluded, and the products that are considered complete will be processed in full producing the best quality and most complete product.
+The reason for this largely comes down to the fact that both coregistration and interferograms are in their nature an operation between two distinct scenes, and thus if data in scene A does not exist in scene B there is nothing to coregister with nor produce an interferogram from... thus we require all scenes to share data.  ga_sar_workflow chose the requirement of only including the most expansive scenes, as the alternative of only processing the least common denominator of data will often result in geospatial holes in the products (from one or two bad acquisitions missing a burst) - with this approach the bad acquisitions are instead excluded, and the products that are considered complete will be processed in full producing the best quality and most complete product.
 
 This subtle but very important detail highlights the importance of the stack's shapefile, and for this reason it is strongly recommended that shapefiles are produced in such a way that maximises how many scenes will consistently have the most expansive set of data for the whole temporal extent of the stack, to avoid this issue.

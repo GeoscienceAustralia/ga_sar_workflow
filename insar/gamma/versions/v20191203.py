@@ -2,7 +2,7 @@
 import insar.gamma.generated.py_gamma_proxy
 import inspect
 
-PyGammaProxyBase = insar.gamma.generated.py_gamma_proxy.PyGammaProxy
+GammaProxyBase = insar.gamma.generated.py_gamma_proxy.GammaProxy
 
-class PyGammaProxy(PyGammaProxyBase):
+class GammaProxy(GammaProxyBase):
     pass

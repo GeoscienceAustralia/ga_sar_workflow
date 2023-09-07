@@ -56,7 +56,7 @@ class DataDownload(luigi.Task):
             LOG.info(f"Unpacking data from {self.data_path} to {self.output_dir}")
 
             # Setup sensor-specific data acquisition info
-            constellation, _, _ = identify_data_source(self.data_path)
+            constellation, _, _ = identify_data_source(Path(self.data_path))
             kwargs = {}
 
             if constellation == S1_ID:
@@ -162,7 +162,7 @@ class InitialSetup(luigi.Task):
 
         # If we have a shape file, query the DB for scenes in that extent
         # TBD: The database geospatial/temporal query is currently Sentinel-1 only
-        # GH issue: https://github.com/GeoscienceAustralia/PyGamma/issues/261
+        # GH issue: https://github.com/GeoscienceAustralia/ga_sar_workflow/issues/261
         if shape_file and proc_config.sensor == "S1":
             # get the relative orbit number, which is int value of the numeric part of the track name
             # Note: This is S1 specific...
@@ -257,7 +257,7 @@ class InitialSetup(luigi.Task):
 
             download_tasks = []
             for slc_url in download_list:
-                _, _, scene_date = identify_data_source(slc_url)
+                _, _, scene_date = identify_data_source(Path(slc_url))
 
                 download_tasks.append(
                     DataDownload(
@@ -279,7 +279,7 @@ class InitialSetup(luigi.Task):
                     if not failed_file:
                         continue
 
-                    _, _, scene_date = identify_data_source(failed_file)
+                    _, _, scene_date = identify_data_source(Path(failed_file))
 
                     LOG.info(
                         f"Corrupted file detected: {failed_file}, removed date {scene_date} from processing",
@@ -381,9 +381,9 @@ class InitialSetup(luigi.Task):
             "num_scene_dates": len(formatted_scene_dates),
             "polarisations": pols,
 
-            # Software versions used for processing
+            # Software versions used for processing (note gasw stands for ga_sar_workflow)
             "gamma_version": gamma_version,
-            "pygamma_version": insar.__version__,
+            "gasw_version": insar.__version__,
             "gdal_version": str(osgeo.gdal.VersionInfo()),
         }
 

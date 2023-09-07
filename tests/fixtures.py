@@ -337,7 +337,7 @@ def s1_test_data_csv(pgp, pgmock, test_data_dir, s1_test_data_zips):
 
     for data_path in s1_test_data_zips:
         for swath_data in get_data_swath_info(data_path):
-            slc_inputs_df = slc_inputs_df.append(swath_data, ignore_index=True)
+            slc_inputs_df = pd.concat([slc_inputs_df, pd.DataFrame.from_dict(swath_data, orient='index').transpose()])
 
     result_path = test_data_dir / f"burst_data_{S1_TEST_STACK_ID}.csv"
     slc_inputs_df.to_csv(result_path)

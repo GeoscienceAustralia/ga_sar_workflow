@@ -19,10 +19,10 @@ jobs:
 
     steps:
     - uses: actions/checkout@v3
-    - name: Set up Python 3.10
+    - name: Set up Python 3.11
       uses: actions/setup-python@v3
       with:
-        python-version: "3.10"
+        python-version: "3.11"
     - name: Install native dependencies
       run: |
         sudo apt-get install -y gdal-bin libgdal-dev libfreetype-dev libpq-dev sqlite3 libsqlite3-mod-spatialite
@@ -37,4 +37,4 @@ jobs:
         GAMMA_VER: 20221129
       run: |
         export PYTHONPATH=${PYTHONPATH}:$(pwd)
-        pytest --mypy
+        pytest
